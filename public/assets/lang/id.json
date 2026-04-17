@@ -1,0 +1,22 @@
+{
+    "t-menu": "menu utama",
+    "t-dashboards": "dasbor",
+    "t-hr-management": "manajemen sdm",
+    "t-employees-list": "daftar karyawan",
+    "t-holidays": "hari libur",
+    "t-leaves-manage": "kelola cuti",
+    "t-by-employee": "atas nama karyawan",
+    "t-add-leave-employee": "tambah cuti (karyawan)",
+    "t-by-hr": "atas nama sdm",
+    "t-add-leave-hr": "tambah cuti (sdm)",
+    "t-attendance": "kehadiran",
+    "t-attendance-hr": "kehadiran (sdm)",
+    "t-main-attendance": "kehadiran utama",
+    "t-department": "departemen",
+    "t-hr": "beranda",
+    "t-pages": "halaman",
+    "t-account": "akun",
+    "t-settings": "pengaturan",
+    "t-maintenance": "pemeliharaan",
+    "t-components": "halaman"
+}

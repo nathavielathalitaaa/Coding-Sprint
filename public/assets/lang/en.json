@@ -1,0 +1,22 @@
+{
+    "t-menu": "Main Menu",
+    "t-dashboards": "Dashboards",
+    "t-hr-management": "HR Management",
+    "t-employees-list": "Employee List",
+    "t-holidays": "Holidays",
+    "t-leaves-manage": "Leaves Manage",
+    "t-by-employee": "By Employee",
+    "t-add-leave-employee": "Add Leave (Employee)",
+    "t-by-hr": "By HR",
+    "t-add-leave-hr": "Add Leave (HR)",
+    "t-attendance": "Attendance",
+    "t-attendance-hr": "Attendance (HR)",
+    "t-main-attendance": "Main Attendance",
+    "t-department": "Department",
+    "t-hr": "Home",
+    "t-pages": "Pages",
+    "t-account": "Account",
+    "t-settings": "Settings",
+    "t-maintenance": "Maintenance",
+    "t-components": "Pages"
+}
