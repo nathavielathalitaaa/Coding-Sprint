@@ -35,6 +35,7 @@ class EmployeeProfile extends Model
         'kode_pos',
         // Approval
         'ttd_path',
+        'signature_path',
         'pin',
     ];
 

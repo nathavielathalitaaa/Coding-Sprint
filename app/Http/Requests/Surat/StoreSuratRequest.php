@@ -24,7 +24,8 @@ class StoreSuratRequest extends FormRequest
         return [
             'jenis_surat' => 'required|string|in:resign,permohonan,surat_tugas,rekomendasi,izin,lainnya',
             'perihal' => 'required|string',
-            'file_pdf' => 'nullable|file|mimes:pdf|max:5120',
+            'file_pdf' => 'required|file|mimes:pdf|max:5120',
+            'ttd_coordinates' => 'nullable|string',
         ];
     }
 
@@ -36,6 +37,7 @@ class StoreSuratRequest extends FormRequest
         return [
             'jenis_surat.required' => 'Jenis surat wajib diisi',
             'perihal.required' => 'Perihal wajib diisi',
+            'file_pdf.required' => 'File surat wajib diunggah.',
             'file_pdf.mimes' => 'File harus berformat PDF',
             'file_pdf.max' => 'Ukuran file maksimal 5MB',
         ];

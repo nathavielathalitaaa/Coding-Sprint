@@ -16,6 +16,7 @@ class DocumentApproval extends Model
         'ttd_snapshot',
         'cover_pdf_path',
         'status',
+        'is_read',
         'catatan',
         'actioned_at',
     ];

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Absensi;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
 
 class AbsensiController extends Controller
@@ -28,11 +30,15 @@ class AbsensiController extends Controller
             ->where('tanggal', date('Y-m-d'))
             ->first();
 
-        return view('HR.absensi.index', compact('absensiList', 'bulan', 'absensiHariIni'));
+        return view('hr.absensi.index', compact('absensiList', 'bulan', 'absensiHariIni'));
     }
 
     public function store(Request $request)
     {
+        if (!auth()->user()->hasRole('hr')) {
+            abort(403, 'Akses ditolak. Hanya HR yang dapat menambah absensi manual.');
+        }
+
         $request->validate([
             'user_id'   => 'required|exists:users,id',
             'tanggal'   => 'required|date',
@@ -138,5 +144,80 @@ class AbsensiController extends Controller
             flash()->error('gagal melakukan absen keluar');
             return redirect()->back();
         }
+    }
+
+    public function exportExcel(Request $request)
+    {
+        if (!auth()->user()->hasRole('hr')) {
+            abort(403, 'Akses ditolak. Hanya HR yang dapat mengekspor data absensi.');
+        }
+
+        $bulan = $request->bulan ?? date('Y-m');
+
+        $absensiList = Absensi::with(['user' => fn($q) => $q->select('id', 'name')])
+            ->where('tanggal', 'like', $bulan . '%')
+            ->orderBy('tanggal')
+            ->get();
+
+        $namaFile = 'rekap-absensi-' . $bulan . '.csv';
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $namaFile . '"',
+        ];
+
+        $callback = function () use ($absensiList) {
+            $file = fopen('php://output', 'w');
+
+            // bom untuk excel agar utf-8 terbaca benar
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // header kolom
+            fputcsv($file, ['No', 'Nama Karyawan', 'Tanggal', 'Jam Masuk', 'Jam Keluar', 'Status', 'Keterangan']);
+
+            foreach ($absensiList as $i => $absensi) {
+                fputcsv($file, [
+                    $i + 1,
+                    $absensi->user?->name ?? '-',
+                    $absensi->tanggal,
+                    $absensi->jam_masuk ?? '-',
+                    $absensi->jam_keluar ?? '-',
+                    ucfirst($absensi->status),
+                    $absensi->keterangan ?? '',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return Response::stream($callback, 200, $headers);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        if (!auth()->user()->hasRole('hr')) {
+            abort(403, 'Akses ditolak. Hanya HR yang dapat mengekspor data absensi.');
+        }
+
+        $bulan = $request->bulan ?? date('Y-m');
+
+        $absensiList = Absensi::with(['user' => fn($q) => $q->select('id', 'name')])
+            ->where('tanggal', 'like', $bulan . '%')
+            ->orderBy('tanggal')
+            ->get();
+
+        // hitung ringkasan
+        $ringkasan = [
+            'hadir' => $absensiList->where('status', 'hadir')->count(),
+            'izin'  => $absensiList->where('status', 'izin')->count(),
+            'sakit' => $absensiList->where('status', 'sakit')->count(),
+            'alpha' => $absensiList->where('status', 'alpha')->count(),
+            'cuti'  => $absensiList->where('status', 'cuti')->count(),
+        ];
+
+        $pdf = Pdf::loadView('hr.absensi.export-pdf', compact('absensiList', 'bulan', 'ringkasan'))
+            ->setPaper('A4', 'landscape');
+
+        return $pdf->download('rekap-absensi-' . $bulan . '.pdf');
     }
 }

@@ -16,46 +16,49 @@ class SuratController extends Controller
         private ApprovalService $approval,
         private PinVerificationService $pinService,
         private ApprovalCoverService $coverService,
+        private \App\Services\PdfStampService $stampService,
+        private \App\Services\NotificationService $notifService,
     ) {
         $this->middleware('auth');
     }
 
-    // ── INDEX ───────────────────────────────────────────────
+    // ── index ───────────────────────────────────────────────
+    /** tampilkan daftar surat */
     public function index()
     {
         $user    = Auth::user()->load('profile');
         $jabatan = $user->profile?->jabatan;
 
-    if ($jabatan) {
-        $surats = Surat::with(['user', 'approvals'])
-            ->whereHas('approvals', function ($q) use ($jabatan) {
-                $q->where('jabatan', $jabatan)
-                ->whereIn('status', ['waiting', 'approved', 'rejected', 'pending']) // sudah benar
-                ->where('document_type', 'LIKE', 'surat_%');
-            })
-            ->latest()->paginate(15);
+        $query = Surat::with(['user', 'approvals']);
+
+        if ($jabatan) {
+            $query->where(function($q) use ($jabatan, $user) {
+                $q->whereHas('approvals', function ($sq) use ($jabatan) {
+                    $sq->where('jabatan', $jabatan)
+                      ->whereIn('status', ['waiting', 'approved', 'rejected', 'pending'])
+                      ->where('document_type', 'LIKE', 'surat_%');
+                })
+                ->orWhere('user_id', $user->id);
+            });
         } elseif ($user->hasRole('staff')) {
-            // Staff — hanya surat milik sendiri
-            $surats = Surat::with(['user', 'approvals'])
-                ->where('user_id', $user->id)
-                ->latest()->paginate(15);
-        } else {
-            // HR / Supervisor tanpa jabatan — lihat semua
-            $surats = Surat::with(['user', 'approvals'])
-                ->latest()->paginate(15);
+            $query->where('user_id', $user->id);
         }
+
+        $surats = $query->latest()->paginate(15);
 
         return view('surat.index', compact('surats'));
     }
 
-    // ── CREATE ──────────────────────────────────────────────
+    // ── create ──────────────────────────────────────────────
+    /** tampilkan form buat surat */
     public function create()
     {
         $this->authorize('create', Surat::class);
         return view('surat.create');
     }
 
-    // ── STORE ───────────────────────────────────────────────
+    // ── store ───────────────────────────────────────────────
+    /** simpan surat baru */
     public function store(StoreSuratRequest $request)
     {
         $this->authorize('store', Surat::class);
@@ -66,22 +69,35 @@ class SuratController extends Controller
         }
 
         $surat = Surat::create([
-            'user_id'     => Auth::id(),
-            'nomor_surat' => $this->generateNomorSurat(),
-            'jenis_surat' => $request->validated()['jenis_surat'],
-            'perihal'     => $request->validated()['perihal'],
-            'file_pdf'    => $fileName,
-            'status'      => 'submitted',
+            'user_id'         => Auth::id(),
+            'nomor_surat'     => $this->generateNomorSurat(),
+            'jenis_surat'     => $request->validated()['jenis_surat'],
+            'perihal'         => $request->validated()['perihal'],
+            'file_pdf'        => $fileName,
+            'ttd_coordinates' => $request->ttd_coordinates ? json_decode($request->ttd_coordinates, true) : null,
+            'status'          => 'submitted',
         ]);
 
-        // Init approval 4 step
+        // init approval 4 step
         $this->approval->initApproval('surat_' . $surat->jenis_surat, $surat->id);
+
+        // notify first approver
+        $firstStep = $surat->approvals()->where('status', 'waiting')->first();
+        if ($firstStep) {
+            $this->notifService->sendToJabatan(
+                $firstStep->jabatan,
+                'Permintaan Approval Surat Baru',
+                "Karyawan " . Auth::user()->name . " mengajukan surat baru ({$surat->nomor_surat}).",
+                route('surat.show', $surat->id)
+            );
+        }
 
         flash()->success('Surat berhasil dibuat dan dikirim untuk approval.');
         return redirect()->route('surat.show', $surat->id);
     }
 
-    // ── SHOW ────────────────────────────────────────────────
+    // ── show ────────────────────────────────────────────────
+    /** tampilkan detail surat */
     public function show(Surat $surat)
     {
         $this->authorize('view', $surat);
@@ -91,21 +107,37 @@ class SuratController extends Controller
         $authUser   = Auth::user()->load('profile');
         $canApprove = $this->approval->canApprove($documentType, $surat->id, $authUser);
         $waitingStep = $this->approval->getWaitingStep($documentType, $surat->id);
+        
+        // tandai sudah dibaca jika ini giliran user ini
+        $this->approval->markAsRead($documentType, $surat->id, $authUser);
 
         return view('surat.show', compact('surat', 'steps', 'canApprove', 'waitingStep'));
     }
 
-    // ── EDIT ────────────────────────────────────────────────
+    // ── edit ────────────────────────────────────────────────
+    /** tampilkan form edit surat */
     public function edit(Surat $surat)
     {
         $this->authorize('edit', $surat);
+
+        if (!$surat->canBeEdited()) {
+            flash()->error('Surat sudah dalam proses approval dan tidak dapat diubah.');
+            return redirect()->route('surat.show', $surat->id);
+        }
+
         return view('surat.edit', compact('surat'));
     }
 
-    // ── UPDATE (resubmit setelah revisi) ────────────────────
+    // ── update (resubmit setelah revisi) ────────────────────
+    /** update data surat */
     public function update(StoreSuratRequest $request, Surat $surat)
     {
         $this->authorize('update', $surat);
+
+        if (!$surat->canBeEdited()) {
+            flash()->error('Surat sudah dalam proses approval dan tidak dapat diubah.');
+            return redirect()->route('surat.show', $surat->id);
+        }
 
         if ($request->hasFile('file_pdf')) {
             if ($surat->file_pdf && file_exists(storage_path('app/public/' . $surat->file_pdf))) {
@@ -119,14 +151,15 @@ class SuratController extends Controller
             'catatan_revisi' => null,
         ]);
 
-        // Reset approval dari step 1
+        // reset approval dari step 1
         $this->approval->resubmit('surat_' . $surat->jenis_surat, $surat->id);
 
         flash()->success('Surat berhasil direvisi dan dikirim ulang untuk approval.');
         return redirect()->route('surat.show', $surat->id);
     }
 
-    // ── APPROVE ─────────────────────────────────────────────
+    // ── approve ─────────────────────────────────────────────
+    /** setujui surat */
     public function approve(Request $request, Surat $surat)
     {
         $request->validate([
@@ -138,17 +171,24 @@ class SuratController extends Controller
 
         $user = Auth::user()->load('profile');
 
-        // Verifikasi PIN
+        // verifikasi pin
         if (!$this->pinService->verify($user, $request->pin)) {
             flash()->error('PIN salah. Silakan coba lagi.');
             return redirect()->back();
         }
 
-        // Ambil path TTD untuk snapshot
+        // server-side guard: cek apakah giliran jabatan user ini
+        $documentType = 'surat_' . $surat->jenis_surat;
+        if (!$this->approval->canApprove($documentType, $surat->id, $user)) {
+            flash()->error('Bukan giliran Anda untuk approve surat ini.');
+            return redirect()->back();
+        }
+
+        // ambil path ttd untuk snapshot
         $ttdSnapshot = $this->pinService->getTtdPath($user);
 
         $result = $this->approval->approve(
-            'surat_' . $surat->jenis_surat,
+            $documentType,
             $surat->id,
             $user,
             $request->catatan ?? '',
@@ -163,25 +203,61 @@ class SuratController extends Controller
             return redirect()->back();
         }
 
-        // Jika semua step selesai, update status surat + generate PDF cover
+        // jika semua step selesai, update status surat + generate pdf cover
         if ($result['selesai']) {
             $surat->update(['status' => 'approved_owner']);
 
-            // Generate PDF cover approval
+            // notify owner
+            $this->notifService->send(
+                $surat->user_id,
+                'Surat Disetujui Penuh',
+                "Surat dengan nomor {$surat->nomor_surat} telah disetujui sepenuhnya.",
+                route('surat.show', $surat->id)
+            );
+
+            // generate pdf cover approval / stamp
             try {
+                $documentType = 'surat_' . $surat->jenis_surat;
+                $step = \App\Models\ApprovalStep::where('document_type', $documentType)->first();
+                $ttdMode = $step?->ttd_mode ?? 'append';
+
+                if ($ttdMode === 'stamp') {
+                    $finalPath = $this->stampService->stamp($surat);
+                    $surat->update(['final_pdf_path' => $finalPath]);
+                    \Log::info('PDF Stamped: ' . $finalPath);
+                } else {
                     $coverPath = $this->coverService->generateCover($surat);
                     $surat->update(['cover_pdf_path' => $coverPath]);
-                    \Log::info('Cover generated: ' . $coverPath); // tambah ini
-                } catch (\Exception $e) {
-                    \Log::error('Gagal generate cover PDF: ' . $e->getMessage());
+                    \Log::info('Cover generated: ' . $coverPath);
+                    
+                    $finalPath = $this->coverService->processMerge($surat);
+                    if ($finalPath) {
+                        $surat->update(['final_pdf_path' => $finalPath]);
+                        \Log::info('Final PDF merged: ' . $finalPath);
+                    }
                 }
+            } catch (\Exception $e) {
+                \Log::error('Gagal generate cover/stamp/merge PDF: ' . $e->getMessage());
+            }
+        } else {
+            // notify next approver
+            $nextStep = $surat->waitingStep();
+            if ($nextStep) {
+                $this->notifService->sendToJabatan(
+                    $nextStep->jabatan,
+                    'Menunggu Approval Surat',
+                    "Ada surat baru ({$surat->nomor_surat}) yang menunggu approval Anda.",
+                    route('surat.show', $surat->id)
+                );
+            }
         }
 
         flash()->success($result['message']);
         return redirect()->route('surat.show', $surat->id);
     }
 
-    // ── REJECT ──────────────────────────────────────────────
+    // ── reject ──────────────────────────────────────────────
+    /** tolak surat */
     public function reject(Request $request, Surat $surat)
     {
         $request->validate([
@@ -191,10 +267,18 @@ class SuratController extends Controller
             'catatan_revisi.min'      => 'Catatan revisi minimal 5 karakter.',
         ]);
 
+        // server-side guard: cek apakah giliran jabatan user ini
+        $user = Auth::user()->load('profile');
+        $documentType = 'surat_' . $surat->jenis_surat;
+        if (!$this->approval->canApprove($documentType, $surat->id, $user)) {
+            flash()->error('Bukan giliran Anda untuk menolak surat ini.');
+            return redirect()->back();
+        }
+
         $result = $this->approval->reject(
-            'surat_' . $surat->jenis_surat,
+            $documentType,
             $surat->id,
-            Auth::user(),
+            $user,
             $request->catatan_revisi
         );
 
@@ -203,7 +287,15 @@ class SuratController extends Controller
             return redirect()->back();
         }
 
-        // Update status surat kembali ke 'revised'
+        // notify owner about rejection
+        $this->notifService->send(
+            $surat->user_id,
+            'Surat Ditolak / Perlu Revisi',
+            "Surat dengan nomor {$surat->nomor_surat} ditolak oleh " . Auth::user()->name . ". Silakan cek catatan revisi.",
+            route('surat.show', $surat->id)
+        );
+
+        // update status surat kembali ke 'revised'
         $surat->update([
             'status'         => 'revised',
             'catatan_revisi' => $request->catatan_revisi,
@@ -213,7 +305,8 @@ class SuratController extends Controller
         return redirect()->route('surat.show', $surat->id);
     }
 
-    // ── DOWNLOAD ────────────────────────────────────────────
+    // ── download ────────────────────────────────────────────
+    /** download surat */
     public function download(Surat $surat)
     {
         $this->authorize('download', $surat);
@@ -235,7 +328,54 @@ class SuratController extends Controller
         return response()->download($filePath, $filename);
     }
 
-    // ── GENERATE NOMOR SURAT ────────────────────────────────
+    // ── delete ──────────────────────────────────────────────
+    /** hapus surat */
+    public function destroy(Surat $surat)
+    {
+        // manual check for now as we might not have a policy method yet
+        if (Auth::id() !== $surat->user_id) {
+            abort(403);
+        }
+
+        if (!$surat->canBeDeleted()) {
+            flash()->error('Surat sudah dalam proses approval dan tidak dapat dihapus.');
+            return redirect()->route('surat.show', $surat->id);
+        }
+
+        // hapus file
+        if ($surat->file_pdf && file_exists(storage_path('app/public/' . $surat->file_pdf))) {
+            unlink(storage_path('app/public/' . $surat->file_pdf));
+        }
+
+        $surat->delete();
+
+        flash()->success('Surat berhasil dihapus.');
+        return redirect()->route('surat.index');
+    }
+
+    // ── get ttd mode ───────────────────────────────────────
+    public function getTtdMode(Request $request)
+    {
+        $jenisSurat = $request->jenis_surat;
+        $step = \App\Models\ApprovalStep::where('document_type', 'surat_' . $jenisSurat)->first();
+        $approvers = \App\Models\ApprovalStep::where('document_type', 'surat_' . $jenisSurat)
+            ->orderBy('step_order')
+            ->get()
+            ->map(function($s) {
+                return [
+                    'jabatan' => $s->jabatan,
+                    'label' => $s->label
+                ];
+            })
+            ->toArray();
+
+        return response()->json([
+            'mode' => $step?->ttd_mode ?? 'append',
+            'approvers' => $approvers
+        ]);
+    }
+
+    // ── generate nomor surat ────────────────────────────────
     private function generateNomorSurat(): string
     {
         $count = Surat::whereYear('created_at', now()->year)->count() + 1;

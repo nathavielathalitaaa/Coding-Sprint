@@ -17,98 +17,140 @@ use Carbon\Carbon;
 
 class HRController extends Controller
 {
-    /** Employee list */
+    /** employee list */
     public function employeeList()
     {
-        // Retrieve all employees
-        $employeeList = User::all();
+        // retrieve all employees
+        $employeeList = User::with('profile')->orderBy('created_at', 'desc')->get();
         
-        // Get the latest user ID and generate the next employee ID
+        // get the latest user id and generate the next employee id
         $latestUser = User::orderBy('id', 'DESC')->first();
-        $userId     = $latestUser ? (int) substr($latestUser->user_id, 4) + 1 : 1;
-        $employeeId = 'KH_' . str_pad($userId, 3, '0', STR_PAD_LEFT); // Zero pad to always show 3 digits
+        $userId     = $latestUser ? (int) substr($latestUser->user_id, strrpos($latestUser->user_id, '-') + 1) + 1 : 1;
+        $employeeId = 'SNR-' . str_pad($userId, 4, '0', STR_PAD_LEFT); // prefix sinergi
 
-        // Retrieve necessary data for the view
+        // retrieve necessary data for the view
         $roleName = DB::table('role_type_users')->get();
         $position = DB::table('position_types')->get();
         $department = DB::table('departments')->get();
         $statusUser = DB::table('user_types')->get();
 
-        return view('HR.employee', compact('employeeList', 'employeeId', 'roleName', 'position', 'department', 'statusUser'));
+        return view('hr.employee', compact('employeeList', 'employeeId', 'roleName', 'position', 'department', 'statusUser'));
     }
 
     /** save record employee */
     public function employeeSaveRecord(Request $request)
     {
         $request->validate([
-            'photo'        => 'required|image',
+            'profile_image' => 'nullable|image|max:2048',
             'name'         => 'required|string',
             'email'        => 'required|string|email|max:255|unique:users',
-            'position'     => 'required|string',
-            'department'   => 'required|string',
-            'role_name'    => 'required|string',
-            'status'       => 'required|string',
-            'phone_number' => 'required|numeric',
-            'location'     => 'required|string',
-            'join_date'    => 'required|string',
-            'experience'   => 'required|string',
-            'designation'  => 'required|string',
+            'position'     => 'nullable|string',
+            'department'   => 'nullable|string',
+            'role_name'    => 'nullable|string',
+            'status'       => 'nullable|string',
+            'phone_number' => 'nullable|numeric',
+            'location'     => 'nullable|string',
+            'join_date'    => 'nullable|string',
+            'experience'   => 'nullable|string',
+            'designation'  => 'nullable|string',
         ]);
 
         try {
-            // Generate the photo file name
-            $photo = $request->name . '.' . $request->photo->extension();  
-            $request->photo->move(public_path('assets/images/user'), $photo);
+            // generate the photo file name
+            $photo = null;
+            if ($request->hasFile('profile_image')) {
+                $photo = $request->name . '_' . time() . '.' . $request->file('profile_image')->extension();
+                $request->file('profile_image')->move(public_path('assets/images/user'), $photo);
+            }
 
-            // Create a new user instance and populate fields
+            // create a new user instance and populate fields
             $register = new User();
             $register->fill([
                 'name'         => $request->name,
                 'email'        => $request->email,
                 'position'     => $request->position,
                 'department'   => $request->department,
-                'role_name'    => $request->role_name,
-                'status'       => $request->status,
+                'role_name'    => $request->role_name ?? 'staff',
+                'status'       => $request->status ?? 'aktif',
                 'phone_number' => $request->phone_number,
                 'location'     => $request->location,
-                'join_date'    => $request->join_date,
+                'join_date'    => $request->tgl_bergabung ?? $request->join_date ?? null,
                 'experience'   => $request->experience,
                 'designation'  => $request->designation,
-                'avatar'       => $photo,
-                'password'     => Hash::make('Hello@123'),
+                'avatar'       => $photo ?? 'profile.png',
+                'password'     => Hash::make($request->password ?? 'Sinergi@' . date('Y')),
             ]);
             $register->save();
 
-            flash()->success('Record added successfully :)');
+            // 1. generate user_id otomatis jika belum ada
+            if (empty($register->user_id)) {
+                $rolePrefix = match(strtolower($request->role_name ?? 'staff')) {
+                    'hr', 'admin'       => 'HR',
+                    'supervisor'        => 'SUP',
+                    'direktur'          => 'DIR',
+                    default             => 'STF',
+                };
+                $count = User::where('user_id', 'LIKE', $rolePrefix . '-%')->count() + 1;
+                $register->user_id = $rolePrefix . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+                $register->saveQuietly();
+            }
+
+            // assign role
+            $register->assignRole($request->role_name ?? 'staff');
+
+            // create/update employee profile
+            $register->profile()->updateOrCreate(
+                ['user_id' => $register->id],
+                [
+                    'nik'                    => $request->nik ?? null,
+                    'no_kk'                  => $request->no_kk ?? null,
+                    'npwp'                   => $request->npwp ?? null,
+                    'bpjs_kesehatan'         => $request->bpjs_kesehatan ?? null,
+                    'bpjs_ketenagakerjaan'   => $request->bpjs_ketenagakerjaan ?? null,
+                    'jabatan'                => $request->jabatan ?? null,
+                    'pendidikan_terakhir'    => $request->pendidikan_terakhir ?? null,
+                    'tgl_bergabung'          => $request->tgl_bergabung ?? $request->join_date ?? null,
+                    'tgl_kontrak_akhir'      => $request->tgl_kontrak_akhir ?? null,
+                    'status_pernikahan'      => $request->status_pernikahan ?? 'belum_menikah',
+                    'jumlah_anak'            => $request->jumlah_anak ?? 0,
+                    'alamat'                 => $request->alamat ?? null,
+                    'kota'                   => $request->kota ?? null,
+                    'provinsi'               => $request->provinsi ?? null,
+                    'kode_pos'               => $request->kode_pos ?? null,
+                ]
+            );
+
+            $defaultPassword = 'Sinergi@' . date('Y');
+            flash()->success('Data karyawan berhasil disimpan. Password default: ' . $defaultPassword);
             return redirect()->back();
         } catch (\Exception $e) {
-            \Log::error($e); // Log the error
-            flash()->error('Failed to add record :)');
+            \Log::error('Error saving employee: ' . $e->getMessage());
+            flash()->error('Gagal menambahkan data karyawan: ' . $e->getMessage());
             return redirect()->back();
         }
     }
 
-    /** Update Record Employee */
+    /** update record employee */
     public function employeeUpdateRecord(Request $request)
     {
         try {
-            $user = User::find($request->id);
+            $user = User::findOrFail($request->id);
 
-            // Handle photo upload
+            // handle photo upload
             if ($request->hasFile('photo')) {
                 $photo = $request->name . '-' . time() . '.' . $request->photo->extension();
                 $request->photo->move(public_path('assets/images/user'), $photo);
 
-                // Delete old photo if exists
+                // delete old photo if exists
                 if (!empty($user->avatar) && file_exists(public_path('assets/images/user/' . $user->avatar))) {
                     unlink(public_path('assets/images/user/' . $user->avatar));
                 }
 
-                // Update user avatar with new photo
+                // update user avatar with new photo
                 $user->avatar = $photo;
             }
 
-            // Update other fields
+            // update other fields
             $user->name         = $request->name;
             $user->email        = $request->email;
             $user->position     = $request->position;
@@ -121,20 +163,54 @@ class HRController extends Controller
             $user->experience   = $request->experience;
             $user->designation  = $request->designation;
 
+            // generate user_id if missing during update
+            if (empty($user->user_id)) {
+                $rolePrefix = match(strtolower($user->role_name ?? 'staff')) {
+                    'hr', 'admin'   => 'HR',
+                    'supervisor'    => 'SUP',
+                    'direktur'      => 'DIR',
+                    default         => 'STF',
+                };
+                $count = User::where('user_id', 'LIKE', $rolePrefix . '-%')->count() + 1;
+                $user->user_id = $rolePrefix . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
+            }
+
             $user->save();
 
-            flash()->success('Update record successfully :)');
+            // create/update employee profile
+            $user->profile()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'nik'                    => $request->nik ?? null,
+                    'no_kk'                  => $request->no_kk ?? null,
+                    'npwp'                   => $request->npwp ?? null,
+                    'bpjs_kesehatan'         => $request->bpjs_kesehatan ?? null,
+                    'bpjs_ketenagakerjaan'   => $request->bpjs_ketenagakerjaan ?? null,
+                    'jabatan'                => $request->jabatan ?? null,
+                    'pendidikan_terakhir'    => $request->pendidikan_terakhir ?? null,
+                    'tgl_bergabung'          => $request->tgl_bergabung ?? $request->join_date ?? null,
+                    'tgl_kontrak_akhir'      => $request->tgl_kontrak_akhir ?? null,
+                    'status_pernikahan'      => $request->status_pernikahan ?? 'belum_menikah',
+                    'jumlah_anak'            => $request->jumlah_anak ?? 0,
+                    'alamat'                 => $request->alamat ?? null,
+                    'kota'                   => $request->kota ?? null,
+                    'provinsi'               => $request->provinsi ?? null,
+                    'kode_pos'               => $request->kode_pos ?? null,
+                ]
+            );
+
+            flash()->success('Data karyawan berhasil diperbarui.');
             return redirect()->back();
 
         } catch (\Exception $e) {
             \Log::info($e);
             DB::rollback();
-            flash()->error('Update record fail :)');
+            flash()->error('Gagal memperbarui data karyawan.');
             return redirect()->back();
         }
     }
 
-    /** Delete Record Employee */
+    /** delete record employee */
     public function employeeDeleteRecord(Request $request)
     {
         try {
@@ -144,21 +220,21 @@ class HRController extends Controller
                 unlink(public_path('assets/images/user/'.$request->del_photo));
             }
 
-            flash()->success('Delete record successfully :)');
+            flash()->success('Data karyawan berhasil dihapus.');
             return redirect()->back();
         } catch(\Exception $e) {
             \Log::info($e);
             DB::rollback();
-            flash()->error('Delete record fail :)');
+            flash()->error('Gagal menghapus data karyawan.');
             return redirect()->back();
         }
     }
 
-    /** holiday Page */
+    /** holiday page */
     public function holidayPage()
     {
         $holidayList = Holiday::all();
-        return view('HR.holidays',compact('holidayList'));
+        return view('hr.holidays',compact('holidayList'));
     }
 
     /** save record holiday */
@@ -171,7 +247,7 @@ class HRController extends Controller
         ]);
     
         try {
-            // Use updateOrCreate to handle both creation and update
+            // use updateorcreate to handle both creation and update
             $holiday = Holiday::updateOrCreate(
                 ['id' => $request->idUpdate],
                 [
@@ -181,11 +257,11 @@ class HRController extends Controller
                 ]
             );
     
-            flash()->success('Holiday created or updated successfully :)');
+            flash()->success('Data hari libur berhasil disimpan.');
             return redirect()->back();
         } catch (\Exception $e) {
-            \Log::error($e); // Log the error
-            flash()->error('Failed to add holiday :)');
+            \Log::error($e); // log the error
+            flash()->error('Gagal menyimpan data hari libur.');
             return redirect()->back();
         }
     }
@@ -194,15 +270,15 @@ class HRController extends Controller
     public function holidayDeleteRecord(Request $request) 
     {
         try {
-            // Find the holiday record or fail if not found
+            // find the holiday record or fail if not found
             $holiday = Holiday::findOrFail($request->id_delete);
             $holiday->delete();
 
-            flash()->success('Holiday deleted successfully :)');
+            flash()->success('Data hari libur berhasil dihapus.');
             return redirect()->back();
         } catch (\Exception $e) {
-            \Log::error($e); // Log the error
-            flash()->error('Failed to delete holiday :)');
+            \Log::error($e); // log the error
+            flash()->error('Gagal menghapus data hari libur.');
             return redirect()->back();
         }
     }
@@ -220,7 +296,7 @@ class HRController extends Controller
             if ($leaveDay) {
                 $days = $leaveDay->leave_days - ($numberOfDay ?? 0);
             } else {
-                $days = 0; // Handle case if leave type doesn't exist
+                $days = 0; // handle case if leave type doesn't exist
             }
             
             $data = [
@@ -234,27 +310,30 @@ class HRController extends Controller
             return response()->json($data);
 
         } catch (\Exception $e) {
-            // Log the exception and return an appropriate response
+            // log the exception and return an appropriate response
             \Log::error($e->getMessage());
             return response()->json(['error' => 'An error occurred.'], 500);
         }
     }
 
-    /** leave Employee */
+    /** leave employee */
     public function leaveEmployee()
     {
-        $annualLeave = LeaveInformation::where('leave_type','Annual Leave')->select('leave_days')->first();
-       
-        $leave = Leave::where('staff_id', Session::get('user_id'))->get();
-        // $leaves = Leave::where('staff_id', Session::get('user_id'))->whereIn('leave_type')->get();
-        return view('HR.LeavesManage.leave-employee',compact('leave'));
+        return $this->myLeave();
     }
 
-    /** create Leave Employee */
+    /** my leave - for staff */
+    public function myLeave()
+    {
+        $leave = Leave::where('staff_id', auth()->id())->latest()->get();
+        return view('hr.leaves-manage.leave-employee', compact('leave'));
+    }
+
+    /** create leave employee */
     public function createLeaveEmployee()
     {
         $leaveInformation = LeaveInformation::all();
-        return view('HR.LeavesManage.create-leave-employee',compact('leaveInformation'));
+        return view('hr.leaves-manage.create-leave-employee',compact('leaveInformation'));
     }
 
     /** save record leave */
@@ -279,15 +358,15 @@ class HRController extends Controller
             $save->number_of_day    = $request->number_of_day;
             $save->leave_date       = json_encode($request->leave_date);
             $save->leave_day        = json_encode($request->select_leave_day);
-            $save->status           = 'Pending';
+            $save->status           = 'menunggu';
             $save->reason           = $request->reason;
             $save->save();
     
-            flash()->success('Apply Leave successfully :)');
+            flash()->success('Pengajuan cuti berhasil dikirim.');
             return redirect()->back();
         } catch (\Exception $e) {
-            \Log::error($e); // Log the error
-            flash()->error('Failed Apply Leave :)');
+            \Log::error($e); // log the error
+            flash()->error('Gagal mengirim pengajuan cuti.');
             return redirect()->back();
         }
     }
@@ -297,19 +376,19 @@ class HRController extends Controller
     {
         $leaveInformation = LeaveInformation::all();
         $leaveDetail = Leave::where('staff_id', $staff_id)->first();
-        $leaveDate   = json_decode($leaveDetail->leave_date, true); // Decode JSON to array
-        $leaveDay    = json_decode($leaveDetail->leave_day, true); // Decode JSON to array
+        $leaveDate   = json_decode($leaveDetail->leave_date, true); // decode json to array
+        $leaveDay    = json_decode($leaveDetail->leave_day, true); // decode json to array
 
-        return view('HR.LeavesManage.view-detail-leave',compact('leaveInformation','leaveDetail','leaveDate','leaveDay'));
+        return view('hr.leaves-manage.view-detail-leave',compact('leaveInformation','leaveDetail','leaveDate','leaveDay'));
     }
 
-    /** leave HR */
+    /** leave hr */
     // tampilkan semua pengajuan cuti untuk ditinjau hr
     public function leaveHR()
     {
         // ambil semua pengajuan cuti beserta data karyawannya
         $leaveList = Leave::with('user')->orderBy('created_at', 'desc')->get();
-        return view('HR.LeavesManage.leave-hr', compact('leaveList'));
+        return view('hr.leaves-manage.leave-hr', compact('leaveList'));
     }
 
     // hr menyetujui pengajuan cuti
@@ -347,56 +426,59 @@ class HRController extends Controller
         }
     }
 
-    /** attendance */
+    /** attendance — redirect ke halaman absensi real */
     public function attendance()
     {
-        return view('HR.Attendance.attendance');
+        // attendance.blade.php masih berisi data dummy, redirect ke absensi real
+        flash()->info('Halaman absensi per karyawan dialihkan ke Rekap Absensi.');
+        return redirect()->route('hr/absensi/page');
     }
 
-    /** create Leave HR */
+
+    /** create leave hr */
     public function createLeaveHR()
     {
         $users = User::all();
         $leaveInformation = LeaveInformation::all();
-        return view('HR.LeavesManage.create-leave-hr',compact('users','leaveInformation'));
+        return view('hr.leaves-manage.create-leave-hr',compact('users','leaveInformation'));
     }
 
-    /** attendance Main */
+    /** attendance main */
     public function attendanceMain()
     {
         try {
-            // Total karyawan aktif
+            // total karyawan aktif
             $totalEmployee = User::where('status', 'aktif')->count();
             
-            // Absensi hari ini (hadir)
+            // absensi hari ini (hadir)
             $today = Carbon::today();
             $hadirHariIni = Absensi::where('tanggal', $today)
                 ->where('status', 'hadir')
                 ->count();
             
-            // Absensi hari ini (total yang tidak hadir)
+            // absensi hari ini (total yang tidak hadir)
             $absenHariIni = $totalEmployee - $hadirHariIni;
             
-            // Hitung hari kerja (Senin-Jumat) di bulan berjalan sampai hari ini
+            // hitung hari kerja (senin-jumat) di bulan berjalan sampai hari ini
             $hariKerja = 0;
             $startMonth = Carbon::now()->startOfMonth();
             $endDate = $today;
             
             $current = $startMonth->copy();
             while ($current <= $endDate) {
-                // Senin (1) sampai Jumat (5)
+                // senin (1) sampai jumat (5)
                 if ($current->dayOfWeek >= 1 && $current->dayOfWeek <= 5) {
                     $hariKerja++;
                 }
                 $current->addDay();
             }
             
-            // Data absensi hari ini dengan relasi user
+            // data absensi hari ini dengan relasi user
             $absensiHariIni = Absensi::with('user')
                 ->where('tanggal', $today)
                 ->get();
             
-            return view('HR.Attendance.attendance-main', compact(
+            return view('hr.attendance.attendance-main', compact(
                 'totalEmployee',
                 'hadirHariIni',
                 'absenHariIni',
@@ -414,7 +496,7 @@ class HRController extends Controller
     public function department()
     {
         $departmentList = Department::all();
-        return view('HR.department',compact('departmentList'));
+        return view('hr.department',compact('departmentList'));
     }
 
     /** save record department */
@@ -429,7 +511,7 @@ class HRController extends Controller
         ]);
     
         try {
-            // Use updateOrCreate to handle both creation and update
+            // use updateorcreate to handle both creation and update
             $department = Department::updateOrCreate(
                 ['id' => $request->id_update],
                 [
@@ -441,11 +523,11 @@ class HRController extends Controller
                 ]
             );
     
-            flash()->success('Department created or updated successfully :)');
+            flash()->success('Data departemen berhasil disimpan.');
             return redirect()->back();
         } catch (\Exception $e) {
             \Log::error($e);
-            flash()->error('Failed to add or update department :)');
+            flash()->error('Gagal menyimpan data departemen.');
             return redirect()->back();
         }
     }
@@ -454,17 +536,34 @@ class HRController extends Controller
     public function deleteRecordDepartment(Request $request)
     {
         try {
-            // Find the department or fail if not found
+            // find the department or fail if not found
             $department = Department::findOrFail($request->id_delete);
             $department->delete();
             
-            flash()->success('Record deleted successfully :)');
+            flash()->success('Data departemen berhasil dihapus.');
             return redirect()->back();
         } catch (\Exception $e) {
-            \Log::error($e); // Log the error
-            flash()->error('Failed to delete record :)');
+            \Log::error($e); // log the error
+            flash()->error('Gagal menghapus data departemen.');
             return redirect()->back();
         }
     }
 
+    /** show employee detail profile */
+    public function showEmployee($id)
+    {
+        $user    = User::findOrFail($id);
+        $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
+        return view('pages.account-profile', compact('user', 'profile'));
+    }
+
+    /** halaman edit profil karyawan (hr only) */
+    public function editEmployee($id)
+    {
+        $user    = User::with('profile')->findOrFail($id);
+        $position   = DB::table('position_types')->get();
+        $roleName   = DB::table('role_type_users')->get();
+        $statusUser = DB::table('user_types')->get();
+        return view('hr.employee-edit', compact('user', 'position', 'roleName', 'statusUser'));
+    }
 }

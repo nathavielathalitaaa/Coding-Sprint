@@ -1,6 +1,6 @@
 @extends('layouts.master')
 @section('content')
-    <!-- Page-content -->
+    
     <div class="group-data-[sidebar-size=lg]:ltr:md:ml-vertical-menu group-data-[sidebar-size=lg]:rtl:md:mr-vertical-menu group-data-[sidebar-size=md]:ltr:ml-vertical-menu-md group-data-[sidebar-size=md]:rtl:mr-vertical-menu-md group-data-[sidebar-size=sm]:ltr:ml-vertical-menu-sm group-data-[sidebar-size=sm]:rtl:mr-vertical-menu-sm pt-[calc(theme('spacing.header')_*_1)] pb-[calc(theme('spacing.header')_*_0.8)] px-4 group-data-[navbar=bordered]:pt-[calc(theme('spacing.header')_*_1.3)] group-data-[navbar=hidden]:pt-0 group-data-[layout=horizontal]:mx-auto group-data-[layout=horizontal]:max-w-screen-2xl group-data-[layout=horizontal]:px-0 group-data-[layout=horizontal]:group-data-[sidebar-size=lg]:ltr:md:ml-auto group-data-[layout=horizontal]:group-data-[sidebar-size=lg]:rtl:md:mr-auto group-data-[layout=horizontal]:md:pt-[calc(theme('spacing.header')_*_1.6)] group-data-[layout=horizontal]:px-3 group-data-[layout=horizontal]:group-data-[navbar=hidden]:pt-[calc(theme('spacing.header')_*_0.9)]">
         <div class="container-fluid group-data-[content=boxed]:max-w-boxed mx-auto">
             <div class="flex flex-col gap-2 py-4 md:flex-row md:items-center print:hidden">
@@ -71,9 +71,7 @@
             </div>
         </div>
     </div>
-    <!-- End Page-content -->
 
-    <!-- tambah/edit shift modal -->
     <div id="addShiftModal" modal-center="" class="fixed flex flex-col hidden transition-all duration-300 ease-in-out left-2/4 z-drawer -translate-x-2/4 -translate-y-2/4 show">
         <div class="w-screen md:w-[30rem] bg-white shadow rounded-md dark:bg-zink-600">
             <div class="flex items-center justify-between p-4 border-b dark:border-zink-500">
@@ -116,9 +114,7 @@
             </div>
         </div>
     </div>
-    <!-- end tambah/edit shift modal -->
 
-    <!-- delete shift confirm modal -->
     <div id="deleteModal" modal-center="" class="fixed flex flex-col hidden transition-all duration-300 ease-in-out left-2/4 z-drawer -translate-x-2/4 -translate-y-2/4 show">
         <div class="w-screen md:w-[25rem] bg-white shadow rounded-md dark:bg-zink-600">
             <div class="flex items-center justify-between p-4 border-b dark:border-zink-500">
@@ -140,7 +136,6 @@
             </div>
         </div>
     </div>
-    <!-- end delete shift confirm modal -->
 
     <script>
         function editShift(id, namaShift, jamMasuk, jamKeluar, toleransi, keterangan) {

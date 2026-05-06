@@ -37,28 +37,30 @@ class AppServiceProvider extends ServiceProvider
 
             $user = auth()->user();
 
-            // Ambil notifikasi cuti yang masih pending
-            $notifCuti = \App\Models\Leave::where('status', 'Pending')
+            // Ambil notifikasi cuti yang masih menunggu
+            $notifCuti = \App\Models\Leave::where('status', 'menunggu')
                 ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get();
 
-            // Ambil notifikasi surat berdasarkan role user
+            // Ambil notifikasi surat berdasarkan JABATAN (bukan role)
             $notifSurat = collect();
-            if ($user->hasRole('supervisor')) {
-                $notifSurat = Surat::where('status', 'submitted')
-                    ->orderBy('created_at', 'desc')
-                    ->take(5)
-                    ->get();
-            } elseif ($user->hasRole('hr')) {
-                $notifSurat = Surat::where('status', 'approved_supervisor')
-                    ->orderBy('created_at', 'desc')
-                    ->take(5)
-                    ->get();
+            $jabatan = $user->profile?->jabatan;
+
+            if ($jabatan) {
+                $notifSurat = Surat::whereHas('approvals', function ($q) use ($jabatan) {
+                    $q->where('jabatan', $jabatan)
+                    ->where('status', 'waiting')
+                    ->where('is_read', false)
+                    ->where('document_type', 'LIKE', 'surat_%');
+                })
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
             }
 
             // Hitung total notifikasi
-            $totalCuti = \App\Models\Leave::where('status', 'Pending')->count();
+            $totalCuti = \App\Models\Leave::where('status', 'menunggu')->count();
             $totalSurat = $notifSurat->count();
             $totalNotif = $totalCuti + $totalSurat;
 

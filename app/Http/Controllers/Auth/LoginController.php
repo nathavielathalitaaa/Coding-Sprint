@@ -19,13 +19,13 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
     }
 
-    /** Show the login page */
+    /** show the login page */
     public function login()
     {
         return view('auth.login');
     }
 
-    /** Authenticate the user */
+    /** authenticate the user */
     public function authenticate(Request $request)
     {
         $request->validate([
@@ -38,7 +38,7 @@ class LoginController extends Controller
                 $user = Auth::user();
                 $todayDate = Carbon::now()->toDayDateTimeString();
 
-                // Store user information in session
+                // store user information in session
                 Session::put([
                     'name'         => $user->name,
                     'email'        => $user->email,
@@ -54,12 +54,12 @@ class LoginController extends Controller
                     'department'   => $user->department,
                 ]);
                 
-                // Update last login
+                // update last login
                 $user->update(['last_login' => $todayDate]);
 
                 flash()->success('Login successful :)');
                 
-                // Redirect berdasarkan role
+                // redirect berdasarkan role
                 if ($user->hasRole('hr')) {
                     return redirect()->route('home');
                 }
@@ -76,13 +76,13 @@ class LoginController extends Controller
         }
     }
 
-    /** Show logout page */
+    /** show logout page */
     public function logoutPage()
     {
         return view('auth.logout');
     }
 
-    /** Logout and forget session */
+    /** logout and forget session */
     public function logout(Request $request)
     {
         $request->session()->flush();

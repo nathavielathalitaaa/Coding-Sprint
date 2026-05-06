@@ -20,13 +20,13 @@ class RegisterController extends Controller
         $this->middleware('guest');
     }
 
-    /** Show the registration page */
+    /** show the registration page */
     public function register()
     {
         return view('auth.register');
     }
 
-    /** Store a new user */
+    /** store a new user */
     public function storeUser(Request $request)
     {
         $request->validate([

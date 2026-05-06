@@ -11,7 +11,25 @@ class ApprovalStep extends Model
         'step_order',
         'jabatan',
         'label',
+        'ttd_mode',
+        'ttd_coordinates',
+        'setting_overrides',
     ];
+
+    protected $casts = [
+        'ttd_coordinates' => 'array',
+        'setting_overrides' => 'array',
+    ];
+
+    public function isModeStamp(): bool
+    {
+        return $this->ttd_mode === 'stamp';
+    }
+
+    public function isModeAppend(): bool
+    {
+        return $this->ttd_mode === 'append';
+    }
 
     /**
      * Ambil semua step untuk satu jenis dokumen, urut.

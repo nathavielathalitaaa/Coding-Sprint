@@ -1,494 +1,588 @@
 @extends('layouts.master')
 
 @section('content')
+<style>
+*, *::before, *::after { box-sizing: border-box; }
 
-{{-- Wrapper ikuti struktur template asli --}}
-<div class="group-data-[sidebar-size=lg]:ltr:md:ml-vertical-menu group-data-[sidebar-size=lg]:rtl:md:mr-vertical-menu group-data-[sidebar-size=md]:ltr:ml-vertical-menu-md group-data-[sidebar-size=md]:rtl:mr-vertical-menu-md group-data-[sidebar-size=sm]:ltr:ml-vertical-menu-sm group-data-[sidebar-size=sm]:rtl:mr-vertical-menu-sm pt-[calc(theme('spacing.header')_*_1)] pb-[calc(theme('spacing.header')_*_0.8)] px-4 group-data-[navbar=bordered]:pt-[calc(theme('spacing.header')_*_1.3)] group-data-[navbar=hidden]:pt-0 group-data-[layout=horizontal]:mx-auto group-data-[layout=horizontal]:max-w-screen-2xl group-data-[layout=horizontal]:px-0 group-data-[layout=horizontal]:group-data-[sidebar-size=lg]:ltr:md:ml-auto group-data-[layout=horizontal]:group-data-[sidebar-size=lg]:rtl:md:mr-auto group-data-[layout=horizontal]:md:pt-[calc(theme('spacing.header')_*_1.6)] group-data-[layout=horizontal]:px-3 group-data-[layout=horizontal]:group-data-[navbar=hidden]:pt-[calc(theme('spacing.header')_*_0.9)]">
-<div class="container-fluid group-data-[content=boxed]:max-w-boxed mx-auto">
-<div class="sng">
+/* GREETING */
+.hv-welcome {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 400;
+    color: #1A2B24;
+    margin: 0 0 32px 0;
+    letter-spacing: -0.5px;
+}
 
-{{-- ── GREETING BANNER — SEMUA ROLE HIJAU ───────────── --}}
-<div class="ds-banner">
-    <div class="relative z-10 flex items-center justify-between flex-wrap gap-4">
-        <div class="flex items-center gap-4 md:gap-6">
-            <img src="{{ URL::to('assets/images/logo-sinergi.png') }}"
-                 alt="Sinergi" class="h-11 opacity-90"
-                 style="filter:brightness(0) invert(1);"
-                 onerror="this.style.display='none'">
-            <div>
-                <p class="text-xs font-semibold tracking-wider uppercase opacity-80">Selamat Datang Kembali</p>
-                <h2 class="text-xl md:text-2xl font-bold mt-1">{{ $userRoleName }} {{ auth()->user()->name }}</h2>
-                <p class="text-xs opacity-70 mt-1">{{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM Y') }}</p>
-            </div>
-        </div>
+/* GRID */
+.hv-row1 {
+    display: grid;
+    grid-template-columns: 260px 1fr 1fr 320px;
+    gap: 24px;
+    margin-bottom: 24px;
+}
 
-        <div class="ds-banner-info">
-            <p class="text-xs font-semibold tracking-wider uppercase opacity-90">Sistem HRIS</p>
-            <p class="text-sm font-bold mt-1">Sinergi Hotel & Villa</p>
-            <p class="text-xs opacity-70 mt-0.5">Malang, Jawa Timur</p>
-        </div>
-    </div>
-</div>
-
-{{-- ── BREADCRUMB ──────────────────────────────────────────── --}}
-<div class="flex items-center justify-between gap-4 mb-6 flex-wrap print:hidden mt-6">
-    <div>
-        @role('hr')
-            <h5 class="text-xl font-bold text-slate-900">Dashboard HR</h5>
-            <p class="text-sm mt-1 text-slate-500">Overview Karyawan, Absensi & Penggajian</p>
-        @endrole
-        @role('supervisor')
-            <h5 class="text-xl font-bold text-slate-900">Dashboard Supervisor</h5>
-            <p class="text-sm mt-1 text-slate-500">Monitoring Absensi & Approval Surat</p>
-        @endrole
-        @role('staff')
-            <h5 class="text-xl font-bold text-slate-900">Dashboard Saya</h5>
-            <p class="text-sm mt-1 text-slate-500">Surat Saya & Status Approval</p>
-        @endrole
-    </div>
-    <div class="text-sm flex items-center gap-1 text-slate-500">
-        <span>Dashboard</span><span class="opacity-35">/</span>
-        @role('hr')<span class="font-bold text-custom-500">HR</span>@endrole
-        @role('supervisor')<span class="font-bold text-custom-500">Supervisor</span>@endrole
-        @role('staff')<span class="font-bold text-custom-500">Staff</span>@endrole
-    </div>
-</div>
-
-{{-- ══════════════════════════════════════════════════════════
-     ROLE: HR — TAMPILAN PENUH
-═══════════════════════════════════════════════════════════ --}}
-@role('hr')
-
-{{-- ROW 1 — 4 STAT CARDS --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-
-    {{-- Card 1: Total Karyawan --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-blue"><i data-lucide="users" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-green">AKTIF</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Total Karyawan</p>
-        <h3 class="text-4xl font-bold leading-none text-custom-500">{{ $totalKaryawan ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">karyawan status aktif</p>
-    </div>
-
-    {{-- Card 2: Hadir Hari Ini --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-green"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-blue">HARI INI</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Hadir Hari Ini</p>
-        <h3 class="text-4xl font-bold leading-none text-blue-600">{{ $hadirHariIni ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">
-            dari {{ $totalKaryawan ?? 0 }} karyawan
-            <span class="font-bold text-custom-500">({{ ($totalKaryawan ?? 0) > 0 ? round((($hadirHariIni ?? 0)/($totalKaryawan))*100) : 0 }}%)</span>
-        </p>
-    </div>
-
-    {{-- Card 3: Cuti Menunggu --}}
-    <div class="ds-card ds-warn">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-amber"><i data-lucide="calendar-clock" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-amber">PENDING</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Cuti Menunggu</p>
-        <h3 class="text-4xl font-bold leading-none text-amber-600">{{ $cutiMenungguCount ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">menunggu persetujuan HR</p>
-    </div>
-
-    {{-- Card 4: Departemen --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-purple"><i data-lucide="building-2" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-gray">UNIT</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Departemen</p>
-        <h3 class="text-4xl font-bold leading-none text-slate-900">{{ $totalDepartemen ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">unit departemen aktif</p>
-    </div>
-
-</div>
-
-{{-- ROW 2 — PAYROLL & OVERTIME --}}
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-    
-    {{-- Card: Gaji Dibayar --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start">
-            <div>
-                <p class="text-xs font-bold tracking-widest uppercase mb-2 text-slate-500">Total Gaji Dibayar Bulan Ini</p>
-                <h3 class="text-2xl font-bold text-slate-900">Rp{{ number_format($totalGajiBayar ?? 0,0,',','.') }}</h3>
-                <p class="text-sm mt-2 text-slate-500">Status <span class="font-bold text-custom-500">dibayar</span> · {{ \Carbon\Carbon::now()->locale('id')->format('F') }}</p>
-            </div>
-            <div class="ds-icon ic-teal"><i data-lucide="banknote" class="w-5 h-5"></i></div>
-        </div>
-    </div>
-
-    {{-- Card: Total Jam Lembur --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start">
-            <div>
-                <p class="text-xs font-bold tracking-widest uppercase mb-2 text-slate-500">Total Jam Lembur</p>
-                <h3 class="text-2xl font-bold text-slate-900">{{ round($totalJamLembur ?? 0,1) }}<span class="text-sm font-semibold text-slate-500 ml-1">jam</span></h3>
-                <p class="text-sm mt-2 text-slate-500">rata-rata <span class="font-bold">{{ round(($totalJamLembur ?? 0) / 30, 1) }}</span> jam/hari</p>
-            </div>
-            <div class="ds-icon ic-amber"><i data-lucide="timer" class="w-5 h-5"></i></div>
-        </div>
-    </div>
-
-    {{-- Card: Surat Menunggu --}}
-    <div class="ds-card ds-warn">
-        <div class="flex justify-between items-start">
-            <div>
-                <p class="text-xs font-bold tracking-widest uppercase mb-2 text-slate-500">Surat Menunggu</p>
-                <h3 class="text-2xl font-bold text-amber-600">{{ $suratMenungguCount ?? 0 }}</h3>
-                <p class="text-sm mt-2 text-slate-500">sedang dalam proses approval</p>
-            </div>
-            <div class="ds-icon ic-amber"><i data-lucide="file-clock" class="w-5 h-5"></i></div>
-        </div>
-    </div>
-
-    {{-- Card: Selesai Hari Ini --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start">
-            <div>
-                <p class="text-xs font-bold tracking-widest uppercase mb-2 text-slate-500">Selesai Hari Ini</p>
-                <h3 class="text-2xl font-bold text-green-600">{{ $suratSelesaiHariIni ?? 0 }}</h3>
-                <p class="text-sm mt-2 text-slate-500">surat yang sudah disetujui</p>
-            </div>
-            <div class="ds-icon ic-green"><i data-lucide="file-check-2" class="w-5 h-5"></i></div>
-        </div>
-    </div>
-
-</div>
-
-{{-- ROW 3 — CHARTS --}}
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-    
-    {{-- Chart: Absensi 7 Hari Terakhir --}}
-    <div class="ds-section">
-        <div class="ds-section-title">Absensi 7 Hari Terakhir</div>
-        <div class="relative h-48"><canvas id="chartAbsensi"></canvas></div>
-    </div>
-
-    {{-- Chart: Jam Lembur 7 Hari Terakhir --}}
-    <div class="ds-section">
-        <div class="ds-section-title" style="border-left-color: #f59e0b;">Jam Lembur 7 Hari Terakhir</div>
-        <div class="relative h-48"><canvas id="chartLembur"></canvas></div>
-    </div>
-
-</div>
-
-{{-- ROW 4 — LISTS --}}
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-    
-    {{-- List: Cuti Terbaru --}}
-    <div class="ds-section">
-        <div class="ds-section-title">Pengajuan Cuti Terbaru</div>
-        @php $palBg=['#dcf5e7','#dbeafe','#ede9fe','#fef3c7','#ffe4e6']; $palFg=['#14532d','#1e3a8a','#4c1d95','#78350f','#7f1d1d']; @endphp
-        @forelse($cutiMenungguTerbaru ?? [] as $cuti)
-            @php $ci=$loop->index%5; @endphp
-            <div class="ds-row">
-                <div class="ds-avatar" style="background:{{ $palBg[$ci] }};color:{{ $palFg[$ci] }};">{{ strtoupper(substr($cuti->employee_name??'K',0,2)) }}</div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold m-0 truncate text-slate-900">{{ $cuti->employee_name ?? '-' }}</p>
-                    <p class="text-xs mt-1 text-slate-500">{{ date('d M',strtotime($cuti->date_from??now())) }} – {{ date('d M Y',strtotime($cuti->date_to??now())) }}</p>
-                </div>
-                <span class="ds-badge b-amber">{{ $cuti->status ?? 'menunggu' }}</span>
-            </div>
-        @empty
-            <div class="text-center py-6">
-                <i data-lucide="calendar-check" class="w-6 h-6 mx-auto mb-2 block text-slate-400"></i>
-                <p class="text-xs m-0 text-slate-500">Tidak ada cuti menunggu</p>
-            </div>
-        @endforelse
-    </div>
-
-    {{-- List: Karyawan Lembur Terbanyak (optional, bisa disesuaikan) --}}
-    <div class="ds-section">
-        <div class="ds-section-title">Karyawan Lembur Terbanyak</div>
-        @forelse($cutiMenungguTerbaru ?? [] as $item)
-            @php $ci=$loop->index%5; @endphp
-            <div class="ds-row">
-                <div class="ds-avatar" style="background:{{ $palBg[$ci] }};color:{{ $palFg[$ci] }};">{{ strtoupper(substr($item->employee_name??'K',0,2)) }}</div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold m-0 truncate text-slate-900">{{ $item->employee_name ?? '-' }}</p>
-                    <p class="text-xs mt-1 text-slate-500">Total lembur bulan ini</p>
-                </div>
-                <span class="ds-badge b-blue">8.5 jam</span>
-            </div>
-        @empty
-            <div class="text-center py-6">
-                <i data-lucide="timer" class="w-6 h-6 mx-auto mb-2 block text-slate-400"></i>
-                <p class="text-xs m-0 text-slate-500">Tidak ada data lembur</p>
-            </div>
-        @endforelse
-    </div>
-
-</div>
-
-@endrole{{-- END HR --}}
-
-
-{{-- ══════════════════════════════════════════════════════════
-     ROLE: SUPERVISOR — MONITORING + APPROVAL
-═══════════════════════════════════════════════════════════ --}}
-@role('supervisor')
-
-{{-- ROW 1 — 4 STAT CARDS --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-
-    {{-- Card 1: Total Karyawan --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-blue"><i data-lucide="users" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-blue">LIHAT</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Total Karyawan</p>
-        <h3 class="text-4xl font-bold leading-none text-blue-600">{{ $totalKaryawan ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">karyawan aktif</p>
-    </div>
-
-    {{-- Card 2: Hadir Hari Ini --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-green"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-blue">HARI INI</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Hadir Hari Ini</p>
-        <h3 class="text-4xl font-bold leading-none text-blue-600">{{ $hadirHariIni ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">
-            dari {{ $totalKaryawan ?? 0 }} karyawan
-            <span class="font-bold text-blue-600">({{ ($totalKaryawan ?? 0) > 0 ? round((($hadirHariIni ?? 0)/($totalKaryawan))*100) : 0 }}%)</span>
-        </p>
-    </div>
-
-    {{-- Card 3: Cuti Menunggu --}}
-    <div class="ds-card ds-warn">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-amber"><i data-lucide="calendar-clock" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-amber">PENDING</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Cuti Menunggu</p>
-        <h3 class="text-4xl font-bold leading-none text-amber-600">{{ $cutiMenungguCount ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">menunggu persetujuan</p>
-    </div>
-
-    {{-- Card 4: Surat Perlu Approval --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-red"><i data-lucide="file-check" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-red">SUBMITTED</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Surat Perlu Approval</p>
-        <h3 class="text-4xl font-bold leading-none text-red-600">{{ $suratSubmitted ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">menunggu persetujuan Anda</p>
-    </div>
-
-</div>
-
-{{-- ROW 2 — CHART + LIST SURAT --}}
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-
-    {{-- Chart: Absensi 7 Hari Terakhir --}}
-    <div class="ds-section">
-        <div class="ds-section-title">Absensi 7 Hari Terakhir</div>
-        <div class="relative h-48"><canvas id="chartAbsensi"></canvas></div>
-    </div>
-
-    {{-- List: Surat Menunggu Approval --}}
-    <div class="ds-section">
-        <div class="flex items-center justify-between mb-4">
-            <div class="ds-section-title m-0">Surat Menunggu Approval Saya</div>
-            <a href="{{ route('surat.index') }}" class="text-xs font-bold text-custom-500 hover:underline">Lihat semua →</a>
-        </div>
-        @php $palBg=['#dcf5e7','#dbeafe','#ede9fe','#fef3c7','#ffe4e6']; $palFg=['#14532d','#1e3a8a','#4c1d95','#78350f','#7f1d1d']; @endphp
-        @forelse($suratMenungguList ?? [] as $item)
-            @php $ci=$loop->index%5; @endphp
-            <div class="ds-row">
-                <div class="ds-avatar" style="background:{{ $palBg[$ci] }};color:{{ $palFg[$ci] }};">
-                    <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold m-0 truncate text-slate-900">{{ $item->nomor_surat ?? 'Surat-'.$item->id }}</p>
-                    <p class="text-xs mt-0.5 text-slate-500">{{ $item->user->name ?? '-' }} · {{ $item->jenis_surat }}</p>
-                </div>
-                <span class="ds-badge b-red">submitted</span>
-            </div>
-        @empty
-            <div class="text-center py-6">
-                <i data-lucide="file-check" class="w-6 h-6 mx-auto mb-2 block text-slate-400"></i>
-                <p class="text-xs m-0 text-slate-500">Tidak ada surat menunggu</p>
-            </div>
-        @endforelse
-    </div>
-
-</div>
-
-@endrole{{-- END SUPERVISOR --}}
-
-
-{{-- ══════════════════════════════════════════════════════════
-     ROLE: STAFF — SURAT PRIBADI
-═══════════════════════════════════════════════════════════ --}}
-@role('staff')
-
-{{-- ROW 1 — 3 STAT CARDS --}}
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-
-    {{-- Card 1: Total Surat --}}
-    <div class="ds-card">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-purple"><i data-lucide="file-text" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-purple">SAYA</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Total Surat Saya</p>
-        <h3 class="text-4xl font-bold leading-none text-purple-600">{{ count($suratStaff ?? []) }}</h3>
-        <p class="text-sm mt-1 text-slate-500">surat yang dibuat</p>
-    </div>
-
-    {{-- Card 2: Menunggu Approval --}}
-    <div class="ds-card ds-warn">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-amber"><i data-lucide="clock" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-amber">PENDING</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Menunggu Approval</p>
-        <h3 class="text-4xl font-bold leading-none text-amber-600">{{ $suratStaffPendingCount ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">dalam proses review</p>
-    </div>
-
-    {{-- Card 3: Perlu Revisi --}}
-    <div class="ds-card ds-danger">
-        <div class="flex justify-between items-start mb-4">
-            <div class="ds-icon ic-red"><i data-lucide="alert-circle" class="w-5 h-5"></i></div>
-            <span class="ds-badge b-red">REVISI</span>
-        </div>
-        <p class="text-xs font-bold tracking-widest uppercase mb-1 text-slate-500">Perlu Revisi</p>
-        <h3 class="text-4xl font-bold leading-none text-red-600">{{ $suratStaffRevisiCount ?? 0 }}</h3>
-        <p class="text-sm mt-1 text-slate-500">perlu diperbaiki</p>
-    </div>
-
-</div>
-
-{{-- ROW 2 — LIST SURAT --}}
-<div class="ds-section mb-6">
-    <div class="flex justify-between items-center mb-4">
-        <div class="ds-section-title m-0">Surat Saya</div>
-        <a href="{{ route('surat.create') }}" class="inline-flex items-center gap-1.5 px-3 py-2 bg-custom-500 text-white rounded-lg text-xs font-bold transition-all hover:bg-custom-600">
-            + Buat Surat
-        </a>
-    </div>
-
-    @php $palBg=['#dcf5e7','#dbeafe','#ede9fe','#fef3c7','#ffe4e6']; $palFg=['#14532d','#1e3a8a','#4c1d95','#78350f','#7f1d1d']; @endphp
-    @forelse($suratStaff ?? [] as $surat)
-        <div class="ds-row">
-            <div class="ds-avatar" style="background:{{ $palBg[$loop->index%5] }};color:{{ $palFg[$loop->index%5] }};">
-                <i data-lucide="file-text" class="w-4 h-4"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-xs font-bold m-0 truncate text-slate-900">{{ $surat->nomor_surat ?? 'Surat-'.$surat->id }}</p>
-                <p class="text-xs mt-0.5 text-slate-500">{{ substr($surat->perihal ?? 'Surat', 0, 45) }}{{ strlen($surat->perihal ?? '') > 45 ? '...' : '' }}</p>
-            </div>
-            <div class="flex-shrink-0">
-                @if($surat->status === 'submitted')
-                    <span class="ds-badge b-blue">diajukan</span>
-                @elseif($surat->status === 'approved_supervisor')
-                    <span class="ds-badge b-amber">approval owner</span>
-                @elseif($surat->status === 'approved_owner')
-                    <span class="ds-badge b-green">✓ disetujui</span>
-                @elseif($surat->status === 'revised')
-                    <span class="ds-badge b-red">⚠ revisi</span>
-                @elseif($surat->status === 'rejected')
-                    <span class="ds-badge b-red">ditolak</span>
-                @else
-                    <span class="ds-badge b-green">{{ $surat->status }}</span>
-                @endif
-            </div>
-        </div>
-    @empty
-        <div class="text-center py-8">
-            <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 block text-slate-400"></i>
-            <p class="text-sm m-0 text-slate-500">Belum ada surat</p>
-            <a href="{{ route('surat.create') }}" class="inline-block mt-3 px-4 py-2 bg-custom-500 text-white rounded-lg text-xs font-bold hover:bg-custom-600 transition-all">
-                Buat Surat Pertama
-            </a>
-        </div>
-    @endforelse
-</div>
-
-@endrole{{-- END STAFF --}}
-
-</div>{{-- end .sng --}}
-</div>{{-- end container-fluid --}}
-</div>{{-- end wrapper --}}
-
-{{-- Chart.js — hanya untuk HR & Supervisor --}}
-@role('hr|supervisor')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-(function(){
-    const font = { family: 'Plus Jakarta Sans' };
-    const opts = {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-            legend: { position:'bottom', labels: { font:{...font,size:11,weight:'600'}, usePointStyle:true, pointStyleWidth:8, padding:16 } },
-            tooltip: { backgroundColor:'#f0f7f2', titleColor:'#14321f', bodyColor:'#3d6650', borderColor:'rgba(148,188,163,.4)', borderWidth:1, titleFont:{...font,weight:'700',size:12}, bodyFont:{...font,size:11}, padding:10, cornerRadius:10 }
-        },
-        scales: {
-            x: { grid:{display:false}, ticks:{font:{...font,size:10,weight:'600'},color:'#7aaa8e'} },
-            y: { beginAtZero:true, grid:{color:'rgba(148,188,163,.18)'}, ticks:{font:{...font,size:10},color:'#7aaa8e'} }
-        }
-    };
-    
-    // Chart Absensi (Line Chart)
-    const ctxA = document.getElementById('chartAbsensi');
-    if(ctxA){
-        new Chart(ctxA, {
-            type:'line',
-            data:{
-                labels: @json($chartAbsensi['labels'] ?? []),
-                datasets:[
-                    { label:'Hadir',  data:@json($chartAbsensi['datasets'][0]['data'] ?? []), borderColor:'#1a9e5c', backgroundColor:'rgba(26,158,92,.1)',  tension:.4, fill:true,  pointRadius:4, pointBackgroundColor:'#1a9e5c', borderWidth:2.5 },
-                    { label:'Izin',   data:@json($chartAbsensi['datasets'][1]['data'] ?? []), borderColor:'#d97706', backgroundColor:'rgba(217,119,6,.06)', tension:.4, fill:false, pointRadius:3, pointBackgroundColor:'#d97706', borderWidth:2 },
-                    { label:'Sakit',  data:@json($chartAbsensi['datasets'][2]['data'] ?? []), borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.06)',  tension:.4, fill:false, pointRadius:3, pointBackgroundColor:'#2563eb', borderWidth:2 },
-                    { label:'Alpha',  data:@json($chartAbsensi['datasets'][3]['data'] ?? []), borderColor:'#e11d48', backgroundColor:'rgba(225,29,72,.06)',   tension:.4, fill:false, pointRadius:3, pointBackgroundColor:'#e11d48', borderWidth:2 },
-                ]
-            },
-            options: opts
-        });
+@media (max-width: 1200px) {
+    .hv-row1 {
+        grid-template-columns: 1fr;
+        gap: 16px;
     }
-    
-    // Chart Lembur (Bar Chart) — hanya untuk HR
-    @role('hr')
-    const ctxL = document.getElementById('chartLembur');
-    if(ctxL){
-        new Chart(ctxL, {
-            type:'bar',
-            data:{
-                labels: @json($chartAbsensi['labels'] ?? []),
-                datasets:[
-                    { label:'Jam Lembur', data:@json($chartAbsensi['datasets'][0]['data'] ?? []), backgroundColor:'#04A54C', borderRadius:6, borderSkipped:false }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display:true, position:'bottom', labels: { font:{...font,size:11,weight:'600'}, usePointStyle:true, pointStyleWidth:8, padding:16 } },
-                    tooltip: { backgroundColor:'#dcf5e7', titleColor:'#14532d', bodyColor:'#04A54C', borderColor:'rgba(4,165,76,.3)', borderWidth:1, titleFont:{...font,weight:'700',size:12}, bodyFont:{...font,size:11}, padding:10, cornerRadius:10 }
-                },
-                scales: { 
-                    x: { grid:{display:false}, ticks:{font:{...font,size:10,weight:'600'},color:'#7aaa8e'} },
-                    y: { beginAtZero:true, grid:{color:'rgba(148,188,163,.18)'}, ticks:{font:{...font,size:10},color:'#7aaa8e'} }
-                }
-            }
-        });
-    }
-    @endrole
-})();
-</script>
-@endrole
+}
 
+/* FOTO */
+.hv-photo-card {
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+    min-height: 220px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.hv-photo-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.hv-photo-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 24px;
+    background: linear-gradient(to top, rgba(26,43,36,0.9), rgba(26,43,36,0.4));
+}
+.hv-photo-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 4px 0;
+}
+.hv-photo-role {
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    margin: 0;
+}
+
+/* CARD GLOBAL */
+.hv-stat,
+.hv-actions-card,
+.hv-cuti-card,
+.hv-full-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(24px);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255,255,255,0.4);
+}
+
+/* STAT */
+.hv-stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 200px;
+}
+.hv-stat.dark {
+    background: #4F6560;
+    color: white;
+    border: none;
+}
+.hv-stat.dark .hv-stat-label, .hv-stat.dark .hv-stat-num {
+    color: white;
+}
+.hv-stat-label {
+    font-size: 13px;
+    color: #6B7280;
+}
+.hv-stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 56px;
+    font-weight: 600;
+    color: #1A2B24;
+    margin: 16px 0;
+    line-height: 1.2;
+}
+.hv-stat-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    margin-top: auto;
+    gap: 12px;
+}
+.hv-stat-icon {
+    width: 32px;
+    height: 32px;
+    color: #9CA3AF;
+    flex-shrink: 0;
+}
+.hv-stat.dark .hv-stat-icon {
+    color: rgba(255,255,255,0.7);
+}
+
+/* DARK CARD */
+.hv-recent {
+    background: rgba(79, 101, 96, 0.85);
+    backdrop-filter: blur(8px);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.hv-recent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.hv-recent-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+.hv-recent-viewall {
+    font-size: 12px;
+    color: #A8C5B5;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.hv-recent-viewall:hover {
+    color: #fff;
+}
+.hv-recent-sub {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 16px;
+}
+.hv-recent-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.hv-recent-ava {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+.hv-recent-name {
+    font-size: 12px;
+    color: #fff;
+}
+.hv-recent-desc {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+}
+
+/* ROW 2 */
+.hv-row2 {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+/* ACTION */
+.hv-actions-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: #1A2B24;
+}
+.hv-actions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* BUTTON */
+.hv-btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: #4F6560;
+    color: #fff !important;
+    border-radius: 12px;
+    font-size: 14px;
+    transition: 0.2s;
+    text-align: center;
+    display: inline-block;
+}
+.hv-btn-primary:hover {
+    background: #3b504c;
+}
+.hv-btn-outline {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    text-align: center;
+    display: inline-block;
+    transition: 0.2s;
+}
+.hv-btn-outline:hover {
+    border-color: #4F6560;
+    color: #4F6560 !important;
+}
+
+/* CUTI */
+.hv-cuti-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.hv-cuti-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: #1A2B24;
+    margin: 0;
+}
+.hv-cuti-viewall {
+    font-size: 12px;
+    color: #4F6560;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.hv-cuti-viewall:hover {
+    color: #2F4C46;
+}
+.hv-cuti-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+
+.hv-cuti-item:hover {
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.hv-cuti-ava {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #80BB9B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+}
+.hv-cuti-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+.hv-cuti-meta {
+    font-size: 12px;
+    color: #6B7280;
+    margin-top: 2px;
+}
+.hv-cuti-badge {
+    margin-left: auto;
+    background: #FEF3C7;
+    color: #92400E;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* EMPTY */
+.hv-empty {
+    text-align: center;
+    color: #9CA3AF;
+    font-size: 12px;
+    padding: 24px 0;
+}
+
+.hv-recent-empty {
+    text-align: center;
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    padding: 24px 0;
+}
+
+.hv-list-link {
+    text-decoration: none;
+    color: #1A2B24;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.hv-list-link:hover {
+    color: #4F6560;
+}
+
+/* BADGE */
+.hv-badge { 
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    display: inline-block;
+}
+.hv-badge-green { background:#E8F5EE; color:#2E7D5E; }
+.hv-badge-amber { background:#fef3c7; color:#92400e; }
+.hv-badge-red { background:#fee2e2; color:#991b1b; }
+.hv-badge-blue { background:#dbeafe; color:#1e40af; }
+.hv-badge-gray { background:#f3f4f6; color:#374151; }
+
+.hv-stats-row {
+    display: grid;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+.hv-stats-3 { grid-template-columns: repeat(3, 1fr); }
+.hv-stats-2 { grid-template-columns: repeat(2, 1fr); }
+
+.hv-list-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 16px;
+    margin-bottom: 12px;
+}
+.hv-list-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #E8F5EE; color: #4F6560;
+    display: flex; align-items: center; justify-content: center;
+}
+.hv-list-icon svg { width: 20px; height: 20px; }
+.hv-list-name { font-weight: 500; font-size: 14px; margin-bottom: 2px; }
+.hv-list-meta { font-size: 12px; color: #6B7280; }
+.hv-full-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    color: #1A2B24;
+}
+</style>
+
+<div>
+
+<p class="hv-welcome">Welcome in, {{ auth()->user()->name }}</p>
+
+{{-- ══════ hr ══════ --}}
+@if(auth()->user()->hasRole('hr'))
+
+    {{-- row 1 --}}
+    <div class="hv-row1">
+
+        {{-- foto profil --}}
+        <div class="hv-photo-card">
+            @if(auth()->user()->avatar)
+                <img src="{{ URL::to('assets/images/user/'.auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}">
+            @endif
+            <div class="hv-photo-overlay">
+                <p class="hv-photo-name">{{ auth()->user()->name }}</p>
+                <p class="hv-photo-role">{{ $userRoleName }}</p>
+            </div>
+        </div>
+
+        {{-- total employees --}}
+        <div class="hv-stat">
+            <p class="hv-stat-label">Total Employees</p>
+            <p class="hv-stat-num">{{ $totalKaryawan ?? 0 }}</p>
+            <div class="hv-stat-bottom">
+                <svg class="hv-stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-2a4 4 0 014-4h4m4 0h4a4 4 0 014 4v2M12 3a4 4 0 100 8 4 4 0 000-8zM6 9a3 3 0 100 6M18 9a3 3 0 100 6"/>
+                </svg>
+            </div>
+        </div>
+
+        {{-- pending approvals --}}
+        <div class="hv-stat">
+            <p class="hv-stat-label">Pending Approvals</p>
+            <p class="hv-stat-num">{{ $suratMenungguCount ?? 0 }}</p>
+            <div class="hv-stat-bottom">
+                <svg class="hv-stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <a href="{{ route('surat.index') }}" class="hv-list-link" style="font-size:12px;text-decoration:underline;text-underline-offset:2px;color:#1A2B24;">Need approval</a>
+            </div>
+        </div>
+
+        {{-- recent activity --}}
+        <div class="hv-recent">
+            <div class="hv-recent-header">
+                <p class="hv-recent-title">Recent Activity</p>
+                <a href="{{ route('surat.index') }}" class="hv-recent-viewall">View all</a>
+            </div>
+            <p class="hv-recent-sub">Snapshot HR &amp; approval terbaru</p>
+            @php
+                $recentSurats = \App\Models\Surat::with('user')->orderBy('updated_at','desc')->limit(3)->get();
+            @endphp
+            @if($recentSurats->count())
+            <div class="hv-recent-list">
+                @foreach($recentSurats as $rs)
+                <div class="hv-recent-item">
+                    <div class="hv-recent-ava">
+                        @if($rs->user?->avatar)
+                            <img src="{{ URL::to('assets/images/user/'.$rs->user->avatar) }}" alt="">
+                        @else
+                            {{ strtoupper(substr($rs->user?->name ?? 'K', 0, 1)) }}
+                        @endif
+                    </div>
+                    <div>
+                        <p class="hv-recent-name">{{ $rs->user?->name ?? '-' }}</p>
+                        <p class="hv-recent-desc">
+                            {{ ucfirst(str_replace('_',' ',$rs->jenis_surat)) }} &mdash;
+                            @php echo match($rs->status){
+                                'approved_owner'=>'Disetujui penuh',
+                                'submitted'=>'Baru diajukan',
+                                'rejected'=>'Ditolak',
+                                'revised'=>'Perlu revisi',
+                                default=>ucfirst($rs->status)
+                            } @endphp<br>
+                            <span style="opacity:.55;">{{ $rs->updated_at->diffForHumans() }}</span>
+                        </p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @else
+            <div class="hv-recent-empty">Belum ada aktivitas terbaru</div>
+            @endif
+        </div>
+
+    </div>{{-- /row1 --}}
+
+    {{-- row 2 --}}
+    <div class="hv-row2">
+
+        {{-- quick actions --}}
+        <div class="hv-actions-card">
+            <p class="hv-actions-title">Quick Actions</p>
+            <div class="hv-actions-list">
+                <a href="{{ route('hr/employee/list') }}" class="hv-btn-primary">Tambah Karyawan</a>
+                <a href="{{ route('hr/leave/hr/page') }}" class="hv-btn-outline">Kelola Cuti</a>
+                <a href="{{ route('surat.index') }}" class="hv-btn-outline">Lihat Surat</a>
+            </div>
+        </div>
+
+        {{-- cuti menunggu --}}
+        <div class="hv-cuti-card">
+            <div class="hv-cuti-header">
+                <p class="hv-cuti-title">Cuti Menunggu</p>
+                <a href="{{ route('hr/leave/hr/page') }}" class="hv-cuti-viewall">Lihat semua</a>
+            </div>
+            @if(isset($cutiMenungguTerbaru) && $cutiMenungguTerbaru->count())
+            <div class="hv-cuti-list">
+                @foreach($cutiMenungguTerbaru as $cuti)
+                <div class="hv-cuti-item">
+                    <div class="hv-cuti-ava">{{ strtoupper(substr($cuti->employee_name ?? 'K',0,1)) }}</div>
+                    <div>
+                        <p class="hv-cuti-name">{{ $cuti->employee_name ?? '-' }}</p>
+                        <p class="hv-cuti-meta">{{ $cuti->leave_type }} &nbsp;·&nbsp; {{ $cuti->number_of_day }} hari</p>
+                    </div>
+                    <span class="hv-cuti-badge">Menunggu</span>
+                </div>
+                @endforeach
+            </div>
+            @else
+            <div class="hv-empty">Tidak ada cuti yang menunggu persetujuan</div>
+            @endif
+        </div>
+
+    </div>{{-- /row2 --}}
+
+
+{{-- ══════ supervisor ══════ --}}
+@elseif(auth()->user()->hasRole('supervisor'))
+
+    <div class="hv-stats-row hv-stats-3">
+        <div class="hv-stat">
+            <p class="hv-stat-label">Total Karyawan</p>
+            <p class="hv-stat-num">{{ $totalKaryawan ?? 0 }}</p>
+            <div class="hv-stat-bottom"><svg class="hv-stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
+        </div>
+        <div class="hv-stat">
+            <p class="hv-stat-label">Hadir Hari Ini</p>
+            <p class="hv-stat-num">{{ $hadirHariIni ?? 0 }}</p>
+            <div class="hv-stat-bottom"><svg class="hv-stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+        </div>
+        <div class="hv-stat dark">
+            <p class="hv-stat-label">Surat Perlu Approval Saya</p>
+            <p class="hv-stat-num">{{ $suratMenungguCount ?? 0 }}</p>
+            <div class="hv-stat-bottom"><svg class="hv-stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+        </div>
+    </div>
+
+    <div class="hv-full-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <p class="hv-full-title" style="margin:0;">Surat Menunggu Approval Saya</p>
+            <a href="{{ route('surat.index') }}" class="hv-list-link">Lihat semua</a>
+        </div>
+        @forelse($suratMenungguList ?? [] as $surat)
+        <div class="hv-list-item">
+            <div class="hv-list-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+            <div style="flex:1;">
+                <p class="hv-list-name">{{ $surat->user?->name ?? '-' }}</p>
+                <p class="hv-list-meta">{{ ucfirst(str_replace('_',' ',$surat->jenis_surat)) }} · {{ $surat->created_at->format('d M Y') }}</p>
+            </div>
+            <a href="{{ route('surat.show', $surat->id) }}" class="hv-list-link">Review</a>
+        </div>
+        @empty
+        <div class="hv-empty">Tidak ada surat yang menunggu approval Anda</div>
+        @endforelse
+    </div>
+
+
+{{-- ══════ staff ══════ --}}
+@elseif(auth()->user()->hasRole('staff'))
+
+    <div class="hv-stats-row hv-stats-2">
+        <div class="hv-stat">
+            <p class="hv-stat-label">Surat Diajukan</p>
+            <p class="hv-stat-num">{{ $suratStaffDiajukan ?? 0 }}</p>
+            <div class="hv-stat-bottom"><svg class="hv-stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+        </div>
+        <div class="hv-stat dark">
+            <p class="hv-stat-label">Surat Disetujui</p>
+            <p class="hv-stat-num">{{ $suratStaffSelesai ?? 0 }}</p>
+            <div class="hv-stat-bottom"><svg class="hv-stat-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+        </div>
+    </div>
+
+    <div class="hv-full-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <p class="hv-full-title" style="margin:0;">Surat Saya</p>
+            <a href="{{ route('surat.create') }}" class="hv-btn-primary" style="width:auto;padding:8px 20px;font-size:12px;">+ Buat Surat Baru</a>
+        </div>
+        @forelse($suratStaff ?? [] as $surat)
+        <div class="hv-list-item">
+            <div class="hv-list-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div>
+            <div style="flex:1;">
+                <p class="hv-list-name">{{ ucfirst(str_replace('_',' ',$surat->jenis_surat)) }}</p>
+                <p class="hv-list-meta">{{ Str::limit($surat->perihal, 60) }} · {{ $surat->created_at->format('d M Y') }}</p>
+            </div>
+            @php $b=match($surat->status){'approved_owner'=>['hv-badge-green','Disetujui'],'submitted'=>['hv-badge-blue','Diajukan'],'rejected'=>['hv-badge-red','Ditolak'],'revised'=>['hv-badge-amber','Revisi'],default=>['hv-badge-gray',ucfirst($surat->status)]}; @endphp
+            <span class="hv-badge {{ $b[0] }}">{{ $b[1] }}</span>
+        </div>
+        @empty
+        <div class="hv-empty">Belum ada surat yang diajukan</div>
+        @endforelse
+    </div>
+
+@endif
+
+</div>{{-- /hv-page --}}
 @endsection

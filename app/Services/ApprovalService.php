@@ -7,6 +7,11 @@ use App\Models\DocumentApproval;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * ApprovalService
+ * Mengelola logika approval dokumen multi-step.
+ * Digunakan oleh: SuratController
+ */
 class ApprovalService
 {
     /**
@@ -65,12 +70,14 @@ class ApprovalService
             return ['success' => false, 'message' => 'Tidak ada step yang menunggu approval.', 'selesai' => false];
         }
 
-        // Cek jabatan approver sesuai step
-        $jabatanApprover = $approver->profile?->jabatan;
-        if ($jabatanApprover !== $currentStep->jabatan) {
+        // Cek jabatan approver HARUS sesuai step — tanpa pengecualian role
+        $jabatanApprover = strtolower($approver->profile?->jabatan ?? '');
+        $jabatanStep     = strtolower($currentStep->jabatan ?? '');
+
+        if ($jabatanApprover !== $jabatanStep) {
             return [
                 'success' => false,
-                'message' => "Jabatan Anda ({$jabatanApprover}) tidak sesuai untuk step ini ({$currentStep->label}).",
+                'message' => "Bukan giliran Anda untuk approve. Step ini untuk {$currentStep->label} (jabatan: {$currentStep->jabatan}).",
                 'selesai' => false,
             ];
         }
@@ -132,11 +139,14 @@ class ApprovalService
             return ['success' => false, 'message' => 'Tidak ada step yang aktif.', 'selesai' => false];
         }
 
-        $jabatanApprover = $approver->profile?->jabatan;
-        if ($jabatanApprover !== $currentStep->jabatan) {
+        // Cek jabatan approver HARUS sesuai step — tanpa pengecualian role
+        $jabatanApprover = strtolower($approver->profile?->jabatan ?? '');
+        $jabatanStep     = strtolower($currentStep->jabatan ?? '');
+
+        if ($jabatanApprover !== $jabatanStep) {
             return [
                 'success' => false,
-                'message' => "Jabatan Anda ({$jabatanApprover}) tidak sesuai untuk step ini ({$currentStep->label}).",
+                'message' => "Bukan giliran Anda untuk menolak. Step ini untuk {$currentStep->label} (jabatan: {$currentStep->jabatan}).",
                 'selesai' => false,
             ];
         }
@@ -204,7 +214,11 @@ class ApprovalService
 
         if (!$waitingStep) return false;
 
-        return $user->profile?->jabatan === $waitingStep->jabatan;
+        // Strict jabatan check — no role bypass
+        $jabatanUser = strtolower($user->profile?->jabatan ?? '');
+        $jabatanStep = strtolower($waitingStep->jabatan ?? '');
+
+        return $jabatanUser === $jabatanStep;
     }
 
     /**
@@ -215,5 +229,22 @@ class ApprovalService
         return DocumentApproval::forDocument($documentType, $documentId)
             ->where('status', 'waiting')
             ->first();
+    }
+
+    /**
+     * Tandai dokumen sebagai sudah dibaca untuk step yang sedang aktif.
+     */
+    public function markAsRead(string $documentType, int $documentId, User $user): void
+    {
+        $waitingStep = $this->getWaitingStep($documentType, $documentId);
+        
+        if ($waitingStep) {
+            // Hanya user dengan jabatan yang cocok bisa mark as read
+            $jabatanUser = strtolower($user->profile?->jabatan ?? '');
+            $jabatanStep = strtolower($waitingStep->jabatan ?? '');
+            if ($jabatanUser === $jabatanStep) {
+                $waitingStep->update(['is_read' => true]);
+            }
+        }
     }
 }

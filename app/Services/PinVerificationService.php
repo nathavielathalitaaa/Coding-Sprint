@@ -5,6 +5,11 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * PinVerificationService
+ * Mengelola verifikasi PIN user.
+ * Digunakan oleh: SuratController, dll.
+ */
 class PinVerificationService
 {
     /**

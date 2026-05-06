@@ -22,6 +22,10 @@ class User extends Authenticatable
         'location',
         'join_date',
         'gaji_pokok',
+        'tunjangan_jabatan',
+        'tunjangan_makan',
+        'tunjangan_transport',
+        'potongan_bpjs',
         'avatar',
         'position',    // kolom posisi singkat di users (opsional, bisa pakai profile)
         'department',

@@ -5,265 +5,171 @@ namespace App\Http\Controllers;
 use App\Models\ApprovalStep;
 use App\Models\DocumentApproval;
 use App\Models\Surat;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ApprovalFlowController extends Controller
 {
-    /**
-     * Jenis surat yang valid di sistem
-     */
-    private const DOCUMENT_TYPES = [
-        'surat_izin',
-        'surat_permohonan',
-        'surat_resign',
-        'surat_tugas',
-        'surat_rekomendasi',
-        'surat_lainnya',
+    // daftar jenis surat yang valid
+    private array $jenisOptions = [
+        'surat_izin'        => 'Surat Izin',
+        'surat_permohonan'  => 'Surat Permohonan',
+        'surat_resign'      => 'Surat Resign',
+        'surat_surat_tugas' => 'Surat Tugas',
+        'surat_rekomendasi' => 'Surat Rekomendasi',
+        'surat_lainnya'     => 'Surat Lainnya',
     ];
 
-    /**
-     * Jabatan yang valid
-     */
-    private const VALID_JABATAN = [
-        'hod',
-        'hr',
-        'purchasing',
-        'owner_rep',
-        'direktur',
-    ];
-
-    /**
-     * Label yang sesuai dengan jabatan
-     */
-    private const LABEL_MAPPING = [
-        'hod' => 'Head of Department',
-        'hr' => 'Human Resources',
-        'purchasing' => 'Purchasing',
+    // daftar jabatan approver yang tersedia
+    private array $jabatanOptions = [
+        'hod'       => 'Head of Department',
+        'hr'        => 'Human Resources',
+        'purchasing'=> 'Purchasing',
         'owner_rep' => 'Owner Representative',
-        'direktur' => 'Direktur',
+        'direktur'  => 'Direktur',
     ];
 
     /**
-     * Display semua jenis surat + approval steps mereka
+     * halaman utama — tampilkan semua flow per jenis surat
      */
     public function index()
     {
-        $approvalFlows = [];
-
-        foreach (self::DOCUMENT_TYPES as $docType) {
-            $approvalFlows[$docType] = [
-                'display_name' => $this->formatDocumentTypeName($docType),
-                'steps' => ApprovalStep::where('document_type', $docType)
-                    ->orderBy('step_order')
-                    ->get(),
+        $flows = [];
+        foreach ($this->jenisOptions as $type => $label) {
+            $flows[$type] = [
+                'label' => $label,
+                'steps' => ApprovalStep::where('document_type', $type)
+                    ->orderBy('step_order')->get(),
             ];
         }
 
-        // Get waiting approvals
-        $waitingApprovals = DocumentApproval::where('status', 'waiting')
-            ->where('document_type', 'LIKE', 'surat_%')
-            ->with('approver')
-            ->get()
-            ->map(function ($approval) {
-                // Get the Surat
-                $surat = Surat::find($approval->document_id);
-                $approval->surat = $surat;
-                return $approval;
-            });
-
-        return view('hr.approval-flow.index', compact('approvalFlows', 'waitingApprovals'));
+        return view('hr.approval-flow.index', compact('flows'));
     }
 
     /**
-     * Tambah step baru ke jenis surat tertentu
+     * form edit flow untuk satu jenis surat
      */
-    public function store(Request $request)
+    public function edit(string $type)
     {
-        $validated = $request->validate([
-            'document_type' => [
-                'required',
-                'string',
-                Rule::in(self::DOCUMENT_TYPES),
-            ],
-            'jabatan' => [
-                'required',
-                Rule::in(self::VALID_JABATAN),
-            ],
-            'label' => 'required|string|max:100',
-        ], [
-            'document_type.required' => 'Jenis surat harus dipilih',
-            'document_type.in' => 'Jenis surat tidak valid',
-            'jabatan.required' => 'Jabatan harus dipilih',
-            'jabatan.in' => 'Jabatan tidak valid',
-            'label.required' => 'Label harus diisi',
-            'label.max' => 'Label maksimal 100 karakter',
+        abort_unless(array_key_exists($type, $this->jenisOptions), 404);
+
+        $steps   = ApprovalStep::where('document_type', $type)->orderBy('step_order')->get();
+        $label   = $this->jenisOptions[$type];
+        $jabatanOptions = $this->jabatanOptions;
+
+        // ambil pengaturan ttd dari step pertama (sebagai representasi jenis surat ini)
+        $firstStep = $steps->first();
+        $ttd_mode = $firstStep->ttd_mode ?? 'append';
+        $setting_overrides = $firstStep->setting_overrides ?? null;
+
+        return view('hr.approval-flow.edit', compact('type', 'label', 'steps', 'jabatanOptions', 'ttd_mode', 'setting_overrides'));
+    }
+
+    /**
+     * simpan perubahan flow — replace semua step untuk jenis surat ini
+     */
+    public function update(Request $request, string $type)
+    {
+        abort_unless(array_key_exists($type, $this->jenisOptions), 404);
+
+        $request->validate([
+            'steps'             => 'required|array|min:1|max:5',
+            'steps.*.jabatan'   => 'required|string|in:hod,hr,purchasing,owner_rep,direktur',
+            'steps.*.label'     => 'required|string|max:100',
+            'ttd_mode'          => 'required|in:stamp,append',
+            'use_override'      => 'nullable|boolean',
+            'override.company_name' => 'required_if:use_override,1|nullable|string|max:255',
+            'override.accent_color' => 'required_if:use_override,1|nullable|string|size:7',
+            'override.font_family'  => 'required_if:use_override,1|nullable|string|in:Arial,Times New Roman,Helvetica,Georgia',
+            'override.footer_text'  => 'nullable|string|max:500',
+            'override_logo'         => 'nullable|image|mimes:png,jpg,jpeg|max:2048',
         ]);
 
-        // Hitung step_order otomatis
-        $maxStepOrder = ApprovalStep::where('document_type', $validated['document_type'])
-            ->max('step_order') ?? 0;
+        // siapkan setting_overrides
+        $setting_overrides = null;
+        if ($request->use_override) {
+            $setting_overrides = $request->override;
+            
+            // handle logo upload for override
+            if ($request->hasFile('override_logo')) {
+                $path = $request->file('override_logo')->store('document-logos', 'public');
+                $setting_overrides['logo_path'] = $path;
+            } else {
+                // keep existing logo path if already set in previous steps
+                $oldFirstStep = ApprovalStep::where('document_type', $type)->first();
+                if ($oldFirstStep && isset($oldFirstStep->setting_overrides['logo_path'])) {
+                    $setting_overrides['logo_path'] = $oldFirstStep->setting_overrides['logo_path'];
+                }
+            }
+        }
 
-        $validated['step_order'] = $maxStepOrder + 1;
+        // hapus semua step lama untuk jenis surat ini
+        ApprovalStep::where('document_type', $type)->delete();
 
-        ApprovalStep::create($validated);
+        // simpan step baru
+        foreach ($request->steps as $order => $step) {
+            ApprovalStep::create([
+                'document_type'     => $type,
+                'step_order'        => $order + 1,
+                'jabatan'           => $step['jabatan'],
+                'label'             => $step['label'],
+                'ttd_mode'          => $request->ttd_mode,
+                'setting_overrides' => $setting_overrides,
+            ]);
+        }
 
-        flash()->success('Step approval berhasil ditambahkan');
-        return redirect()->back();
+        flash()->success('Flow approval ' . $this->jenisOptions[$type] . ' berhasil diperbarui.');
+        return redirect()->route('hr.approval-flow.index');
     }
 
     /**
-     * Hapus satu step berdasarkan ID
-     * (hanya boleh jika tidak ada surat aktif dengan status waiting/pending untuk step ini)
+     * halaman reassign — daftar surat yang sedang pending/waiting
      */
-    public function destroy($id)
+    public function reassignIndex()
     {
-        $step = ApprovalStep::findOrFail($id);
+        // surat yang masih dalam proses (ada step waiting)
+        $surats = Surat::with(['user', 'approvals'])
+            ->whereHas('approvals', fn($q) => $q->where('status', 'waiting'))
+            ->where('status', 'submitted')
+            ->latest()->get();
 
-        // Cek apakah ada DocumentApproval dengan status waiting/pending
-        $activeApproval = DocumentApproval::where('document_type', $step->document_type)
-            ->where('jabatan', $step->jabatan)
-            ->whereIn('status', ['waiting', 'pending'])
-            ->exists();
+        // daftar user yang punya jabatan approver (untuk dropdown pengganti)
+        $approvers = User::whereHas('profile', fn($q) =>
+            $q->whereIn('jabatan', array_keys($this->jabatanOptions))
+              ->where(fn($q2) => $q2->whereNotNull('signature_path')->orWhereNotNull('ttd_path'))
+              ->whereNotNull('pin')
+        )->with('profile')->get();
 
-        if ($activeApproval) {
-            flash()->error('Tidak dapat menghapus step karena ada surat yang sedang dalam proses approval.');
+        $jabatanOptions = $this->jabatanOptions;
+
+        return view('hr.approval-flow.reassign', compact('surats', 'approvers', 'jabatanOptions'));
+    }
+
+    /**
+     * terapkan reassign — ganti jabatan di step yang sedang waiting
+     */
+    public function reassignApply(Request $request)
+    {
+        $request->validate([
+            'approval_id'   => 'required|exists:document_approvals,id',
+            'jabatan_baru'  => 'required|in:hod,hr,purchasing,owner_rep,direktur',
+        ]);
+
+        $step = DocumentApproval::findOrFail($request->approval_id);
+
+        // hanya bisa reassign step yang sedang waiting
+        if ($step->status !== 'waiting') {
+            flash()->error('Hanya step yang sedang menunggu yang bisa di-reassign.');
             return redirect()->back();
         }
 
-        $step->delete();
-
-        // Reorder steps untuk document_type ini
-        $this->reorderStepsForDocumentType($step->document_type);
-
-        flash()->success('Step approval berhasil dihapus');
-        return redirect()->back();
-    }
-
-    /**
-     * Update urutan steps untuk satu document_type
-     * Menerima array: ['steps' => [['id'=>1,'step_order'=>1], ...]]
-     */
-    public function reorder(Request $request)
-    {
-        $validated = $request->validate([
-            'document_type' => [
-                'required',
-                'string',
-                Rule::in(self::DOCUMENT_TYPES),
-            ],
-            'steps' => 'required|array',
-            'steps.*.id' => 'required|integer',
-            'steps.*.step_order' => 'required|integer|min:1',
+        $jabatanLama = $step->jabatan;
+        $step->update([
+            'jabatan' => $request->jabatan_baru,
+            'label'   => $this->jabatanOptions[$request->jabatan_baru],
         ]);
 
-        foreach ($validated['steps'] as $stepData) {
-            ApprovalStep::where('id', $stepData['id'])
-                ->where('document_type', $validated['document_type'])
-                ->update(['step_order' => $stepData['step_order']]);
-        }
-
-        flash()->success('Urutan step berhasil diperbarui');
-        return redirect()->back();
-    }
-
-    /**
-     * Helper: Reorder steps otomatis setelah delete (agar tidak ada gap)
-     */
-    private function reorderStepsForDocumentType(string $documentType)
-    {
-        $steps = ApprovalStep::where('document_type', $documentType)
-            ->orderBy('step_order')
-            ->get();
-
-        foreach ($steps as $index => $step) {
-            $step->update(['step_order' => $index + 1]);
-        }
-    }
-
-    /**
-     * Format document type menjadi display name yang readable
-     * Contoh: 'surat_izin' => 'Surat Izin'
-     */
-    private function formatDocumentTypeName(string $docType): string
-    {
-        return ucwords(str_replace('_', ' ', $docType));
-    }
-
-    /**
-     * Get label mapping (untuk view)
-     */
-    public static function getLabelMapping()
-    {
-        return self::LABEL_MAPPING;
-    }
-
-    /**
-     * Get valid jabatan (untuk view)
-     */
-    public static function getValidJabatan()
-    {
-        return self::VALID_JABATAN;
-    }
-
-    /**
-     * Reassign/Delegate step approval ke jabatan lain
-     * Hanya untuk DocumentApproval dengan status 'waiting'
-     */
-    public function reassign(Request $request)
-    {
-        $validated = $request->validate([
-            'document_approval_id' => 'required|exists:document_approvals,id',
-            'jabatan_baru' => [
-                'required',
-                Rule::in(self::VALID_JABATAN),
-            ],
-            'label_baru' => 'required|string|max:100',
-        ], [
-            'document_approval_id.required' => 'Document approval harus dipilih',
-            'document_approval_id.exists' => 'Document approval tidak ditemukan',
-            'jabatan_baru.required' => 'Jabatan baru harus dipilih',
-            'jabatan_baru.in' => 'Jabatan baru tidak valid',
-            'label_baru.required' => 'Label baru harus diisi',
-            'label_baru.max' => 'Label baru maksimal 100 karakter',
-        ]);
-
-        $documentApproval = DocumentApproval::findOrFail($validated['document_approval_id']);
-
-        // Validasi: hanya bisa reassign jika status 'waiting'
-        if ($documentApproval->status !== 'waiting') {
-            flash()->error('Hanya bisa mengubah step yang sedang menunggu (waiting).');
-            return redirect()->back();
-        }
-
-        // Update jabatan, label, dan reset approver_id
-        $documentApproval->update([
-            'jabatan' => $validated['jabatan_baru'],
-            'label' => $validated['label_baru'],
-            'approver_id' => null,
-        ]);
-
-        flash()->success("Step approval berhasil dialihkan ke {$validated['label_baru']}.");
-        return redirect()->back();
-    }
-
-    /**
-     * Tampilkan riwayat audit approval (approved & rejected)
-     */
-    public function auditLog(Request $request)
-    {
-        $logs = DocumentApproval::whereIn('status', ['approved', 'rejected'])
-            ->where('document_type', 'LIKE', 'surat_%')
-            ->with('approver')
-            ->orderByDesc('actioned_at')
-            ->paginate(20);
-
-        // Attach surat untuk setiap log
-        $logs->getCollection()->transform(function ($log) {
-            $log->surat = Surat::find($log->document_id);
-            return $log;
-        });
-
-        return view('hr.approval-flow.audit', compact('logs'));
+        flash()->success("Step approval berhasil dialihkan dari {$this->jabatanOptions[$jabatanLama]} ke {$this->jabatanOptions[$request->jabatan_baru]}.");
+        return redirect()->route('hr.approval-flow.reassign');
     }
 }

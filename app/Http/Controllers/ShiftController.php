@@ -13,7 +13,7 @@ class ShiftController extends Controller
     public function index()
     {
         $shiftList = Shift::all();
-        return view('HR.shift.index', compact('shiftList'));
+        return view('hr.shift.index', compact('shiftList'));
     }
 
     // simpan atau update data shift
@@ -84,7 +84,7 @@ class ShiftController extends Controller
             ->whereBetween('tanggal_mulai', [$mulaiMinggu, $akhirMinggu])
             ->get();
 
-        return view('HR.shift.jadwal', compact('karyawanList', 'shiftList', 'jadwalList', 'mulaiMinggu', 'akhirMinggu'));
+        return view('hr.shift.jadwal', compact('karyawanList', 'shiftList', 'jadwalList', 'mulaiMinggu', 'akhirMinggu'));
     }
 
     // simpan penugasan shift ke karyawan

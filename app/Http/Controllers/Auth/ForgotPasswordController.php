@@ -9,12 +9,12 @@ class ForgotPasswordController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | Password Reset Controller
+    | password reset controller
     |--------------------------------------------------------------------------
     |
-    | This controller is responsible for handling password reset emails and
+    | this controller is responsible for handling password reset emails and
     | includes a trait which assists in sending these notifications from
-    | your application to your users. Feel free to explore this trait.
+    | your application to your users. feel free to explore this trait.
     |
     */
 

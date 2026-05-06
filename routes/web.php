@@ -19,9 +19,9 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
-// ══════════════════════════════════════════════════════
-// AUTH ROUTES
-// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
 Route::controller(LoginController::class)->group(function () {
     Route::get('/login', 'login')->name('login');
     Route::post('/login', 'authenticate');
@@ -49,7 +49,9 @@ Route::controller(ResetPasswordController::class)->group(function () {
 // ══════════════════════════════════════════════════════
 Route::middleware('auth')->group(function () {
 
-    // ── ONBOARDING ROUTES (NO middleware to avoid loops) ──
+    // ══════════════════════════════════════════════
+    // ONBOARDING
+    // ══════════════════════════════════════════════
     Route::controller(AccountController::class)->group(function () {
         Route::get('onboarding', 'showOnboarding')->name('onboarding');
         Route::post('onboarding/ttd', 'onboardingTtd')->name('onboarding.ttd');
@@ -64,10 +66,17 @@ Route::middleware('auth')->group(function () {
 
         // ── Profil user ────────────────────────────────────
         Route::get('profile', [AccountController::class, 'showProfile'])->name('profile.show');
-        Route::post('profile/update', [AccountController::class, 'updateProfile'])->name('profile.update');
+        Route::post('profile/update/{id?}', [AccountController::class, 'updateProfile'])->name('profile.update');
+        Route::post('profile/photo', [AccountController::class, 'updatePhoto'])->name('profile.photo');
+        Route::post('profile/email', [AccountController::class, 'updateEmail'])->name('profile.email');
+        Route::post('profile/password', [AccountController::class, 'updatePassword'])->name('profile.password');
         Route::post('profile/ttd', [AccountController::class, 'uploadTtd'])->name('profile.ttd');
         Route::post('profile/pin', [AccountController::class, 'setPin'])->name('profile.pin');
         Route::get('profile/ttd/preview', [AccountController::class, 'showTtd'])->name('profile.ttd.preview');
+
+        // ── Digital Signature (New Public Storage approach) ──
+        Route::post('profile/signature/{id?}', [AccountController::class, 'uploadSignature'])->name('profile.signature.upload');
+        Route::delete('profile/signature/{id?}', [AccountController::class, 'deleteSignature'])->name('profile.signature.delete');
 
         // ── Profil ─────────────────────────────────────────
         Route::get('page/account/{user_id}', [AccountController::class, 'profileDetail']);
@@ -75,7 +84,9 @@ Route::middleware('auth')->group(function () {
         // ── Search ─────────────────────────────────────────
         Route::get('search', [SearchController::class, 'cari'])->name('search');
 
-    // ── HR MODULE ──────────────────────────────────────
+        // ══════════════════════════════════════════════
+        // HR MANAGEMENT (role: hr)
+        // ══════════════════════════════════════════════
     Route::prefix('hr')->group(function () {
 
         Route::controller(HRController::class)->group(function () {
@@ -84,6 +95,8 @@ Route::middleware('auth')->group(function () {
             Route::post('employee/save', 'employeeSaveRecord')->name('hr/employee/save');
             Route::post('employee/update', 'employeeUpdateRecord')->name('hr/employee/update');
             Route::post('employee/delete', 'employeeDeleteRecord')->name('hr/employee/delete');
+            Route::get('employee/show/{id}', 'showEmployee')->name('hr/employee/show');
+            Route::get('employee/{id}/edit', 'editEmployee')->name('hr/employee/edit');
 
             // Hari Libur
             Route::get('holidays/page', 'holidayPage')->name('hr/holidays/page');
@@ -109,8 +122,8 @@ Route::middleware('auth')->group(function () {
 
             // Departemen
             Route::get('department/page', 'department')->name('hr/department/page');
-            Route::post('department/save', 'saveRecorddepartment')->name('hr/department/save');
-            Route::post('department/delete', 'deleteRecorddepartment')->name('hr/department/delete');
+            Route::post('department/save', 'saveRecordDepartment')->name('hr/department/save');
+            Route::post('department/delete', 'deleteRecordDepartment')->name('hr/department/delete');
         });
 
         // ── Absensi ──────────────────────────────────────
@@ -119,6 +132,8 @@ Route::middleware('auth')->group(function () {
             Route::post('absensi/store', 'store')->name('hr/absensi/store');
             Route::post('absensi/clock-in', 'clockIn')->name('hr/absensi/clock-in');
             Route::post('absensi/clock-out', 'clockOut')->name('hr/absensi/clock-out');
+            Route::get('absensi/export/excel', 'exportExcel')->name('hr/absensi/export/excel');
+            Route::get('absensi/export/pdf', 'exportPdf')->name('hr/absensi/export/pdf');
         });
 
         // ── Import Absensi ────────────────────────────────
@@ -136,15 +151,31 @@ Route::middleware('auth')->group(function () {
             Route::post('shift/jadwal/store', 'simpanJadwal')->name('hr/shift/jadwal/store');
         });
 
-        // ── Approval Flow Manager ─────────────────────────
-        Route::controller(\App\Http\Controllers\ApprovalFlowController::class)->group(function () {
-            Route::get('approval-flow', 'index')->name('hr.approval-flow.index');
-            Route::get('approval-flow/audit', 'auditLog')->name('hr.approval-flow.audit');
-            Route::post('approval-flow/store', 'store')->name('hr.approval-flow.store');
-            Route::delete('approval-flow/{id}', 'destroy')->name('hr.approval-flow.destroy');
-            Route::post('approval-flow/reorder', 'reorder')->name('hr.approval-flow.reorder');
-            Route::post('approval-flow/reassign', 'reassign')->name('hr.approval-flow.reassign');
-        });
+        // ══════════════════════════════════════════════
+        // APPROVAL FLOW
+        // ══════════════════════════════════════════════
+        Route::controller(\App\Http\Controllers\ApprovalFlowController::class)
+            ->prefix('approval-flow')
+            ->middleware('role:hr')
+            ->group(function () {
+                Route::get('/',               'index')->name('hr.approval-flow.index');
+                Route::get('/{type}/edit',    'edit')->name('hr.approval-flow.edit');
+                Route::post('/{type}',        'update')->name('hr.approval-flow.update');
+                Route::get('/reassign/index', 'reassignIndex')->name('hr.approval-flow.reassign');
+                Route::post('/reassign/apply', 'reassignApply')->name('hr.approval-flow.reassign.apply');
+            });
+
+        // ══════════════════════════════════════════════
+        // SETTINGS DOKUMEN
+        // ══════════════════════════════════════════════
+        Route::controller(\App\Http\Controllers\DocumentSettingController::class)
+            ->prefix('settings')
+            ->middleware('role:hr|super-admin')
+            ->group(function () {
+                Route::get('document', 'index')->name('hr.settings.document');
+                Route::post('document', 'update')->name('hr.settings.document.update');
+                Route::post('document/logo', 'uploadLogo')->name('hr.settings.document.logo');
+            });
 
         // ── Penggajian ────────────────────────────────────
         Route::controller(PenggajianController::class)->group(function () {
@@ -157,7 +188,10 @@ Route::middleware('auth')->group(function () {
 
     }); // end prefix hr
 
-    Route::controller(SuratController::class)
+        // ══════════════════════════════════════════════
+        // SURAT (role: staff, supervisor, hr)
+        // ══════════════════════════════════════════════
+        Route::controller(SuratController::class)
         ->prefix('surat')
         ->name('surat.')
         ->group(function () {
@@ -165,14 +199,18 @@ Route::middleware('auth')->group(function () {
             Route::get('create', 'create')->name('create');
             Route::post('/', 'store')->name('store');
 
+            Route::get('ttd-mode', 'getTtdMode')->name('ttd-mode');
             Route::get('{surat}', 'show')->name('show');
             Route::get('{surat}/edit', 'edit')->name('edit');
             Route::put('{surat}', 'update')->name('update');
             Route::get('{surat}/download', 'download')->name('download');
+            Route::delete('{surat}', 'destroy')->name('destroy');
 
             // Approve & reject berbasis jabatan (HOD→Purchasing→Owner Rep→Direktur)
-            Route::post('{surat}/approve', 'approve')->name('approve');
-            Route::post('{surat}/reject', 'reject')->name('reject');
+            Route::middleware(['role:hr|supervisor|super-admin'])->group(function () {
+                Route::post('{surat}/approve', 'approve')->name('approve');
+                Route::post('{surat}/reject', 'reject')->name('reject');
+            });
         });
 
     }); // end middleware('onboarding')

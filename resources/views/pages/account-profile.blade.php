@@ -1,479 +1,568 @@
 @extends('layouts.master')
 
 <style>
-  /* Soft UI Input Styling */
-  .sng-input {
-    background: var(--bg-inner);
-    border: 1px solid rgba(148, 188, 163, 0.3);
-    border-radius: 12px;
-    padding: 10px 14px;
-    box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
-    color: var(--text-dark);
-    font-size: 14px;
-  }
-  .sng-input:focus {
-    outline: none;
-    border-color: rgba(26, 158, 92, 0.5);
-  }
-  .sng-input::placeholder {
-    color: var(--text-muted);
-  }
-
-  /* Soft UI Button Styling */
-  .sng-btn-primary {
-    background: linear-gradient(135deg, #1a9e5c, #2db870);
-    color: white;
-    border-radius: 12px;
-    padding: 10px 24px;
-    font-weight: 700;
-    box-shadow: 4px 4px 10px var(--sh-dark), -4px -4px 10px var(--sh-light);
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  .sng-btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 6px 6px 12px var(--sh-dark), -6px -6px 12px var(--sh-light);
-  }
-
-  /* Section Title */
-  .stitle {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--text-body);
+  /* Specific styling for profile page */
+  .avatar-upload-overlay {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #4F6560;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-    padding-left: 10px;
-    border-left: 4px solid var(--green-main);
-    border-radius: 99px;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+  }
+  .avatar-upload-overlay:hover {
+    transform: scale(1.1);
+    background: #3d504c;
   }
 
-  /* TTD Preview Box */
   .ttd-preview-box {
-    background: var(--bg-inner);
-    border: 2px dashed rgba(148, 188, 163, 0.5);
+    background: #FFFFFF;
+    border: 2px dashed #E5E7EB;
     border-radius: 16px;
     padding: 24px;
-    box-shadow: inset 3px 3px 8px var(--sh-dark), inset -3px -3px 8px var(--sh-light);
     text-align: center;
   }
 
-  /* Warning/Danger Box */
   .sng-box-danger {
-    background: #fff5f5;
-    border-left: 4px solid #e11d48;
+    background: #fee2e2;
+    border-left: 4px solid #ef4444;
     border-radius: 12px;
     padding: 12px 16px;
-    color: #831843;
+    color: #991b1b;
   }
 
-  /* Info Box */
   .sng-box-info {
-    background: #f0fdf4;
-    border-left: 4px solid var(--green-main);
+    background: #F6F6F6;
+    border-left: 4px solid #80BB9B;
     border-radius: 12px;
     padding: 12px 16px;
-    color: #15803d;
+    color: #4F6560;
+  }
+
+  [x-cloak] {
+    display: none !important;
   }
 </style>
 
 @section('content')
-    <!-- Page-content with soft UI background -->
-    <div class="group-data-[sidebar-size=lg]:ltr:md:ml-vertical-menu group-data-[sidebar-size=lg]:rtl:md:mr-vertical-menu group-data-[sidebar-size=md]:ltr:ml-vertical-menu-md group-data-[sidebar-size=md]:rtl:mr-vertical-menu-md group-data-[sidebar-size=sm]:ltr:ml-vertical-menu-sm group-data-[sidebar-size=sm]:rtl:mr-vertical-menu-sm pt-[calc(theme('spacing.header')_*_1)] pb-[calc(theme('spacing.header')_*_0.8)] px-4 group-data-[navbar=bordered]:pt-[calc(theme('spacing.header')_*_1.3)] group-data-[navbar=hidden]:pt-0 group-data-[layout=horizontal]:mx-auto group-data-[layout=horizontal]:max-w-screen-2xl group-data-[layout=horizontal]:px-0 group-data-[layout=horizontal]:group-data-[sidebar-size=lg]:ltr:md:ml-auto group-data-[layout=horizontal]:group-data-[sidebar-size=lg]:rtl:md:mr-auto group-data-[layout=horizontal]:md:pt-[calc(theme('spacing.header')_*_1.6)] group-data-[layout=horizontal]:px-3 group-data-[layout=horizontal]:group-data-[navbar=hidden]:pt-[calc(theme('spacing.header')_*_0.9)]">
-        <div class="container-fluid group-data-[content=boxed]:max-w-boxed mx-auto">
+<div class="mb-6">
+    <nav class="text-sm" aria-label="breadcrumb">
+        <ol class="flex items-center gap-2">
+            <li><a href="{{ route('home') }}" style="color: #80BB9B; font-weight: 600;" class="hover:opacity-80">Beranda</a></li>
+            <li style="color: #6B7280;">/</li>
+            <li style="color: #2C2C2A; font-weight: 600;">Profil Saya</li>
+        </ol>
+    </nav>
+</div>
 
-            <!-- Page Background with soft UI -->
-            <div style="background: var(--bg-base); border-radius: 20px; padding: 24px; margin: 0 -10px;">
+<div class="flex items-center justify-between mb-8">
+    <h2 class="hivi-section-title mb-0">Profil Akun {{ $user->id === auth()->id() ? 'Saya' : $user->name }}</h2>
+    @if(auth()->user()->hasRole('hr') && isset($user) && $user->id !== auth()->id())
+    <a href="{{ route('hr/employee/edit', $user->id) }}" class="hivi-btn-primary">
+        <i data-lucide="edit" class="w-4 h-4"></i> Edit Data Karyawan
+    </a>
+    @endif
+</div>
 
-            <!-- Breadcrumb -->
-            <div class="mb-6">
-                <nav class="text-sm" aria-label="breadcrumb">
-                    <ol class="flex items-center gap-2">
-                        <li><a href="{{ route('home') }}" style="color: var(--green-main); font-weight: 600;" class="hover:opacity-80">Beranda</a></li>
-                        <li style="color: var(--text-muted);">/</li>
-                        <li style="color: var(--text-dark); font-weight: 600;">Profil Saya</li>
-                    </ol>
-                </nav>
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <!-- left column: user info card -->
+    <div class="lg:col-span-1">
+        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-sm border border-white/40">
+            @php
+                $fullName = $user->name ?? 'User';
+                $parts = explode(' ', trim($fullName));
+                $initials = '';
+                foreach ($parts as $part) {
+                    if (!empty($part)) {
+                        $initials .= strtoupper(substr($part, 0, 1));
+                    }
+                }
+                if (strlen($initials) > 2) {
+                    $initials = substr($initials, 0, 2);
+                }
+            @endphp
+            <div class="flex justify-center mb-6">
+                <div class="relative">
+                    @if($user->avatar)
+                        <div class="w-24 h-24 rounded-full border-4 border-white shadow-sm overflow-hidden flex items-center justify-center bg-gray-50">
+                            <img id="avatar-preview" src="{{ URL::to('assets/images/user/'.$user->avatar) }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
+                        </div>
+                    @else
+                        <div id="avatar-initials" class="w-24 h-24 rounded-full border-4 border-white shadow-sm bg-gray-100 flex items-center justify-center">
+                            <span class="text-3xl font-semibold text-gray-500" style="font-family: 'Playfair Display', serif;">{{ $initials }}</span>
+                        </div>
+                        <img id="avatar-preview" src="" alt="{{ $user->name }}" class="w-24 h-24 rounded-full border-4 border-white shadow-sm object-cover hidden">
+                    @endif
+                    
+                    <label for="photo-upload" class="avatar-upload-overlay">
+                        <i data-lucide="camera" class="w-4 h-4"></i>
+                    </label>
+                    <input type="file" id="photo-upload" class="hidden" accept="image/*" onchange="uploadPhoto(event)">
+                </div>
             </div>
 
-            <!-- Page Title -->
-            <h2 style="color: var(--text-dark);" class="text-2xl font-bold mb-6">Profil Akun Saya</h2>
+            <h3 class="text-xl font-semibold text-center mb-2" style="font-family: 'Playfair Display', serif;">
+                {{ $user->name }}
+            </h3>
 
-            <!-- Main Grid: left col = user card, right col = tabs -->
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            @if($user->role_name)
+                <div class="flex justify-center mb-4">
+                    <span class="hivi-badge hivi-badge-green">{{ $user->role_name }}</span>
+                </div>
+            @endif
 
-                <!-- Left Column: User Info Card (Soft UI) -->
-                <div class="lg:col-span-1">
-                    <div class="ds-card">
-                        <!-- Avatar Circle with Initials -->
-                        @php
-                            $fullName = $user->name ?? 'User';
-                            $parts = explode(' ', trim($fullName));
-                            $initials = '';
-                            foreach ($parts as $part) {
-                                if (!empty($part)) {
-                                    $initials .= strtoupper(substr($part, 0, 1));
-                                }
-                            }
-                            if (strlen($initials) > 2) {
-                                $initials = substr($initials, 0, 2);
-                            }
-                        @endphp
-                        <div class="flex justify-center mb-6">
-                            @if($user->avatar)
-                                <div class="w-20 h-20 rounded-full border-4 border-custom-100 overflow-hidden flex items-center justify-center bg-custom-50">
-                                    <img src="{{ URL::to('assets/images/user/'.$user->avatar) }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
-                                </div>
-                            @else
-                                <div class="w-20 h-20 rounded-full border-4 border-custom-100 bg-gradient-to-br from-custom-400 to-custom-500 flex items-center justify-center">
-                                    <span style="color: white;" class="text-2xl font-bold">{{ $initials }}</span>
-                                </div>
-                            @endif
-                        </div>
+            @if($user->position)
+                <p class="text-center text-sm font-medium mb-4 text-gray-500">
+                    {{ $user->position }}
+                </p>
+            @endif
 
-                        <!-- Name -->
-                        <h3 style="color: var(--text-dark);" class="text-xl font-bold text-center mb-2">
-                            {{ $user->name }}
-                        </h3>
+            <hr class="border-gray-200 my-6">
 
-                        <!-- Role Badge -->
-                        @if($user->role_name)
-                            <div class="flex justify-center mb-4">
-                                <span class="ds-badge b-green">{{ $user->role_name }}</span>
-                            </div>
-                        @endif
-
-                        <!-- Department -->
-                        @if($user->position)
-                            <p style="color: var(--text-body);" class="text-center text-sm font-medium mb-4">
-                                {{ $user->position }}
-                            </p>
-                        @endif
-
-                        <!-- Divider -->
-                        <div style="border-color: rgba(26, 158, 92, 0.2);" class="border-t my-4"></div>
-
-                        <!-- Details -->
-                        <div class="space-y-4">
-                            <!-- Email -->
-                            <div class="flex items-start gap-3">
-                                <i data-lucide="mail" style="color: var(--text-muted);" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
-                                <div>
-                                    <p style="color: var(--text-muted); font-size: 11px;" class="font-bold tracking-wider uppercase">Email</p>
-                                    <p style="color: var(--text-dark);" class="text-sm break-all">{{ $user->email }}</p>
-                                </div>
-                            </div>
-
-                            <!-- Phone -->
-                            @if($user->phone_number)
-                                <div class="flex items-start gap-3">
-                                    <i data-lucide="phone" style="color: var(--text-muted);" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
-                                    <div>
-                                        <p style="color: var(--text-muted); font-size: 11px;" class="font-bold tracking-wider uppercase">Telepon</p>
-                                        <p style="color: var(--text-dark);" class="text-sm">{{ $user->phone_number }}</p>
-                                    </div>
-                                </div>
-                            @endif
-
-                            <!-- Location -->
-                            @if($user->location)
-                                <div class="flex items-start gap-3">
-                                    <i data-lucide="map-pin" style="color: var(--text-muted);" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
-                                    <div>
-                                        <p style="color: var(--text-muted); font-size: 11px;" class="font-bold tracking-wider uppercase">Lokasi</p>
-                                        <p style="color: var(--text-dark);" class="text-sm">{{ $user->location }}</p>
-                                    </div>
-                                </div>
-                            @endif
-
-                            <!-- Join Date -->
-                            @if($user->join_date)
-                                <div class="flex items-start gap-3">
-                                    <i data-lucide="calendar" style="color: var(--text-muted);" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
-                                    <div>
-                                        <p style="color: var(--text-muted); font-size: 11px;" class="font-bold tracking-wider uppercase">Tanggal Bergabung</p>
-                                        <p style="color: var(--text-dark);" class="text-sm">{{ $user->join_date->format('d M Y') }}</p>
-                                    </div>
-                                </div>
-                            @endif
-
-                            <!-- Status -->
-                            <div class="flex items-start gap-3">
-                                <i data-lucide="check-circle" style="color: var(--green-main);" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
-                                <div>
-                                    <p style="color: var(--text-muted); font-size: 11px;" class="font-bold tracking-wider uppercase">Status</p>
-                                    <span class="ds-badge b-green">
-                                        {{ ucfirst($user->status ?? 'aktif') }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+            <div class="space-y-4">
+                <div class="flex items-start gap-3">
+                    <i data-lucide="mail" class="w-5 h-5 text-gray-400"></i>
+                    <div>
+                        <p class="text-[11px] font-semibold tracking-wider uppercase text-gray-400">Email</p>
+                        <p class="text-sm font-medium text-gray-900 break-all">{{ $user->email }}</p>
                     </div>
                 </div>
 
-                <!-- Right Column: Tabs with Forms -->
-                <div class="lg:col-span-2" x-data="{ activeTab: 'info' }">
-
-                    <!-- Tab Navigation Buttons -->
-                    <div class="flex gap-3 mb-6 overflow-x-auto pb-2">
-                        <button
-                            @click="activeTab = 'info'"
-                            :class="activeTab === 'info' ? 'bg-custom-500 text-white font-bold' : 'text-slate-500 font-medium hover:text-slate-700'"
-                            style="padding: 6px 16px; border-radius: 99px; font-size: 14px; border: none; cursor: pointer; transition: all 0.2s ease;"
-                            class="whitespace-nowrap">
-                            <i data-lucide="user" class="w-4 h-4 inline-block mr-2"></i>
-                            Informasi Dasar
-                        </button>
-                        <button
-                            @click="activeTab = 'ttd'"
-                            :class="activeTab === 'ttd' ? 'bg-custom-500 text-white font-bold' : 'text-slate-500 font-medium hover:text-slate-700'"
-                            style="padding: 6px 16px; border-radius: 99px; font-size: 14px; border: none; cursor: pointer; transition: all 0.2s ease;"
-                            class="whitespace-nowrap">
-                            <i data-lucide="edit" class="w-4 h-4 inline-block mr-2"></i>
-                            TTD & PIN
-                        </button>
-                        <button
-                            @click="activeTab = 'keamanan'"
-                            :class="activeTab === 'keamanan' ? 'bg-custom-500 text-white font-bold' : 'text-slate-500 font-medium hover:text-slate-700'"
-                            style="padding: 6px 16px; border-radius: 99px; font-size: 14px; border: none; cursor: pointer; transition: all 0.2s ease;"
-                            class="whitespace-nowrap">
-                            <i data-lucide="shield" class="w-4 h-4 inline-block mr-2"></i>
-                            Keamanan
-                        </button>
+                @if($user->phone_number)
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="phone" class="w-5 h-5 text-gray-400"></i>
+                        <div>
+                            <p class="text-[11px] font-semibold tracking-wider uppercase text-gray-400">Telepon</p>
+                            <p class="text-sm font-medium text-gray-900">{{ $user->phone_number }}</p>
+                        </div>
                     </div>
+                @endif
 
-                    <!-- Tab Content Panels -->
-                    <div class="ds-section"
-
-                        <!-- Tab: Informasi Dasar -->
-                        <div x-show="activeTab === 'info'">
-                            <h4 style="color: var(--text-dark);" class="text-lg font-bold mb-6 flex items-center gap-2">
-                                <span class="stitle" style="margin: 0; padding: 0; border: none;">Informasi Dasar</span>
-                            </h4>
-                            
-                            <form action="{{ route('profile.update') }}" method="POST">
-                                @csrf
-
-                                <!-- Name -->
-                                <div class="mb-6">
-                                    <label for="name" style="color: var(--text-dark);" class="block text-sm font-bold mb-2">Nama Lengkap</label>
-                                    <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required class="w-full sng-input"
-                                        placeholder="Masukkan nama lengkap">
-                                    @error('name')
-                                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Phone Number -->
-                                <div class="mb-6">
-                                    <label for="phone_number" style="color: var(--text-dark);" class="block text-sm font-bold mb-2">Nomor Telepon</label>
-                                    <input type="text" name="phone_number" id="phone_number" value="{{ old('phone_number', $user->phone_number) }}" class="w-full sng-input"
-                                        placeholder="Contoh: 08123456789">
-                                    @error('phone_number')
-                                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Location -->
-                                <div class="mb-6">
-                                    <label for="location" style="color: var(--text-dark);" class="block text-sm font-bold mb-2">Lokasi</label>
-                                    <input type="text" name="location" id="location" value="{{ old('location', $user->location) }}" class="w-full sng-input"
-                                        placeholder="Masukkan lokasi">
-                                    @error('location')
-                                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Submit Button -->
-                                <button type="submit" class="w-full sng-btn-primary">
-                                    <i data-lucide="save" class="w-4 h-4 inline-block mr-2"></i>
-                                    Simpan Perubahan
-                                </button>
-                            </form>
+                @if($user->location)
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="map-pin" class="w-5 h-5 text-gray-400"></i>
+                        <div>
+                            <p class="text-[11px] font-semibold tracking-wider uppercase text-gray-400">Lokasi</p>
+                            <p class="text-sm font-medium text-gray-900">{{ $user->location }}</p>
                         </div>
+                    </div>
+                @endif
 
-                        <!-- Tab: Tanda Tangan & PIN -->
-                        <div x-show="activeTab === 'ttd'">
-                            <h4 style="color: var(--text-dark);" class="text-lg font-bold mb-6 flex items-center gap-2">
-                                <span class="stitle" style="margin: 0; padding: 0; border: none;">Tanda Tangan & PIN</span>
-                            </h4>
-
-                            <!-- Section 1: TTD Upload -->
-                            <div class="pb-6 mb-6" style="border-bottom: 1px solid rgba(148, 188, 163, 0.2);">
-                                <h5 style="color: var(--text-dark);" class="text-md font-bold mb-4 flex items-center gap-2">
-                                    <i data-lucide="pen-tool" class="w-5 h-5" style="color: var(--green-main);"></i>
-                                    Tanda Tangan Digital
-                                </h5>
-
-                                <!-- Current TTD Preview -->
-                                @if($profile->ttd_path)
-                                    <div class="mb-6">
-                                        <p style="color: var(--text-body);" class="text-sm font-medium mb-3">Tanda tangan Anda saat ini:</p>
-                                        <div class="ttd-preview-box">
-                                            <img src="{{ route('profile.ttd.preview') }}" alt="TTD" class="w-full max-w-xs mx-auto h-auto">
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="sng-box-danger mb-6">
-                                        <i data-lucide="alert-circle" class="w-4 h-4 inline-block mr-2"></i>
-                                        Belum ada tanda tangan yang diunggah
-                                    </div>
-                                @endif
-
-                                <!-- Upload Form -->
-                                <form action="{{ route('profile.ttd') }}" method="POST" enctype="multipart/form-data">
-                                    @csrf
-                                    <div class="mb-6">
-                                        <label for="ttd" style="color: var(--text-dark);" class="block text-sm font-bold mb-3">Upload Tanda Tangan Baru</label>
-                                        <div class="relative ttd-preview-box border-dashed hover:opacity-80 transition-opacity cursor-pointer group">
-                                            <input type="file" name="ttd" id="ttd" accept=".png,.jpg,.jpeg,image/png,image/jpeg" required class="hidden" onchange="previewTtd(event)">
-                                            <label for="ttd" class="cursor-pointer block">
-                                                <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto mb-2" style="color: var(--text-muted);"></i>
-                                                <p style="color: var(--text-dark);" class="text-sm font-medium">Klik untuk memilih file</p>
-                                                <p style="color: var(--text-muted);" class="text-xs mt-1">PNG, JPG, atau JPEG (Max 2MB)</p>
-                                            </label>
-                                        </div>
-                                        @error('ttd')
-                                            <p class="text-xs text-red-600 mt-2">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <div class="sng-box-info mb-6">
-                                        <i data-lucide="info" class="w-4 h-4 inline-block mr-2"></i>
-                                        Upload file PNG transparan untuk hasil terbaik. Ukuran maksimal: 2MB.
-                                    </div>
-
-                                    <button type="submit" class="w-full sng-btn-primary">
-                                        <i data-lucide="save" class="w-4 h-4 inline-block mr-2"></i>
-                                        Simpan Tanda Tangan
-                                    </button>
-                                </form>
-                            </div>
-
-                            <!-- Section 2: PIN Setup -->
-                            <div>
-                                <h5 style="color: var(--text-dark);" class="text-md font-bold mb-4 flex items-center gap-2">
-                                    <i data-lucide="key" class="w-5 h-5" style="color: var(--green-main);"></i>
-                                    PIN Approval
-                                </h5>
-
-                                <!-- PIN Status Badge -->
-                                <div class="mb-6">
-                                    @if($profile->pin)
-                                        <span class="ds-badge b-green">
-                                            <i data-lucide="check-circle" class="w-3 h-3 inline-block mr-1"></i>
-                                            PIN sudah diatur
-                                        </span>
-                                    @else
-                                        <span class="ds-badge b-amber">
-                                            <i data-lucide="alert-circle" class="w-3 h-3 inline-block mr-1"></i>
-                                            Belum ada PIN
-                                        </span>
-                                    @endif
-                                </div>
-
-                                <!-- PIN Form -->
-                                <form action="{{ route('profile.pin') }}" method="POST">
-                                    @csrf
-
-                                    <!-- Current PIN (if already set) -->
-                                    @if($profile->pin)
-                                        <div class="mb-6">
-                                            <label for="current_pin" style="color: var(--text-dark);" class="block text-sm font-bold mb-2">PIN Lama</label>
-                                            <input type="password" name="current_pin" id="current_pin" inputmode="numeric" maxlength="6" class="w-full sng-input tracking-widest"
-                                                placeholder="••••••">
-                                            @error('current_pin')
-                                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-                                    @endif
-
-                                    <!-- New PIN -->
-                                    <div class="mb-6">
-                                        <label for="pin" style="color: var(--text-dark);" class="block text-sm font-bold mb-2">PIN Baru (6 digit angka)</label>
-                                        <input type="password" name="pin" id="pin" inputmode="numeric" maxlength="6" required class="w-full sng-input tracking-widest"
-                                            placeholder="••••••">
-                                        @error('pin')
-                                            <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <!-- PIN Confirmation -->
-                                    <div class="mb-6">
-                                        <label for="pin_confirmation" style="color: var(--text-dark);" class="block text-sm font-bold mb-2">Konfirmasi PIN Baru</label>
-                                        <input type="password" name="pin_confirmation" id="pin_confirmation" inputmode="numeric" maxlength="6" required class="w-full sng-input tracking-widest"
-                                            placeholder="••••••">
-                                        @error('pin_confirmation')
-                                            <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-
-                                    <!-- Info Box -->
-                                    <div class="sng-box-info mb-6">
-                                        <i data-lucide="info" class="w-4 h-4 inline-block mr-2"></i>
-                                        PIN digunakan saat menyetujui dokumen. Jangan bagikan PIN Anda.
-                                    </div>
-
-                                    <button type="submit" class="w-full sng-btn-primary">
-                                        <i data-lucide="save" class="w-4 h-4 inline-block mr-2"></i>
-                                        Simpan PIN
-                                    </button>
-                                </form>
-                            </div>
+                @if($user->join_date)
+                    <div class="flex items-start gap-3">
+                        <i data-lucide="calendar" class="w-5 h-5 text-gray-400"></i>
+                        <div>
+                            <p class="text-[11px] font-semibold tracking-wider uppercase text-gray-400">Tanggal Bergabung</p>
+                            <p class="text-sm font-medium text-gray-900">{{ $user->join_date->format('d M Y') }}</p>
                         </div>
+                    </div>
+                @endif
 
-                        <!-- Tab: Keamanan -->
-                        <div x-show="activeTab === 'keamanan'" class="p-6">
-                            <h4 class="text-lg font-semibold text-slate-800 dark:text-zink-100 mb-6">Keamanan Akun</h4>
-
-                            <!-- Last Login Info -->
-                            <div class="rounded-lg border border-slate-200 dark:border-zink-500 p-4 mb-4 bg-slate-50 dark:bg-zink-600">
-                                <div class="flex items-center gap-3">
-                                    <i data-lucide="clock" class="w-5 h-5 text-slate-400 dark:text-zink-400"></i>
-                                    <div>
-                                        <p class="text-sm text-slate-600 dark:text-zink-300">Login Terakhir</p>
-                                        <p class="text-md font-medium text-slate-800 dark:text-zink-100">
-                                            Sekarang
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Change Password Section (UI only, no functionality yet) -->
-                            <div class="rounded-lg border border-slate-200 dark:border-zink-500 p-4 bg-slate-50 dark:bg-zink-600">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex items-start gap-3">
-                                        <i data-lucide="key" class="w-5 h-5 text-slate-400 dark:text-zink-400 mt-0.5"></i>
-                                        <div>
-                                            <p class="text-sm font-medium text-slate-700 dark:text-zink-200">Ubah Kata Sandi</p>
-                                            <p class="text-xs text-slate-600 dark:text-zink-400 mt-1">Perbarui kata sandi akun Anda secara berkala untuk keamanan maksimal</p>
-                                        </div>
-                                    </div>
-                                    <button type="button" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-zink-200 bg-white dark:bg-zink-700 border border-slate-300 dark:border-zink-500 rounded-lg hover:bg-slate-50 dark:hover:bg-zink-600 transition-colors duration-200" disabled>
-                                        <i data-lucide="lock" class="w-4 h-4 inline-block mr-2"></i>
-                                        Coming Soon
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
+                <div class="flex items-start gap-3">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>
+                    <div>
+                        <p class="text-[11px] font-semibold tracking-wider uppercase text-gray-400">Status</p>
+                        <span class="hivi-badge hivi-badge-green mt-1">
+                            {{ ucfirst($user->status ?? 'aktif') }}
+                        </span>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 
-    <script>
-        function previewTtd(event) {
-            const file = event.target.files[0];
-            if (file) {
-                console.log('File selected:', file.name);
-            }
+    <!-- right column: forms -->
+    <div class="lg:col-span-2" x-data="{ showEmailForm: false, showPasswordForm: false, showPinForm: false }">
+        
+        <!-- informasi dasar -->
+        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-sm border border-white/40 mb-6">
+            <h4 class="text-lg font-semibold mb-6 flex items-center gap-2" style="font-family: 'Playfair Display', serif;">
+                Informasi Akun
+            </h4>
+            
+            <form action="{{ route('profile.update', $user->id) }}" method="POST">
+                @csrf
+
+                <div class="mb-5">
+                    <label for="name" class="block text-sm font-medium mb-2 text-gray-700">Nama Lengkap</label>
+                    <input type="text" name="name" id="name" value="{{ old('name', $user->name) }}" required class="hivi-input"
+                        placeholder="Masukkan nama lengkap">
+                    @error('name') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="mb-5">
+                    <label for="phone_number" class="block text-sm font-medium mb-2 text-gray-700">Nomor Telepon</label>
+                    <input type="text" name="phone_number" id="phone_number" value="{{ old('phone_number', $user->phone_number) }}" class="hivi-input"
+                        placeholder="Contoh: 08123456789">
+                    @error('phone_number') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="mb-6">
+                    <label for="location" class="block text-sm font-medium mb-2 text-gray-700">Lokasi</label>
+                    <input type="text" name="location" id="location" value="{{ old('location', $user->location) }}" class="hivi-input"
+                        placeholder="Masukkan lokasi">
+                    @error('location') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <button type="submit" class="hivi-btn-primary w-full">
+                    <i data-lucide="save" class="w-4 h-4"></i> Simpan Perubahan
+                </button>
+            </form>
+        </div>
+
+        <!-- tanda tangan digital -->
+        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-sm border border-white/40 mb-6" x-data="{ showUpload: {{ ($profile->signature_path || $profile->ttd_path) ? 'false' : 'true' }} }">
+            <div class="flex items-center gap-2 mb-4">
+                <h4 class="text-lg font-semibold m-0" style="font-family: 'Playfair Display', serif;">Tanda Tangan Digital</h4>
+            </div>
+            <p class="text-sm text-gray-500 mb-6">TTD ini akan digunakan untuk persetujuan dokumen</p>
+
+            @if($profile->signature_path || $profile->ttd_path)
+                <div class="mb-6">
+                    <div class="ttd-preview-box">
+                        <img src="{{ Storage::url($profile->signature_path ?? $profile->ttd_path) }}?v={{ time() }}" alt="Signature"
+                             style="max-height: 100px; width: auto; object-fit: contain; display: block; margin: 0 auto;"
+                             onerror="this.parentElement.innerHTML='<p class=\'text-xs text-gray-400\'>Gagal memuat preview</p>'">
+                    </div>
+                </div>
+
+                <div class="mb-4 flex items-center gap-4">
+                    <button @click="showUpload = !showUpload" type="button" class="hivi-btn-secondary text-sm px-4 py-2">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span x-text="showUpload ? 'Batal' : 'Ganti TTD'"></span>
+                    </button>
+                    
+                    <form action="{{ route('profile.signature.delete', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus tanda tangan ini?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="hivi-btn-outline text-red-600 border-red-200 hover:bg-red-50 text-sm px-4 py-2">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
+                        </button>
+                    </form>
+                </div>
+            @else
+                <div class="sng-box-danger mb-6 flex items-center gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4"></i> Belum ada tanda tangan
+                </div>
+            @endif
+
+            <div x-show="showUpload" x-transition>
+                <div class="sng-box-info mb-5">
+                    <div class="flex items-start gap-2">
+                        <i data-lucide="info" class="w-4 h-4 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-semibold mb-1">Ketentuan File Tanda Tangan</p>
+                            <ul class="text-xs space-y-1 list-disc pl-4 text-gray-600">
+                                <li>Format yang didukung: <strong>PNG, JPG, JPEG</strong></li>
+                                <li>Disarankan: <strong>PNG dengan background TRANSPARAN</strong></li>
+                                <li>Ukuran file maksimal: <strong>2MB</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <form action="{{ route('profile.signature.upload', $user->id) }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="mb-5">
+                        <div class="ttd-preview-box cursor-pointer hover:bg-gray-50 transition-colors">
+                            <input type="file" name="signature" id="signature" accept="image/png, image/jpeg, image/jpg" required
+                                   class="hidden" onchange="previewSignature(event)">
+                            <label for="signature" class="cursor-pointer block">
+                                <i data-lucide="upload-cloud" class="w-8 h-8 mx-auto mb-2 text-gray-400"></i>
+                                <p class="text-sm font-medium text-gray-700">Klik untuk memilih file</p>
+                                <p class="text-xs text-gray-500 mt-1">PNG, JPG, JPEG (Max 2MB)</p>
+                            </label>
+                        </div>
+                        @error('signature') <p class="text-xs text-red-600 mt-2">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div id="signature-preview-container" class="hidden mb-5">
+                        <p class="text-xs font-semibold uppercase tracking-widest mb-2 text-gray-500">Preview:</p>
+                        <div class="ttd-preview-box">
+                            <img id="signature-preview-img" src="" alt="Preview Signature"
+                                 style="max-height: 100px; width: auto; object-fit: contain; display: block; margin: 0 auto;">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="hivi-btn-primary w-full">
+                        <i data-lucide="upload" class="w-4 h-4"></i> Upload TTD
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- data kepegawaian -->
+        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-sm border border-white/40 mb-6">
+            <h4 class="text-lg font-semibold mb-6" style="font-family: 'Playfair Display', serif;">Data Kepegawaian</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Jabatan Approval</p>
+                    <p class="text-sm text-gray-900 font-medium">
+                        @if($profile->jabatan)
+                            <span class="hivi-badge hivi-badge-blue">{{ ucfirst(str_replace('_',' ',$profile->jabatan)) }}</span>
+                        @else — @endif
+                    </p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Pendidikan Terakhir</p>
+                    <p class="text-sm text-gray-900 font-medium">{{ $profile->pendidikan_terakhir ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Tanggal Bergabung</p>
+                    <p class="text-sm text-gray-900 font-medium">
+                        {{ $profile->tgl_bergabung ? \Carbon\Carbon::parse($profile->tgl_bergabung)->format('d M Y') : ($user->join_date ? \Carbon\Carbon::parse($user->join_date)->format('d M Y') : '—') }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Tanggal Kontrak Akhir</p>
+                    <p class="text-sm text-gray-900 font-medium">
+                        {{ $profile->tgl_kontrak_akhir ? \Carbon\Carbon::parse($profile->tgl_kontrak_akhir)->format('d M Y') : '—' }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Status Pernikahan</p>
+                    <p class="text-sm text-gray-900 font-medium">{{ ucfirst(str_replace('_',' ', $profile->status_pernikahan ?? '—')) }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Jumlah Anak</p>
+                    <p class="text-sm text-gray-900 font-medium">{{ $profile->jumlah_anak ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- data kependudukan -->
+        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-sm border border-white/40 mb-6">
+            <h4 class="text-lg font-semibold mb-6" style="font-family: 'Playfair Display', serif;">Data Kependudukan</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">NIK</p>
+                    <p class="text-sm text-gray-900 font-mono">{{ $profile->nik ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">No. KK</p>
+                    <p class="text-sm text-gray-900 font-mono">{{ $profile->no_kk ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">NPWP</p>
+                    <p class="text-sm text-gray-900 font-mono">{{ $profile->npwp ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">BPJS Kesehatan</p>
+                    <p class="text-sm text-gray-900 font-mono">{{ $profile->bpjs_kesehatan ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">BPJS Ketenagakerjaan</p>
+                    <p class="text-sm text-gray-900 font-mono">{{ $profile->bpjs_ketenagakerjaan ?? '—' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- alamat -->
+        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-sm border border-white/40 mb-6">
+            <h4 class="text-lg font-semibold mb-6" style="font-family: 'Playfair Display', serif;">Alamat</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="sm:col-span-2">
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Alamat Lengkap</p>
+                    <p class="text-sm text-gray-900 font-medium">{{ $profile->alamat ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Kota</p>
+                    <p class="text-sm text-gray-900 font-medium">{{ $profile->kota ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Provinsi</p>
+                    <p class="text-sm text-gray-900 font-medium">{{ $profile->provinsi ?? '—' }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">Kode Pos</p>
+                    <p class="text-sm text-gray-900 font-medium">{{ $profile->kode_pos ?? '—' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- keamanan & pin -->
+        <div class="bg-white/80 backdrop-blur rounded-3xl p-8 shadow-sm border border-white/40 mb-6">
+            <h4 class="text-lg font-semibold mb-6" style="font-family: 'Playfair Display', serif;">Keamanan & PIN</h4>
+            
+            <!-- pin setup -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h5 class="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-1">
+                            <i data-lucide="key-round" class="w-4 h-4 text-gray-400"></i> PIN Approval
+                        </h5>
+                        @if($profile->pin)
+                            <span class="text-xs text-green-600 flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> PIN sudah diatur</span>
+                        @else
+                            <span class="text-xs text-amber-600 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Belum ada PIN</span>
+                        @endif
+                    </div>
+                    <button @click="showPinForm = !showPinForm" type="button" class="hivi-btn-outline text-xs">
+                        <span x-text="showPinForm ? 'Tutup ▲' : 'Ubah PIN ▼'"></span>
+                    </button>
+                </div>
+
+                <form action="{{ route('profile.pin') }}" method="POST" x-show="showPinForm" x-transition class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    @csrf
+                    @if($profile->pin)
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-2 text-gray-700">PIN Lama</label>
+                            <input type="password" name="current_pin" inputmode="numeric" maxlength="6" class="hivi-input tracking-widest text-center" placeholder="••••••">
+                            @error('current_pin') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    @endif
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2 text-gray-700">PIN Baru (6 digit angka)</label>
+                        <input type="password" name="pin" inputmode="numeric" maxlength="6" required class="hivi-input tracking-widest text-center" placeholder="••••••">
+                        @error('pin') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium mb-2 text-gray-700">Konfirmasi PIN Baru</label>
+                        <input type="password" name="pin_confirmation" inputmode="numeric" maxlength="6" required class="hivi-input tracking-widest text-center" placeholder="••••••">
+                    </div>
+                    <button type="submit" class="hivi-btn-primary w-full">Simpan PIN</button>
+                </form>
+            </div>
+
+            <!-- email & password -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-t border-gray-100 pt-4">
+                    <div>
+                        <h5 class="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-1">
+                            <i data-lucide="mail" class="w-4 h-4 text-gray-400"></i> Ubah Email
+                        </h5>
+                    </div>
+                    <button @click="showEmailForm = !showEmailForm" type="button" class="hivi-btn-outline text-xs">
+                        <span x-text="showEmailForm ? 'Tutup ▲' : 'Ubah Email ▼'"></span>
+                    </button>
+                </div>
+
+                <form action="{{ route('profile.email') }}" method="POST" x-show="showEmailForm" x-transition class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2 text-gray-700">Email Baru</label>
+                        <input type="email" name="email" required class="hivi-input" placeholder="nama@email.com">
+                        @error('email') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium mb-2 text-gray-700">Konfirmasi Password Saat Ini</label>
+                        <input type="password" name="password" required class="hivi-input" placeholder="••••••••">
+                        @error('password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <button type="submit" class="hivi-btn-primary w-full">Simpan Email</button>
+                </form>
+
+                <div class="flex items-center justify-between border-t border-gray-100 pt-4">
+                    <div>
+                        <h5 class="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-1">
+                            <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i> Ubah Kata Sandi
+                        </h5>
+                    </div>
+                    <button @click="showPasswordForm = !showPasswordForm" type="button" class="hivi-btn-outline text-xs">
+                        <span x-text="showPasswordForm ? 'Tutup ▲' : 'Ubah Kata Sandi ▼'"></span>
+                    </button>
+                </div>
+
+                <form action="{{ route('profile.password') }}" method="POST" x-show="showPasswordForm" x-transition class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2 text-gray-700">Password Saat Ini</label>
+                        <input type="password" name="current_password" required class="hivi-input" placeholder="••••••••">
+                        @error('current_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2 text-gray-700">Password Baru</label>
+                        <input type="password" name="new_password" required class="hivi-input" placeholder="Minimal 8 karakter">
+                        @error('new_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="mb-5">
+                        <label class="block text-sm font-medium mb-2 text-gray-700">Konfirmasi Password Baru</label>
+                        <input type="password" name="new_password_confirmation" required class="hivi-input" placeholder="Ulangi password baru">
+                    </div>
+                    <button type="submit" class="hivi-btn-primary w-full">Simpan Password Baru</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function previewSignature(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+            alert('Ukuran file maksimal 2MB!');
+            event.target.value = '';
+            document.getElementById('signature-preview-container').classList.add('hidden');
+            return;
         }
-    </script>
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('signature-preview-img').src = e.target.result;
+            document.getElementById('signature-preview-container').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function uploadPhoto(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('_token', '{{ csrf_token() }}');
+
+        try {
+            const response = await fetch('{{ route("profile.photo") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                const preview = document.getElementById('avatar-preview');
+                const initials = document.getElementById('avatar-initials');
+                
+                preview.src = result.url;
+                preview.classList.remove('hidden');
+                if (initials) initials.classList.add('hidden');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil',
+                    text: 'Foto profil berhasil diperbarui',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: result.message || 'Gagal upload foto'
+                });
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Kesalahan',
+                text: 'Terjadi kesalahan sistem'
+            });
+        }
+    }
+</script>
 @endsection

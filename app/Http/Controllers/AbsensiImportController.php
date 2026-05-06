@@ -12,18 +12,26 @@ class AbsensiImportController extends Controller
 {
     public function showImport()
     {
-        // Generate last 12 months
+        if (!auth()->user()->hasRole('hr')) {
+            abort(403, 'Akses ditolak. Hanya HR yang dapat mengakses fitur import.');
+        }
+
+        // generate last 12 months
         $months = [];
         for ($i = 0; $i < 12; $i++) {
             $date = Carbon::now()->subMonths($i);
             $months[$date->format('Y-m')] = $date->format('F Y');
         }
 
-        return view('HR.absensi.import', compact('months'));
+        return view('hr.absensi.import', compact('months'));
     }
 
     public function import(Request $request)
     {
+        if (!auth()->user()->hasRole('hr')) {
+            abort(403, 'Akses ditolak. Hanya HR yang dapat mengakses fitur import.');
+        }
+
         $request->validate([
             'file' => 'required|mimes:xlsx,xls|max:5120',
             'bulan' => 'required|date_format:Y-m',
@@ -42,7 +50,7 @@ class AbsensiImportController extends Controller
             $path = $file->storeAs('imports', $filename, 'local');
             $fullPath = storage_path('app' . DIRECTORY_SEPARATOR . 'imports' . DIRECTORY_SEPARATOR . $filename);
 
-            // Load spreadsheet
+            // load spreadsheet
             $spreadsheet = IOFactory::load($fullPath);
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray();
@@ -51,38 +59,38 @@ class AbsensiImportController extends Controller
             $skipped = [];
             $bulan = $request->bulan;
 
-            // Get last day of month
+            // get last day of month
             $lastDay = Carbon::createFromFormat('Y-m', $bulan)->endOfMonth()->day;
 
-            // Process each row (skip header row 0, data from row 1)
+            // process each row (skip header row 0, data from row 1)
             foreach ($rows as $index => $row) {
-                if ($index < 1) continue; // Skip header
+                if ($index < 1) continue; // skip header
 
                 $no = trim((string)($row[0] ?? ''));
                 $nama = trim((string)($row[1] ?? ''));
                 $jabatan = trim((string)($row[2] ?? ''));
 
-                // Skip if NO is empty or is Roman numeral (section header)
+                // skip if no is empty or is roman numeral (section header)
                 if (empty($no) || $this->isRomanNumeral($no)) {
                     continue;
                 }
 
-                // Skip if NAMA is empty
+                // skip if nama is empty
                 if (empty($nama) || strtolower($nama) === 'nan') {
                     continue;
                 }
 
-                // Extract counts
+                // extract counts
                 $sakitDgnSrt = (int)($row[3] ?? 0);
                 $sakitTanpaSrt = (int)($row[4] ?? 0);
                 $ijin = (int)($row[5] ?? 0);
                 $alfa = (int)($row[6] ?? 0);
                 $hariKerja = (int)($row[7] ?? 0);
-                // $off = (int)($row[8] ?? 0); // Not used for import
+                // $off = (int)($row[8] ?? 0); // not used for import
 
                 $totalSakit = $sakitDgnSrt + $sakitTanpaSrt;
 
-                // Find user by name
+                // find user by name
                 $user = User::where('name', 'LIKE', '%' . $nama . '%')->first();
 
                 if (!$user) {
@@ -90,12 +98,12 @@ class AbsensiImportController extends Controller
                     continue;
                 }
 
-                // Delete existing absensi for this month
+                // delete existing absensi for this month
                 Absensi::where('user_id', $user->id)
                     ->where('tanggal', 'like', $bulan . '%')
                     ->delete();
 
-                // Create records for each day
+                // create records for each day
                 $dayCounter = 1;
                 $hariKerjaCreated = 0;
                 $sakitCreated = 0;
@@ -105,7 +113,7 @@ class AbsensiImportController extends Controller
                 for ($day = 1; $day <= $lastDay; $day++) {
                     $date = Carbon::createFromFormat('Y-m-d', $bulan . '-' . str_pad($day, 2, '0', STR_PAD_LEFT));
 
-                    // Skip Sundays (assuming 0 = Sunday in Carbon)
+                    // skip sundays (assuming 0 = sunday in carbon)
                     if ($date->dayOfWeek == 0) {
                         continue;
                     }
@@ -114,24 +122,24 @@ class AbsensiImportController extends Controller
                     $jamMasuk = null;
                     $jamKeluar = null;
 
-                    // Fill hadir first
+                    // fill hadir first
                     if ($hariKerjaCreated < $hariKerja) {
                         $status = 'hadir';
                         $jamMasuk = '08:00:00';
                         $jamKeluar = '17:00:00';
                         $hariKerjaCreated++;
                     }
-                    // Then sakit
+                    // then sakit
                     elseif ($sakitCreated < $totalSakit) {
                         $status = 'sakit';
                         $sakitCreated++;
                     }
-                    // Then izin
+                    // then izin
                     elseif ($ijinCreated < $ijin) {
                         $status = 'izin';
                         $ijinCreated++;
                     }
-                    // Then alfa
+                    // then alfa
                     elseif ($alfaCreated < $alfa) {
                         $status = 'alfa';
                         $alfaCreated++;
@@ -153,7 +161,7 @@ class AbsensiImportController extends Controller
                 $imported++;
             }
 
-            // Build flash message
+            // build flash message
             $message = "Berhasil import {$imported} karyawan.";
             if (count($skipped) > 0) {
                 $message .= " Gagal/tidak ditemukan: " . count($skipped) . " karyawan (" . implode(', ', $skipped) . ")";
@@ -173,7 +181,7 @@ class AbsensiImportController extends Controller
     }
 
     /**
-     * Check if string is a Roman numeral
+     * check if string is a roman numeral
      */
     private function isRomanNumeral($str)
     {

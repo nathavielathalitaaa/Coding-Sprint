@@ -1,0 +1,182 @@
+@extends('layouts.master')
+@section('content')
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h4 class="text-xl font-bold text-slate-900">Edit Data Karyawan</h4>
+                <p class="text-sm text-slate-500 mt-0.5">Perbarui informasi lengkap {{ $user->name }}</p>
+            </div>
+            <a href="{{ route('hr/employee/list') }}" class="px-5 py-2.5 border border-gray-200 bg-white/50 hover:bg-white text-sm font-medium text-gray-600 transition shadow-sm backdrop-blur rounded-xl">
+                <i data-lucide="arrow-left" class="w-4 h-4 inline-block mr-1"></i> Kembali
+            </a>
+        </div>
+
+        <div class="ds-section">
+            <form action="{{ route('hr/employee/update') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="id" value="{{ $user->id }}">
+                <input type="hidden" name="old_photo" value="{{ $user->avatar }}">
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- left column: photo & basic account -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white/80 backdrop-blur rounded-3xl p-6 shadow-sm border border-white/40 text-center">
+                            <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Foto Profil</p>
+                            <div class="relative inline-block">
+                                <img id="edit-photo-preview" src="{{ $user->avatar ? URL::to('assets/images/user/'.$user->avatar) : URL::to('assets/images/profile.png') }}"
+                                    class="w-32 h-32 rounded-full object-cover border-4 border-slate-100 mx-auto">
+                                <label for="photo-input" class="absolute bottom-0 right-0 w-10 h-10 bg-[#4F6560] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#3d504c] shadow-lg border-2 border-white transition">
+                                    <i data-lucide="camera" class="w-5 h-5 text-white"></i>
+                                </label>
+                                <input id="photo-input" name="photo" type="file" class="hidden" accept="image/*" onchange="previewPhoto(this)">
+                            </div>
+                            <p class="text-xs text-slate-400 mt-3">Klik kamera untuk ubah foto</p>
+                        </div>
+
+                        <div class="bg-white/80 backdrop-blur rounded-3xl p-6 shadow-sm border border-white/40">
+                            <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Status Akun</p>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
+                                    <input type="text" value="{{ $user->user_id }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                                    <select name="role_name" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                        @foreach($roleName as $role)
+                                            <option value="{{ $role->role_type }}" {{ $user->role_name == $role->role_type ? 'selected' : '' }}>{{ $role->role_type }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Status Keaktifan</label>
+                                    <select name="status" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                        @foreach($statusUser as $status)
+                                            <option value="{{ $status->type_name }}" {{ $user->status == $status->type_name ? 'selected' : '' }}>{{ $status->type_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- right column: full details -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-white/80 backdrop-blur rounded-3xl p-6 shadow-sm border border-white/40">
+                            <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 border-b pb-2">Informasi Pekerjaan</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                                    <input type="text" name="name" value="{{ $user->name }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Email Perusahaan</label>
+                                    <input type="email" name="email" value="{{ $user->email }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]" required>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">No. Telepon</label>
+                                    <input type="tel" name="phone_number" value="{{ $user->phone_number }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Departemen</label>
+                                    <input type="text" name="department" value="{{ $user->department }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Posisi</label>
+                                    <select name="position" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                        <option value="">-- Pilih Posisi --</option>
+                                        @foreach($position as $pos)
+                                            <option value="{{ $pos->position }}" {{ $user->position == $pos->position ? 'selected' : '' }}>{{ $pos->position }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Jabatan Approval</label>
+                                    <select name="jabatan" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                        <option value="">-- Tidak ada --</option>
+                                        <option value="hod" {{ $user->profile?->jabatan == 'hod' ? 'selected' : '' }}>Head of Department</option>
+                                        <option value="hr" {{ $user->profile?->jabatan == 'hr' ? 'selected' : '' }}>Human Resources</option>
+                                        <option value="purchasing" {{ $user->profile?->jabatan == 'purchasing' ? 'selected' : '' }}>Purchasing</option>
+                                        <option value="owner_rep" {{ $user->profile?->jabatan == 'owner_rep' ? 'selected' : '' }}>Owner Representative</option>
+                                        <option value="direktur" {{ $user->profile?->jabatan == 'direktur' ? 'selected' : '' }}>Direktur</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Tanggal Bergabung</label>
+                                    <input type="date" name="join_date" value="{{ $user->join_date ? \Carbon\Carbon::parse($user->join_date)->format('Y-m-d') : '' }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Pendidikan Terakhir</label>
+                                    <select name="pendidikan_terakhir" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                        <option value="">-- Pilih --</option>
+                                        @foreach(['SD','SMP','SMA/SMK','D3','S1','S2','S3'] as $edu)
+                                            <option value="{{ $edu }}" {{ $user->profile?->pendidikan_terakhir == $edu ? 'selected' : '' }}>{{ $edu }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/80 backdrop-blur rounded-3xl p-6 shadow-sm border border-white/40">
+                            <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 border-b pb-2">Data Kependudukan</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">NIK (KTP)</label>
+                                    <input type="text" name="nik" value="{{ $user->profile?->nik }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]" maxlength="16">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">No. KK</label>
+                                    <input type="text" name="no_kk" value="{{ $user->profile?->no_kk }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">NPWP</label>
+                                    <input type="text" name="npwp" value="{{ $user->profile?->npwp }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Status Pernikahan</label>
+                                    <select name="status_pernikahan" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                        <option value="belum_menikah" {{ $user->profile?->status_pernikahan == 'belum_menikah' ? 'selected' : '' }}>Belum Menikah</option>
+                                        <option value="menikah" {{ $user->profile?->status_pernikahan == 'menikah' ? 'selected' : '' }}>Menikah</option>
+                                        <option value="cerai" {{ $user->profile?->status_pernikahan == 'cerai' ? 'selected' : '' }}>Cerai</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/80 backdrop-blur rounded-3xl p-6 shadow-sm border border-white/40">
+                            <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4 border-b pb-2">Alamat Lengkap</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Alamat</label>
+                                    <textarea name="alamat" rows="2" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">{{ $user->profile?->alamat }}</textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Kota</label>
+                                    <input type="text" name="kota" value="{{ $user->profile?->kota }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-700 mb-1">Provinsi</label>
+                                    <input type="text" name="provinsi" value="{{ $user->profile?->provinsi }}" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-3 mt-8">
+                            <button type="submit" class="px-8 py-3 bg-[#4F6560] text-white rounded-xl text-md font-bold hover:bg-[#3d504c] shadow-sm transition">
+                                <i data-lucide="save" class="w-5 h-5 inline mr-2"></i> Simpan Perubahan Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+<script>
+    function previewPhoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => document.getElementById('edit-photo-preview').src = e.target.result;
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+@endsection

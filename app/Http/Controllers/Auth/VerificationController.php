@@ -9,11 +9,11 @@ class VerificationController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | Email Verification Controller
+    | email verification controller
     |--------------------------------------------------------------------------
     |
-    | This controller is responsible for handling email verification for any
-    | user that recently registered with the application. Emails may also
+    | this controller is responsible for handling email verification for any
+    | user that recently registered with the application. emails may also
     | be re-sent if the user didn't receive the original email message.
     |
     */
@@ -21,14 +21,14 @@ class VerificationController extends Controller
     use VerifiesEmails;
 
     /**
-     * Where to redirect users after verification.
+     * where to redirect users after verification.
      *
      * @var string
      */
     protected $redirectTo = '/home';
 
     /**
-     * Create a new controller instance.
+     * create a new controller instance.
      *
      * @return void
      */

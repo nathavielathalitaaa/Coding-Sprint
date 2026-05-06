@@ -17,7 +17,7 @@ class PenggajianController extends Controller
             ->where('periode', $periode)
             ->get();
 
-        return view('HR.penggajian.index', compact('penggajianList', 'periode'));
+        return view('hr.penggajian.index', compact('penggajianList', 'periode'));
     }
 
     // buat slip gaji otomatis untuk semua karyawan aktif
@@ -56,15 +56,18 @@ class PenggajianController extends Controller
                     continue;
                 }
 
-                // hitung gaji bersih (saat ini sama dengan gaji pokok, bisa ditambah tunjangan nanti)
-                $gajiBersih = $karyawan->gaji_pokok;
+                // hitung komponen gaji
+                $totalTunjangan = $karyawan->tunjangan_jabatan + $karyawan->tunjangan_makan + $karyawan->tunjangan_transport;
+                $potonganBpjs   = $karyawan->gaji_pokok * 0.01;
+                $totalPotongan  = $potonganBpjs;
+                $gajiBersih     = ($karyawan->gaji_pokok + $totalTunjangan) - $totalPotongan;
 
                 Penggajian::create([
                     'user_id'         => $karyawan->id,
                     'periode'         => $request->periode,
                     'gaji_pokok'      => $karyawan->gaji_pokok,
-                    'total_tunjangan' => 0,
-                    'total_potongan'  => 0,
+                    'total_tunjangan' => $totalTunjangan,
+                    'total_potongan'  => $totalPotongan,
                     'gaji_bersih'     => $gajiBersih,
                     'status'          => 'draft',
                 ]);
@@ -92,7 +95,7 @@ class PenggajianController extends Controller
     {
         // ambil data penggajian beserta data karyawannya
         $penggajian = Penggajian::with('user')->findOrFail($id);
-        return view('HR.penggajian.show', compact('penggajian'));
+        return view('hr.penggajian.show', compact('penggajian'));
     }
 
     // update komponen tunjangan dan potongan (hanya di status draft)

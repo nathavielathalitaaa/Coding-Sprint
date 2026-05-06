@@ -23,7 +23,7 @@ class HomeController extends Controller
     {
         $user = auth()->user();
 
-        // Data dasar — dikirim ke semua role
+        // data dasar — dikirim ke semua role
         $data = [
             'userRoleName'    => match(true) {
                 $user->hasRole('hr')         => 'HR',
@@ -34,7 +34,7 @@ class HomeController extends Controller
             'userDisplayName' => 'Selamat datang kembali',
         ];
 
-        // ── HR: statistik penuh ───────────────────────────────
+        // ── hr: statistik penuh ───────────────────────────────
         if ($user->hasRole('hr')) {
             $data = array_merge($data, [
                 'totalKaryawan'       => User::where('status', 'aktif')->count(),
@@ -50,30 +50,37 @@ class HomeController extends Controller
             ]);
         }
 
-        // ── SUPERVISOR: monitoring + approval ────────────────
-        // BUG FIX: tambah totalKaryawan & hadirHariIni (sebelumnya hardcode di view)
-        // BUG FIX: tambah $suratMenungguList untuk list surat di dashboard
+        // ── supervisor: monitoring + approval ────────────────
         elseif ($user->hasRole('supervisor')) {
+            $jabatan = $user->profile?->jabatan;
             $data = array_merge($data, [
                 'totalKaryawan'      => User::where('status', 'aktif')->count(),
                 'hadirHariIni'       => Absensi::where('tanggal', now()->format('Y-m-d'))->where('status', 'hadir')->count(),
                 'cutiMenungguCount'  => Leave::where('status', 'menunggu')->count(),
-                'suratSubmitted'     => Surat::where('status', 'submitted')->count(),
-                'suratMenungguList'  => Surat::where('status', 'submitted')
+                'suratMenungguCount' => DocumentApproval::where('status', 'waiting')
+                                            ->where('jabatan', $jabatan)
+                                            ->where('document_type', 'LIKE', 'surat_%')
+                                            ->count(),
+                'suratMenungguList'  => Surat::whereHas('approvals', function($q) use ($jabatan) {
+                                                $q->where('jabatan', $jabatan)->where('status', 'waiting');
+                                            })
                                             ->with('user')
                                             ->orderBy('created_at', 'desc')
                                             ->take(5)
                                             ->get(),
-                'chartAbsensi'       => $this->getChartAbsensi(),
             ]);
         }
 
-        // ── STAFF: surat milik sendiri ────────────────────────
+        // ── staff: surat milik sendiri ────────────────────────
         elseif ($user->hasRole('staff')) {
             $suratStaff = Surat::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
             $data = array_merge($data, [
-                'suratStaff'             => $suratStaff,
-                'suratStaffPendingCount' => $suratStaff->whereIn('status', ['submitted', 'approved_supervisor'])->count(),
+                'suratStaff'             => $suratStaff->take(10),
+                'suratStaffDiajukan'     => $suratStaff->where('status', 'submitted')->count(),
+                'suratStaffProses'       => $suratStaff->whereIn('status', ['submitted'])->filter(function($s) {
+                                                return $s->approvals()->where('status', 'approved')->count() > 0;
+                                            })->count(),
+                'suratStaffSelesai'      => $suratStaff->where('status', 'approved_owner')->count(),
                 'suratStaffRevisiCount'  => $suratStaff->where('status', 'revised')->count(),
             ]);
         }

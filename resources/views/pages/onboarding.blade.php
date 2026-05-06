@@ -248,7 +248,7 @@
         }
     </style>
 
-    <!-- Alpine.js -->
+    <!-- alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
@@ -256,7 +256,7 @@
 
 <div class="layout">
 
-    <!-- LEFT -->
+    <!-- left -->
     <div class="left">
         <div class="left-content">
             <img src="{{ URL::to('assets\images\Logo Sinergi putih.png') }}">
@@ -265,14 +265,14 @@
         </div>
     </div>
 
-    <!-- RIGHT -->
+    <!-- right -->
     <div class="right">
         <div class="card">
 
             <h1 class="title">Selamat Datang, {{ $user->name }}</h1>
             <p class="subtitle">Lengkapi profil Anda</p>
 
-            <!-- PROGRESS -->
+            <!-- progress -->
             <div class="steps">
                 <div class="step {{ $step === 'ttd' ? 'active' : ($profile->ttd_path ? 'done' : '') }}">
                     <div class="circle">1</div>
@@ -284,7 +284,7 @@
                 </div>
             </div>
 
-            <!-- STEP 1 -->
+            <!-- step 1 -->
             @if($step === 'ttd')
             <div x-data="{ loading: false }">
                 <form method="POST" action="{{ route('onboarding.ttd') }}" enctype="multipart/form-data" @submit="loading = true">
@@ -324,7 +324,7 @@
             </div>
             @endif
 
-            <!-- STEP 2 -->
+            <!-- step 2 -->
             @if($step === 'pin')
             <div x-data="{ loading: false }">
                 <div class="ttd-preview-box">

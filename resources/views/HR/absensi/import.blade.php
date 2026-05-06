@@ -1,6 +1,6 @@
 @extends('layouts.master')
 @section('content')
-    <!-- Page-content -->
+    
     <div class="group-data-[sidebar-size=lg]:ltr:md:ml-vertical-menu group-data-[sidebar-size=lg]:rtl:md:mr-vertical-menu group-data-[sidebar-size=md]:ltr:ml-vertical-menu-md group-data-[sidebar-size=md]:rtl:mr-vertical-menu-md group-data-[sidebar-size=sm]:ltr:ml-vertical-menu-sm group-data-[sidebar-size=sm]:rtl:mr-vertical-menu-sm pt-[calc(theme('spacing.header')_*_1)] pb-[calc(theme('spacing.header')_*_0.8)] px-4 group-data-[navbar=bordered]:pt-[calc(theme('spacing.header')_*_1.3)] group-data-[navbar=hidden]:pt-0 group-data-[layout=horizontal]:mx-auto group-data-[layout=horizontal]:max-w-screen-2xl group-data-[layout=horizontal]:px-0 group-data-[layout=horizontal]:group-data-[sidebar-size=lg]:ltr:md:ml-auto group-data-[layout=horizontal]:group-data-[sidebar-size=lg]:rtl:md:mr-auto group-data-[layout=horizontal]:md:pt-[calc(theme('spacing.header')_*_1.6)] group-data-[layout=horizontal]:px-3 group-data-[layout=horizontal]:group-data-[navbar=hidden]:pt-[calc(theme('spacing.header')_*_0.9)]">
         <div class="container-fluid group-data-[content=boxed]:max-w-boxed mx-auto">
             <div class="flex flex-col gap-2 py-4 md:flex-row md:items-center print:hidden">
@@ -38,7 +38,6 @@
                     <form action="{{ route('hr/absensi/import/store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                         @csrf
 
-                        <!-- Info Box -->
                         <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
                             <h6 class="text-sm font-bold text-blue-900 mb-2">Format Excel yang Diharapkan:</h6>
                             <p class="text-sm text-blue-800 mb-3">Kolom harus berurutan sesuai berikut:</p>
@@ -51,7 +50,6 @@
                             </p>
                         </div>
 
-                        <!-- Periode Selection -->
                         <div>
                             <label class="inline-block mb-2 text-base font-medium text-slate-700">Pilih Periode / Bulan <span class="text-red-500">*</span></label>
                             <select name="bulan" required class="w-full px-3 py-2 rounded-lg border border-slate-200 text-slate-900 focus:outline-none focus:border-custom-500 focus:ring-1 focus:ring-custom-500 dark:border-zink-500 dark:text-zink-100 dark:bg-zink-700">
@@ -65,7 +63,6 @@
                             @enderror
                         </div>
 
-                        <!-- File Upload -->
                         <div>
                             <label class="inline-block mb-2 text-base font-medium text-slate-700">Upload File Excel <span class="text-red-500">*</span></label>
                             <div class="relative">
@@ -78,7 +75,6 @@
                             @enderror
                         </div>
 
-                        <!-- Buttons -->
                         <div class="flex gap-3 pt-4">
                             <button type="submit" class="inline-flex items-center gap-2 px-6 py-2 bg-custom-500 text-white rounded-lg font-semibold hover:bg-custom-600 transition-all">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="upload" class="w-4 h-4">
@@ -97,5 +93,5 @@
             </div>
         </div>
     </div>
-    <!-- End Page-content -->
+    
 @endsection

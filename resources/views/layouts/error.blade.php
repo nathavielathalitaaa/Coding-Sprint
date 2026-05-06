@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta content="Minimal Admin & Dashboard Template" name="description">
     <meta content="Sinergi Hotel & Vila" name="author">
-    <!-- App favicon -->
+    <!-- app favicon -->
     <link rel="shortcut icon" href="{{ URL::to('assets/images/favicon.ico') }}">
-    <!-- Layout config Js -->
+    <!-- layout config js -->
     <script src="{{ URL::to('assets/js/layout.js') }}"></script>
-    <!-- Sinergi Hotel & Vila CSS -->
+    <!-- sinergi hotel & vila css -->
     <link rel="stylesheet" href="{{ URL::to('assets/css/starcode2.css') }}">
 </head>
 

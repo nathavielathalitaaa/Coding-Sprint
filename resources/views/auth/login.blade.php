@@ -2,31 +2,31 @@
 @section('content')
 
 <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-custom-50 to-slate-100 px-4 py-12 relative overflow-hidden">
-    <!-- Background decoration -->
+    <!-- background decoration -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <div class="absolute top-0 right-0 w-96 h-96 bg-custom-100 rounded-full opacity-10 blur-3xl"></div>
         <div class="absolute bottom-0 left-0 w-96 h-96 bg-custom-100 rounded-full opacity-10 blur-3xl"></div>
     </div>
 
-    <!-- Login Card -->
+    <!-- login card -->
     <div class="relative z-10 w-full max-w-md">
         <div class="bg-white rounded-2xl border border-slate-200 shadow-xl p-8">
-            <!-- Logo -->
+            <!-- logo -->
             <div class="text-center mb-8">
                 <img src="{{ asset('assets/images/logo-sinergi.png') }}" alt="Sinergi" class="h-16 mx-auto">
             </div>
 
-            <!-- Heading -->
+            <!-- heading -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-slate-900 mb-2">Welcome Back!</h1>
                 <p class="text-slate-600 text-sm">Sign in to HRIS Sinergi Hotel & Villa</p>
             </div>
 
-            <!-- Form -->
+            <!-- form -->
             <form action="{{ route('login') }}" method="POST" class="space-y-8">
                 @csrf
 
-                <!-- Email Input -->
+                <!-- email input -->
                 <div>
                     <label for="email" class="block text-xs uppercase font-bold tracking-wider text-slate-700 mb-3">
                         Username / Email
@@ -42,7 +42,7 @@
                     >
                 </div>
 
-                <!-- Password Input -->
+                <!-- password input -->
                 <div>
                     <label for="password" class="block text-xs uppercase font-bold tracking-wider text-slate-700 mb-3">
                         Password
@@ -57,7 +57,7 @@
                     >
                 </div>
 
-                <!-- Remember & Forgot -->
+                <!-- remember & forgot -->
                 <div class="flex items-center justify-between">
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input 
@@ -69,7 +69,7 @@
                     </label>
                 </div>
 
-                <!-- Submit Button -->
+                <!-- submit button -->
                 <button 
                     type="submit"
                     class="w-full py-3 bg-custom-500 hover:bg-custom-600 text-white font-bold uppercase tracking-wider rounded-lg transition-all duration-200 shadow-md hover:shadow-lg active:scale-95"
@@ -77,7 +77,7 @@
                     Sign In
                 </button>
 
-                <!-- Divider -->
+                <!-- divider -->
                 <div class="relative">
                     <div class="absolute inset-0 flex items-center">
                         <div class="w-full border-t border-slate-300"></div>
@@ -85,7 +85,7 @@
                 </div>
 
 
-                <!-- Sign Up Link -->
+                <!-- sign up link -->
                 <div class="text-center pt-4 border-t border-slate-200">
                     <p class="text-sm text-slate-600">
                         Tidak memiliki akun?

@@ -9,11 +9,11 @@ class ConfirmPasswordController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | Confirm Password Controller
+    | confirm password controller
     |--------------------------------------------------------------------------
     |
-    | This controller is responsible for handling password confirmations and
-    | uses a simple trait to include the behavior. You're free to explore
+    | this controller is responsible for handling password confirmations and
+    | uses a simple trait to include the behavior. you're free to explore
     | this trait and override any functions that require customization.
     |
     */
@@ -21,14 +21,14 @@ class ConfirmPasswordController extends Controller
     use ConfirmsPasswords;
 
     /**
-     * Where to redirect users when the intended url fails.
+     * where to redirect users when the intended url fails.
      *
      * @var string
      */
     protected $redirectTo = '/home';
 
     /**
-     * Create a new controller instance.
+     * create a new controller instance.
      *
      * @return void
      */

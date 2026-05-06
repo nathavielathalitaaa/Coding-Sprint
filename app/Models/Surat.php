@@ -18,9 +18,21 @@ class Surat extends Model
         'perihal',
         'file_pdf',
         'cover_pdf_path',
+        'final_pdf_path',
         'status',
         'catatan_revisi',
+        'ttd_coordinates',
     ];
+
+    protected $casts = [
+        'ttd_coordinates' => 'array',
+    ];
+
+    // ── Helper: cek apakah punya final_pdf ─────────────
+    public function hasFinalPdf(): bool
+    {
+        return !empty($this->final_pdf_path);
+    }
 
     // ── Relasi ke User (pembuat) ───────────────────────
     public function user()
@@ -29,10 +41,9 @@ class Surat extends Model
     }
 
     // ── Relasi ke DocumentApproval (log 4 step) ────────
-   public function approvals()
+    public function approvals()
     {
         return $this->hasMany(DocumentApproval::class, 'document_id')
-            ->whereColumn('document_type', \DB::raw("CONCAT('surat_', (SELECT jenis_surat FROM surats WHERE id = document_id))"))
             ->orderBy('step_order');
     }
 
@@ -46,6 +57,42 @@ class Surat extends Model
     public function isFullyApproved(): bool
     {
         return $this->approvals()->whereNotIn('status', ['approved'])->doesntExist();
+    }
+
+    // ── Helper: cek apakah bisa diedit (oleh pembuat) ──
+    public function canBeEdited(): bool
+    {
+        // Status revised selalu bisa diedit (resubmit)
+        if ($this->status === 'revised') {
+            return true;
+        }
+
+        // Selain submitted, tidak bisa diedit
+        if ($this->status !== 'submitted') {
+            return false;
+        }
+
+        // Jika submitted, pastikan belum ada approval yang diproses (approved/rejected)
+        $hasProcessedApproval = $this->approvals()
+            ->whereIn('status', ['approved', 'rejected'])
+            ->exists();
+
+        return !$hasProcessedApproval;
+    }
+
+    // ── Helper: cek apakah bisa dihapus (oleh pembuat) ──
+    public function canBeDeleted(): bool
+    {
+        // Hanya bisa dihapus jika status submitted dan belum ada approval diproses
+        if ($this->status !== 'submitted') {
+            return false;
+        }
+
+        $hasProcessedApproval = $this->approvals()
+            ->whereIn('status', ['approved', 'rejected'])
+            ->exists();
+
+        return !$hasProcessedApproval;
     }
 
     // ── Label status untuk tampilan ────────────────────
