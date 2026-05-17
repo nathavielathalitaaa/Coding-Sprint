@@ -33,14 +33,9 @@
         {{-- absensi (hr only) --}}
         @if(auth()->user()->hasRole('hr'))
         <a href="{{ route('hr/absensi/page') }}"
-           class="{{ request()->routeIs('hr/absensi/page') ? 'active' : '' }}"
+           class="{{ request()->routeIs('hr/absensi*') ? 'active' : '' }}"
            title="Attendance">
             <i data-lucide="calendar-range"></i>
-        </a>
-        <a href="{{ route('hr/absensi/ai') }}"
-           class="{{ request()->routeIs('hr/absensi/ai*') ? 'active' : '' }}"
-           title="AI Summary">
-            <i data-lucide="sparkles"></i>
         </a>
         @endif
 
@@ -60,8 +55,23 @@
         </a>
         @endif
 
+        {{-- system monitor (hr only) --}}
+        @if(auth()->user()->hasRole('hr'))
+        <a href="{{ route('hr/system/monitor') }}"
+           class="{{ request()->routeIs('hr/system/monitor') ? 'active' : '' }}"
+           title="System Health">
+            <i data-lucide="activity"></i>
+        </a>
+        @endif
 
-
+        {{-- pengaturan (hr only) --}}
+        @if(auth()->user()->hasRole('hr'))
+        <a href="{{ route('hr.settings.master') }}"
+           class="{{ request()->routeIs('hr.settings.*') ? 'active' : '' }}"
+           title="Pengaturan">
+            <i data-lucide="settings"></i>
+        </a>
+        @endif
 
     </div>
 

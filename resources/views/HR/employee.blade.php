@@ -11,6 +11,12 @@
             <button onclick="window.print()" class="p-3 bg-white/80 backdrop-blur border border-white/60 text-[#4F6560] rounded-2xl hover:bg-white transition-all shadow-sm group">
                 <i data-lucide="printer" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
             </button>
+            {{-- Import Excel Button --}}
+            <button onclick="document.getElementById('importEmployeeModal').classList.remove('hidden')"
+                class="inline-flex items-center gap-2 px-5 py-3 bg-white border-2 border-[#4F6560] text-[#4F6560] hover:bg-[#4F6560] hover:text-white rounded-[999px] text-[13px] font-[500] transition-all whitespace-nowrap group shadow-sm" style="font-family:'Poppins',sans-serif;">
+                <i data-lucide="upload" class="w-[14px] h-[14px] group-hover:scale-110 transition-transform"></i>
+                Import Excel
+            </button>
             <button onclick="document.getElementById('addEmployeeModal').classList.remove('hidden')"
                 class="inline-flex items-center gap-2 px-6 py-3 bg-[#4F6560] hover:bg-[#3d504c] text-white rounded-2xl text-sm font-bold shadow-lg shadow-[#4F6560]/20 transition-all whitespace-nowrap group">
                 <i data-lucide="plus" class="w-4 h-4 group-hover:rotate-90 transition-transform duration-300"></i> 
@@ -18,6 +24,47 @@
             </button>
         </div>
     </div>
+
+    {{-- Import Result Card --}}
+    @if(session('import_result'))
+    @php $ir = session('import_result'); @endphp
+    <div class="mb-6 rounded-2xl border border-[#80BB9B] bg-[#E8F5EE] p-5" style="font-family:'Poppins',sans-serif;">
+        <div class="flex items-center gap-3 mb-1">
+            <i data-lucide="check-circle" class="w-5 h-5 text-[#4F6560]"></i>
+            <span class="font-[600] text-[#1A2B24] text-[14px]">{{ $ir['success'] }} karyawan berhasil diimport</span>
+        </div>
+        @if(!empty($ir['failed_rows']))
+        <details class="mt-3">
+            <summary class="cursor-pointer text-[13px] font-[500] text-amber-700 flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                {{ $ir['failed'] }} baris gagal — klik untuk lihat detail
+            </summary>
+            <div class="mt-3 overflow-x-auto">
+                <table class="w-full text-[12px] border-separate border-spacing-0">
+                    <thead>
+                        <tr class="bg-amber-50">
+                            <th class="px-3 py-2 text-left font-[600] text-amber-800 border-b border-amber-200">Baris</th>
+                            <th class="px-3 py-2 text-left font-[600] text-amber-800 border-b border-amber-200">Nama</th>
+                            <th class="px-3 py-2 text-left font-[600] text-amber-800 border-b border-amber-200">Email</th>
+                            <th class="px-3 py-2 text-left font-[600] text-amber-800 border-b border-amber-200">Alasan Gagal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($ir['failed_rows'] as $fr)
+                        <tr class="hover:bg-amber-50/50">
+                            <td class="px-3 py-2 text-amber-900 border-b border-amber-100">{{ $fr['row'] }}</td>
+                            <td class="px-3 py-2 text-amber-900 border-b border-amber-100">{{ $fr['nama'] }}</td>
+                            <td class="px-3 py-2 text-amber-900 border-b border-amber-100">{{ $fr['email'] }}</td>
+                            <td class="px-3 py-2 text-rose-700 border-b border-amber-100">{{ $fr['reason'] }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        @endif
+    </div>
+    @endif
 
     {{-- Main Container --}}
     <div class="bg-white/80 backdrop-blur-xl rounded-[40px] shadow-sm border border-white/60 p-8 overflow-hidden relative">
@@ -341,7 +388,86 @@
         </div>
     </div>
 
-    {{-- Delete Modal --}}
+    {{-- ═══ IMPORT MODAL ═══ --}}
+    <div id="importEmployeeModal" class="fixed inset-0 z-[1000] hidden">
+        <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" onclick="document.getElementById('importEmployeeModal').classList.add('hidden')"></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="relative bg-white/95 backdrop-blur-xl rounded-[40px] shadow-2xl w-full max-w-lg border border-white/60 overflow-hidden" style="font-family:'Poppins',sans-serif;">
+
+                {{-- Modal Header --}}
+                <div class="flex items-center justify-between p-8 border-b border-gray-100">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-[#E8F5EE] flex items-center justify-center text-[#4F6560]">
+                            <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h5 style="font-family:'Playfair Display',serif;" class="text-[20px] font-bold text-[#1A2B24]">Import Data Karyawan</h5>
+                            <p class="text-[12px] font-[300] text-[#6B7280] mt-0.5">Upload file Excel sesuai template yang disediakan</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="document.getElementById('importEmployeeModal').classList.add('hidden')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-rose-50 text-gray-400 hover:text-rose-500 transition-colors">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <div class="p-8 space-y-5">
+
+                    {{-- Download Template Link --}}
+                    <div class="flex items-center gap-2 text-[13px]">
+                        <i data-lucide="download" class="w-4 h-4 text-[#80BB9B]"></i>
+                        <a href="{{ route('hr/employee/template') }}" class="text-[#80BB9B] underline underline-offset-2 hover:text-[#4F6560] transition-colors font-[500]">
+                            Download Template Excel
+                        </a>
+                        <span class="text-gray-400 text-[11px]">(isi sesuai panduan di sheet 2)</span>
+                    </div>
+
+                    {{-- Upload Form --}}
+                    <form id="importForm" action="{{ route('hr/employee/import') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+
+                        {{-- Drag & Drop Area --}}
+                        <div id="importDropZone"
+                             class="border-2 border-dashed border-[#D1E8DC] rounded-[16px] p-8 text-center cursor-pointer transition-all bg-[#F6FAF8] hover:border-[#80BB9B] hover:bg-[#EDF7F1] mb-5"
+                             onclick="document.getElementById('importFileInput').click()"
+                             ondragover="event.preventDefault(); this.classList.add('border-[#80BB9B]','bg-[#EDF7F1]');"
+                             ondragleave="this.classList.remove('border-[#80BB9B]','bg-[#EDF7F1]');"
+                             ondrop="handleImportDrop(event)">
+
+                            <div class="w-12 h-12 rounded-[12px] bg-[#E8F5EE] flex items-center justify-center mx-auto mb-3 text-[#4F6560]">
+                                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                            </div>
+                            <p id="importFileName" class="text-[14px] font-[500] text-[#1A2B24] mb-1">Klik atau drag & drop file Excel</p>
+                            <p class="text-[12px] text-[#6B7280] font-[300]">Format .xlsx atau .xls · Maksimal 5MB</p>
+                            <input type="file" id="importFileInput" name="file" accept=".xlsx,.xls" class="hidden"
+                                   onchange="updateImportFileName(this)">
+                        </div>
+
+                        @error('file')
+                        <div class="text-rose-600 text-[12px] bg-rose-50 rounded-xl px-4 py-2 mb-3">{{ $message }}</div>
+                        @enderror
+
+                        {{-- Info Box --}}
+                        <div class="bg-[#F0F7F3] border-l-[3px] border-[#80BB9B] rounded-r-[10px] px-4 py-3 text-[12px] text-[#4F6560] mb-5 leading-relaxed">
+                            Password default untuk semua akun yang diimport: <strong>Sinergi@2026</strong>.<br>
+                            Baris yang gagal (email duplikat, role tidak valid, dsb.) akan dilewati dan ditampilkan di halaman hasil.
+                        </div>
+
+                        {{-- Buttons --}}
+                        <button type="submit" id="importSubmitBtn"
+                            class="w-full bg-[#4F6560] hover:bg-[#3d504c] text-white rounded-[9999px] py-[14px] text-[14px] font-[500] transition-all flex items-center justify-center gap-2 mb-3">
+                            <i data-lucide="upload" class="w-4 h-4"></i>
+                            Mulai Import
+                        </button>
+                        <button type="button" onclick="document.getElementById('importEmployeeModal').classList.add('hidden')"
+                            class="w-full border-2 border-[#4F6560] text-[#4F6560] rounded-[9999px] py-[13px] text-[14px] font-[500] hover:bg-[#4F6560] hover:text-white transition-all">
+                            Batal
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="deleteModal" class="fixed inset-0 z-[1000] hidden">
         <div class="fixed inset-0 bg-black/40 backdrop-blur-sm" onclick="document.getElementById('deleteModal').classList.add('hidden')"></div>
         <div class="fixed inset-0 flex items-center justify-center p-4">
@@ -544,8 +670,47 @@
     </script>
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function () {});
+
+// ── Import Modal JS ──────────────────────────────────────────────
+function updateImportFileName(input) {
+    const label = document.getElementById('importFileName');
+    if (input.files && input.files[0]) {
+        const f = input.files[0];
+        const mb = (f.size / 1024 / 1024).toFixed(2);
+        label.textContent = f.name + ' (' + mb + ' MB)';
+        label.classList.add('text-[#4F6560]');
+    }
+}
+
+function handleImportDrop(event) {
+    event.preventDefault();
+    const zone = document.getElementById('importDropZone');
+    zone.classList.remove('border-[#80BB9B]', 'bg-[#EDF7F1]');
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        const input = document.getElementById('importFileInput');
+        // Transfer dropped files to the hidden input via DataTransfer
+        const dt = new DataTransfer();
+        dt.items.add(files[0]);
+        input.files = dt.files;
+        updateImportFileName(input);
+    }
+}
+
+// Show loading state on import submit
+document.getElementById('importForm')?.addEventListener('submit', function() {
+    const btn = document.getElementById('importSubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>Mengimport...';
 });
+
+// Re-open modal if there was a file validation error
+@if($errors->has('file'))
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('importEmployeeModal').classList.remove('hidden');
+});
+@endif
 </script>
 @endpush
 @endsection

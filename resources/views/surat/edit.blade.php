@@ -4,8 +4,8 @@
     {{-- Header --}}
     <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-3xl font-playfair font-semibold text-[#1A2B24]">Revisi Surat</h1>
-            <p class="text-sm text-gray-500 mt-1">Upload file PDF yang sudah direvisi sesuai catatan</p>
+            <h1 class="text-3xl font-playfair font-bold text-[#1A2B24]">Revisi Surat</h1>
+            <p class="text-[13px] font-light text-[#6B7280] mt-1">Upload file PDF yang sudah direvisi sesuai catatan</p>
         </div>
         <a href="{{ route('surat.show', $surat->id) }}"
            class="px-5 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-600 transition shadow-sm">

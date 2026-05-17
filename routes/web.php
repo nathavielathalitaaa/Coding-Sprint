@@ -9,28 +9,25 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\HRController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 
-// ── Root redirect ─────────────────────────────────────
+// ── root redirect ─────────────────────────────────────
 Route::get('/', fn() => redirect('/home'));
 Route::get('/dashboard', fn() => redirect('/home'))->middleware('auth');
 
 // ══════════════════════════════════════════════
-// AUTH
+// auth
 // ══════════════════════════════════════════════
 Route::controller(LoginController::class)->group(function () {
     Route::get('/login', 'login')->name('login');
-    Route::post('/login', 'authenticate');
+    Route::post('/login', 'authenticate')->middleware('throttle:5,1');
     Route::get('/logout', 'logout')->name('logout');
     Route::get('logout/page', 'logoutPage')->name('logout/page');
 });
 
-Route::controller(RegisterController::class)->group(function () {
-    Route::get('/register', 'register')->name('register');
-    Route::post('/register', 'storeUser');
-});
+Route::get('/register', function() { abort(404); });
+Route::post('/register', function() { abort(404); });
 
 Route::controller(ForgotPasswordController::class)->group(function () {
     Route::get('forget-password', 'getEmail')->name('forget-password');
@@ -43,12 +40,12 @@ Route::controller(ResetPasswordController::class)->group(function () {
 });
 
 // ══════════════════════════════════════════════════════
-// AUTHENTICATED ROUTES
+// authenticated routes
 // ══════════════════════════════════════════════════════
 Route::middleware('auth')->group(function () {
 
     // ══════════════════════════════════════════════
-    // ONBOARDING
+    // onboarding
     // ══════════════════════════════════════════════
     Route::controller(AccountController::class)->group(function () {
         Route::get('onboarding', 'showOnboarding')->name('onboarding');
@@ -56,16 +53,18 @@ Route::middleware('auth')->group(function () {
         Route::post('onboarding/pin', 'onboardingPin')->name('onboarding.pin');
     });
 
-    // ── ALL OTHER ROUTES (with onboarding middleware) ────
-    Route::middleware('onboarding')->group(function () {
+    // ── all other routes (with onboarding + force_password middleware) ─
+    Route::middleware(['onboarding', 'force_password'])->group(function () {
 
-        // ── Dashboard ──────────────────────────────────────
+        // ── dashboard ──────────────────────────────────────
         Route::get('/home', [HomeController::class, 'index'])->name('home');
+        Route::get('/activity-log', [HomeController::class, 'activityLog'])->name('activity.log');
 
-        // ── Profil user ────────────────────────────────────
+        // ── profil user ────────────────────────────────────
         Route::get('profile', [AccountController::class, 'showProfile'])->name('profile.show');
         Route::post('profile/update/{id?}', [AccountController::class, 'updateProfile'])->name('profile.update');
         Route::post('profile/photo', [AccountController::class, 'updatePhoto'])->name('profile.photo');
+        Route::delete('profile/photo', [AccountController::class, 'deletePhoto'])->name('profile.photo.delete');
         Route::post('profile/email', [AccountController::class, 'updateEmail'])->name('profile.email');
         Route::post('profile/password', [AccountController::class, 'updatePassword'])->name('profile.password');
         Route::post('profile/ttd', [AccountController::class, 'uploadTtd'])->name('profile.ttd');
@@ -74,83 +73,91 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/ttd-preview/{userId}', function($userId) {
             $profile = \App\Models\EmployeeProfile::where('user_id', $userId)->firstOrFail();
-            if (!$profile->ttd_path) abort(404);
-            $path = storage_path('app/private/' . $profile->ttd_path);
-            if (!file_exists($path)) abort(404);
-            return response()->file($path, ['Content-Type' => 'image/png']);
+            
+            $path = null;
+            if ($profile->signature_path) {
+                // Check in private storage first (new secure approach)
+                $path = storage_path('app/private/' . $profile->signature_path);
+                if (!file_exists($path)) {
+                    // Fallback to public storage for legacy files
+                    $path = storage_path('app/public/' . $profile->signature_path);
+                }
+            } 
+            
+            if (!$path || !file_exists($path)) {
+                if ($profile->ttd_path) {
+                    // Check in private storage (onboarding/manual)
+                    // Check both storage/app/private/ttd/... and storage/app/private/private/ttd/...
+                    $path = storage_path('app/private/' . $profile->ttd_path);
+                    if (!file_exists($path)) {
+                        $path = storage_path('app/private/private/' . $profile->ttd_path);
+                    }
+                    if (!file_exists($path)) {
+                        // Also check public storage just in case
+                        $path = storage_path('app/public/' . $profile->ttd_path);
+                    }
+                }
+            }
+
+            if (!$path || !file_exists($path)) abort(404);
+            
+            $mime = str_ends_with($path, '.png') ? 'image/png' : 'image/jpeg';
+            return response()->file($path, ['Content-Type' => $mime]);
         })->name('ttd.preview.user')->middleware('auth');
 
-        // ── Digital Signature (New Public Storage approach) ──
+        // ── digital signature (new public storage approach) ──
         Route::post('profile/signature/{id?}', [AccountController::class, 'uploadSignature'])->name('profile.signature.upload');
         Route::delete('profile/signature/{id?}', [AccountController::class, 'deleteSignature'])->name('profile.signature.delete');
 
-        // ── Profil ─────────────────────────────────────────
+        // ── profil ─────────────────────────────────────────
         Route::get('page/account/{user_id}', [AccountController::class, 'profileDetail']);
 
-        // ── Search ─────────────────────────────────────────
+        // ── search ─────────────────────────────────────────
         Route::get('search', [SearchController::class, 'cari'])->name('search');
 
         // ══════════════════════════════════════════════
-        // HR MANAGEMENT (role: hr)
+        // hr management (role: hr)
         // ══════════════════════════════════════════════
     Route::prefix('hr')->group(function () {
 
         Route::controller(HRController::class)->group(function () {
-            // Karyawan
+            // karyawan
             Route::get('employee/list', 'employeeList')->name('hr/employee/list');
             Route::post('employee/save', 'employeeSaveRecord')->name('hr/employee/save');
             Route::post('employee/update', 'employeeUpdateRecord')->name('hr/employee/update');
             Route::post('employee/delete', 'employeeDeleteRecord')->name('hr/employee/delete');
             Route::get('employee/show/{id}', 'showEmployee')->name('hr/employee/show');
             Route::get('employee/{id}/edit', 'editEmployee')->name('hr/employee/edit');
-
-            // Hari Libur
-            Route::get('holidays/page', 'holidayPage')->name('hr/holidays/page');
-            Route::post('holidays/save', 'holidaySaveRecord')->name('hr/holidays/save');
-            Route::post('holidays/delete', 'holidayDeleteRecord')->name('hr/holidays/delete');
+            // import karyawan
+            Route::post('employee/import', 'importKaryawan')->name('hr/employee/import');
+            Route::get('employee/template', 'downloadTemplate')->name('hr/employee/template');
 
 
-            // Attendance
-            Route::get('attendance/page', 'attendance')->name('hr/attendance/page');
-            Route::get('attendance/main/page', 'attendanceMain')->name('hr/attendance/main/page');
 
         });
+        
+        // system monitor
+        Route::get('system/monitor', [\App\Http\Controllers\SystemMonitorController::class, 'index'])->name('hr/system/monitor');
+        Route::get('system/monitor/archive-manager', [\App\Http\Controllers\SystemMonitorController::class, 'archiveManager'])->name('hr/system/monitor/archive-manager');
+        Route::post('system/monitor/archive', [\App\Http\Controllers\SystemMonitorController::class, 'archiveDocuments'])->name('hr/system/monitor/archive');
 
-        // ── Absensi ──────────────────────────────────────
+        // ── absensi (unified module) ──────────────────────
         Route::controller(AbsensiController::class)->group(function () {
             Route::get('absensi/page', 'index')->name('hr/absensi/page');
             Route::get('absensi/export/excel', 'exportExcel')->name('hr/absensi/export/excel');
             Route::get('absensi/export/pdf', 'exportPdf')->name('hr/absensi/export/pdf');
             Route::delete('absensi/{id}', 'destroy')->name('hr/absensi/delete');
-        });
-
-        // ── Import Absensi ────────────────────────────────
-        Route::controller(\App\Http\Controllers\AbsensiImportController::class)->group(function () {
-            Route::get('absensi/import', 'showImport')->name('hr/absensi/import');
-            Route::post('absensi/import', 'import')->name('hr/absensi/import/store');
+            // Tab 2 – AI import (JSON endpoints)
+            Route::post('absensi/process-ai', 'processAI')->name('hr/absensi/process-ai');
+            Route::post('absensi/confirm-import', 'confirmImport')->name('hr/absensi/confirm-import');
             Route::post('absensi/import/map', 'mapFingerprint')->name('hr/absensi/import/map');
-        });
-
-        // ── AI Absensi ────────────────────────────────────
-        Route::controller(\App\Http\Controllers\AbsensiAiController::class)->group(function () {
-            Route::get('absensi/ai', 'showUpload')->name('hr/absensi/ai');
-            Route::post('absensi/ai/analyze', 'analyze')->name('hr/absensi/ai/analyze');
-            Route::get('absensi/ai/preview', 'preview')->name('hr/absensi/ai/preview');
-            Route::post('absensi/ai/save', 'save')->name('hr/absensi/ai/save');
-        });
-
-        // ── Shift ─────────────────────────────────────────
-        Route::controller(ShiftController::class)->group(function () {
-            Route::get('shift/page', 'index')->name('hr/shift/page');
-            Route::post('shift/store', 'store')->name('hr/shift/store');
-            Route::post('shift/delete', 'destroy')->name('hr/shift/delete');
-            Route::get('shift/jadwal', 'jadwal')->name('hr/shift/jadwal');
-            Route::post('shift/jadwal/store', 'simpanJadwal')->name('hr/shift/jadwal/store');
+            // Tab 3 – rekap data (JSON)
+            Route::get('absensi/rekap-data', 'rekapData')->name('hr/absensi/rekap-data');
         });
 
 
         // ══════════════════════════════════════════════
-        // SETTINGS DOKUMEN
+        // settings dokumen
         // ══════════════════════════════════════════════
         Route::controller(\App\Http\Controllers\DocumentSettingController::class)
             ->prefix('settings')
@@ -161,10 +168,33 @@ Route::middleware('auth')->group(function () {
                 Route::post('document/logo', 'uploadLogo')->name('hr.settings.document.logo');
             });
 
+        // Master Data Management
+        Route::controller(\App\Http\Controllers\MasterDataController::class)
+            ->prefix('settings')
+            ->middleware('role:hr')
+            ->group(function () {
+                Route::get('master', 'index')->name('hr.settings.master');
+                
+                // Position
+                Route::post('position', 'storePosition')->name('hr.settings.position.store');
+                Route::put('position/{id}', 'updatePosition')->name('hr.settings.position.update');
+                Route::delete('position/{id}', 'destroyPosition')->name('hr.settings.position.destroy');
+                
+                // User Type
+                Route::post('user-type', 'storeUserType')->name('hr.settings.usertype.store');
+                Route::put('user-type/{id}', 'updateUserType')->name('hr.settings.usertype.update');
+                Route::delete('user-type/{id}', 'destroyUserType')->name('hr.settings.usertype.destroy');
+                
+                // Role Type
+                Route::post('role-type', 'storeRoleType')->name('hr.settings.roletype.store');
+                Route::put('role-type/{id}', 'updateRoleType')->name('hr.settings.roletype.update');
+                Route::delete('role-type/{id}', 'destroyRoleType')->name('hr.settings.roletype.destroy');
+            });
+
     }); // end prefix hr
 
         // ══════════════════════════════════════════════
-        // SURAT (role: staff, supervisor, hr)
+        // surat (role: staff, supervisor, hr)
         // ══════════════════════════════════════════════
         Route::controller(SuratController::class)
         ->prefix('surat')
@@ -182,13 +212,13 @@ Route::middleware('auth')->group(function () {
             Route::get('{surat}/download', 'download')->name('download');
             Route::delete('{surat}', 'destroy')->name('destroy');
 
-            // Approve & reject berbasis jabatan (HOD→Purchasing→Owner Rep→Direktur)
+            // approve & reject berbasis jabatan (hod→purchasing→owner rep→direktur)
             Route::middleware(['role:hr|supervisor|super-admin'])->group(function () {
                 Route::post('{surat}/approve', 'approve')->name('approve');
                 Route::post('{surat}/reject', 'reject')->name('reject');
             });
 
-            // Route sementara untuk regenerate cover PDF / Stamp
+            // route sementara untuk regenerate cover pdf / stamp
             Route::get('{id}/regenerate-final', function($id) {
                 $surat = \App\Models\Surat::findOrFail($id);
                 $coverService = app(\App\Services\ApprovalCoverService::class);
@@ -218,7 +248,7 @@ Route::middleware('auth')->group(function () {
         });
 
         // ══════════════════════════════════════════════
-        // SURAT TYPE MANAGEMENT (role: hr)
+        // surat type management (role: hr)
         // ══════════════════════════════════════════════
         Route::middleware('role:hr')->prefix('surat-type')->name('surat-type.')->group(function () {
             Route::get('/', [\App\Http\Controllers\SuratTypeController::class, 'index'])->name('index');
@@ -233,3 +263,4 @@ Route::middleware('auth')->group(function () {
     }); // end middleware('onboarding')
 
 }); // end middleware('auth')
+

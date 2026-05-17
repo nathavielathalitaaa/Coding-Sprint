@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * run the migrations.
      */
     public function up(): void
     {
@@ -16,17 +16,17 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->nullable()->after('surat_type_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             
-            // Changing enum values is tricky with standard Schema, using raw statement
+            // changing enum values is tricky with standard schema, using raw statement
             $table->string('metode_ttd')->default('stamp')->change();
         });
 
-        // Update existing data to new enum strings
+        // update existing data to new enum strings
         \DB::table('surat_type_approvers')->where('metode_ttd', 'ttd_digital')->update(['metode_ttd' => 'stamp']);
         \DB::table('surat_type_approvers')->where('metode_ttd', 'ttd_manual')->update(['metode_ttd' => 'append']);
     }
 
     /**
-     * Reverse the migrations.
+     * reverse the migrations.
      */
     public function down(): void
     {

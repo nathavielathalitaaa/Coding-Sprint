@@ -8,33 +8,39 @@ use Illuminate\Support\Facades\Storage;
 
 class PdfStampService
 {
+    /**
+     * Stamp signatures onto the original PDF at specified coordinates.
+     * Falls back to append mode if stamping is not possible or requested.
+     *
+     * @param \App\Models\Surat $surat The document to stamp
+     * @return string Path to the final stamped PDF
+     * @throws \Exception If the original PDF cannot be found or read
+     */
     public function stamp(Surat $surat): string
     {
-        \Log::info('PdfStampService@stamp starting', ['surat_id' => $surat->id]);
-
-        // 1. Get approval steps
+        // ── Mengambil Data Approval ─────────────────────────────────────
         $approvals = $surat->approvals()
             ->where('status', 'approved')
             ->with('approver.profile')
             ->get();
-        
-        \Log::info('Found approvals for stamping', ['count' => $approvals->count()]);
 
-        // 2. Check if any approval requires append mode
+        // ── Pengecekan Mode Append ──────────────────────────────────────
+        // Jika ada approval yang secara spesifik meminta metode append
         if ($approvals->contains('metode_ttd', 'append')) {
-            \Log::info('Append mode detected, directly creating pengesahan.');
             return $this->appendSignatures($surat);
         }
 
-        // 3. Get coordinates from $surat->ttd_coordinates
-        $coords = $surat->ttd_coordinates;
-        if (!$coords || empty($coords)) {
+        // ── Pengambilan Koordinat TTD ───────────────────────────────────
+        $signatureCoordinates = $surat->ttd_coordinates;
+        
+        if (empty($signatureCoordinates)) {
             \Log::warning('Stamp warning: Coordinates not found, falling back to append mode.', ['surat_id' => $surat->id]);
             return $this->appendSignatures($surat);
         }
 
-        // 4. Load original PDF using FPDI
+        // ── Load PDF Original ───────────────────────────────────────────
         $originalPdfPath = storage_path('app/public/' . $surat->file_pdf);
+        
         if (!file_exists($originalPdfPath)) {
             \Log::error('Stamp failed: Original PDF not found', ['path' => $originalPdfPath]);
             throw new \Exception("Original PDF file not found at " . $originalPdfPath);
@@ -45,14 +51,12 @@ class PdfStampService
         try {
             $pageCount = $pdf->setSourceFile($originalPdfPath);
         } catch (\Exception $e) {
-            \Log::warning('FPDI cannot read PDF, falling back to append mode');
+            \Log::warning('FPDI cannot read PDF, falling back to append mode. ' . $e->getMessage());
             return $this->appendSignatures($surat);
         }
 
+        // ── Proses Stamping PDF ─────────────────────────────────────────
         try {
-            \Log::info('PDF loaded', ['pageCount' => $pageCount]);
-
-            // 4. For each page
             for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
                 $templateId = $pdf->importPage($pageNo);
                 $size = $pdf->getTemplateSize($templateId);
@@ -60,43 +64,65 @@ class PdfStampService
                 $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
                 $pdf->useTemplate($templateId);
 
-                // Find any coordinates for this page
                 foreach ($approvals as $approval) {
                     $jabatan = $approval->jabatan;
                     $coordKey = null;
-                    foreach (array_keys($coords) as $key) {
+                    
+                    foreach (array_keys($signatureCoordinates) as $key) {
                         if (strtolower($key) === strtolower($jabatan)) {
                             $coordKey = $key;
                             break;
                         }
                     }
-                    if ($coordKey && $coords[$coordKey]['page'] == $pageNo) {
-                        $coord = $coords[$coordKey];
+                    
+                    if ($coordKey && $signatureCoordinates[$coordKey]['page'] == $pageNo) {
+                        $coord = $signatureCoordinates[$coordKey];
                         
-                        // Convert percentage to pixels/points
-                        $x = ($coord['x'] / 100) * $size['width'];
-                        $y = ($coord['y'] / 100) * $size['height'];
+                        // Konversi persentase koordinat ke ukuran aktual PDF
+                        $xAxis = ($coord['x'] / 100) * $size['width'];
+                        $yAxis = ($coord['y'] / 100) * $size['height'];
 
                         $foundPath = $this->getSignaturePath($approval);
                         
                         if ($foundPath && ($approval->metode_ttd ?? 'stamp') === 'stamp') {
-                            \Log::info('Stamping signature', ['jabatan' => $jabatan, 'path' => $foundPath]);
-                            $w = 40; 
-                            $h = 20;
-                            $pdf->Image($foundPath, $x - ($w/2), $y - ($h/2), $w, $h);
+                            $imageWidth = 40; 
+                            $imageHeight = 20;
+                            $pdf->Image($foundPath, $xAxis - ($imageWidth / 2), $yAxis - ($imageHeight / 2), $imageWidth, $imageHeight);
                         }
                     }
                 }
+
+                // ── Stamp watermark footer di setiap halaman ──────────────
+                $pdf->SetFont('Helvetica', 'I', 7);
+                $pdf->SetTextColor(150, 150, 150);
+                
+                // Get page dimensions
+                $pageWidth = $pdf->GetPageWidth();
+                $pageHeight = $pdf->GetPageHeight();
+                
+                // Footer text bottom-right corner
+                $text = 'Generated by HR Sinergi Hotel & Vila Malang · ' 
+                      . now()->format('d/m/Y H:i');
+                $textWidth = $pdf->GetStringWidth($text);
+                
+                $pdf->SetXY(
+                    $pageWidth - $textWidth - 10,  // right aligned, 10mm margin
+                    $pageHeight - 8                 // 8mm from bottom
+                );
+                $pdf->Cell($textWidth, 4, $text, 0, 0, 'R');
             }
 
-            // 5. Save
+            // ── Simpan PDF Final ────────────────────────────────────────────
             $finalFilename = $surat->id . '_final_' . time() . '.pdf';
             $finalDir = storage_path('app/public/final-pdf');
-            if (!is_dir($finalDir)) mkdir($finalDir, 0755, true);
+            
+            if (!is_dir($finalDir)) {
+                mkdir($finalDir, 0755, true);
+            }
+            
             $finalPath = $finalDir . '/' . $finalFilename;
-            $pdf->Output('F', $finalPath);
 
-            \Log::info('Stamp completed successfully', ['finalPath' => $finalPath]);
+            $pdf->Output('F', $finalPath);
 
             return 'final-pdf/' . $finalFilename;
         } catch (\Exception $e) {
@@ -105,13 +131,16 @@ class PdfStampService
         }
     }
 
+
     /**
-     * Fallback: Append signatures to a new page
+     * Append signatures to a new page at the end of the document.
+     * Used as a fallback when stamping is not possible.
+     *
+     * @param \App\Models\Surat $surat The document to process
+     * @return string Path to the final appended PDF
      */
     private function appendSignatures(Surat $surat): string
     {
-        \Log::info('PdfStampService@appendSignatures starting', ['surat_id' => $surat->id]);
-
         $approvals = $surat->approvals()
             ->where('status', 'approved')
             ->with('approver.profile')
@@ -120,8 +149,9 @@ class PdfStampService
         $pdf = new Fpdi();
         $pdf->AddPage('P', 'A4');
 
-        // Logo
+        // ── Render Header & Kop Surat ───────────────────────────────────
         $logoPath = public_path('assets/images/logo-sinergi.png');
+        
         if (file_exists($logoPath)) {
             $pdf->Image($logoPath, 85, 10, 40);
             $pdf->Ln(25);
@@ -129,71 +159,88 @@ class PdfStampService
             $pdf->Ln(20);
         }
 
-        // Title
         $pdf->SetFont('Helvetica', 'B', 14);
         $pdf->Cell(0, 10, 'LEMBAR PENGESAHAN', 0, 1, 'C');
 
-        // Surat number
         $pdf->SetFont('Helvetica', '', 11);
         $pdf->Cell(0, 8, $surat->nomor_surat ?? '-', 0, 1, 'C');
 
-        // Perihal
         $pdf->SetFont('Helvetica', '', 10);
         $pdf->Cell(0, 8, $surat->perihal ?? '-', 0, 1, 'C');
 
-        // Divider line
         $pdf->Ln(5);
         $pdf->Line(20, $pdf->GetY(), 190, $pdf->GetY());
         $pdf->Ln(15);
 
-        // Signature columns
-        $count = $approvals->count();
-        if ($count > 0) {
+        // ── Render Kolom Tanda Tangan ───────────────────────────────────
+        $approvalCount = $approvals->count();
+        
+        if ($approvalCount > 0) {
             $pageWidth = 210;
             $margin = 20;
-            $cellWidth = ($pageWidth - ($margin * 2)) / $count;
+            $cellWidth = ($pageWidth - ($margin * 2)) / $approvalCount;
             $startY = $pdf->GetY();
 
-            foreach ($approvals as $i => $approval) {
-                $x = $margin + ($i * $cellWidth);
+            foreach ($approvals as $index => $approval) {
+                $xAxis = $margin + ($index * $cellWidth);
                 
-                // Jabatan
-                $pdf->SetXY($x, $startY);
+                $pdf->SetXY($xAxis, $startY);
                 $pdf->SetFont('Helvetica', 'B', 10);
                 $pdf->Cell($cellWidth, 5, strtoupper($approval->jabatan ?? ''), 0, 0, 'C');
 
-                // Signature Image
                 $foundPath = $this->getSignaturePath($approval);
+                
                 if ($foundPath) {
-                    $pdf->Image($foundPath, $x + ($cellWidth/2) - 15, $startY + 10, 30, 15);
+                    $pdf->Image($foundPath, $xAxis + ($cellWidth / 2) - 15, $startY + 10, 30, 15);
                 }
 
-                // Horizontal line
                 $lineY = $startY + 30;
-                $pdf->Line($x + 5, $lineY, $x + $cellWidth - 5, $lineY);
+                $pdf->Line($xAxis + 5, $lineY, $xAxis + $cellWidth - 5, $lineY);
 
-                // Name
-                $pdf->SetXY($x, $lineY + 2);
+                $pdf->SetXY($xAxis, $lineY + 2);
                 $pdf->SetFont('Helvetica', '', 10);
                 $pdf->Cell($cellWidth, 5, $approval->approver?->name ?? '-', 0, 0, 'C');
             }
             $pdf->Ln(40);
         }
 
-        // Footer
+        // ── Render Footer ───────────────────────────────────────────────
         $pdf->SetY(-30);
         $pdf->SetFont('Helvetica', 'I', 9);
         $pdf->Cell(0, 10, 'Dokumen ini adalah lampiran lembar pengesahan digital.', 0, 0, 'C');
 
         $finalFilename = $surat->id . '_pengesahan_' . time() . '.pdf';
         $finalDir = storage_path('app/public/final-pdf');
-        if (!is_dir($finalDir)) mkdir($finalDir, 0755, true);
+        
+        if (!is_dir($finalDir)) {
+            mkdir($finalDir, 0755, true);
+        }
+        
         $finalPath = $finalDir . '/' . $finalFilename;
+
+        // ── Stamp watermark footer di lembar pengesahan ──────────
+        $pdf->SetFont('Helvetica', 'I', 7);
+        $pdf->SetTextColor(150, 150, 150);
+        $pageWidth = $pdf->GetPageWidth();
+        $pageHeight = $pdf->GetPageHeight();
+        $text = 'Generated by HR Sinergi Hotel & Vila Malang · ' . now()->format('d/m/Y H:i');
+        $textWidth = $pdf->GetStringWidth($text);
+        $pdf->SetXY($pageWidth - $textWidth - 10, $pageHeight - 8);
+        $pdf->Cell($textWidth, 4, $text, 0, 0, 'R');
+
         $pdf->Output('F', $finalPath);
 
         return 'final-pdf/' . $finalFilename;
     }
 
+
+    /**
+     * Resolve the physical path for the signature image.
+     * Prioritizes the signature snapshot at the time of approval.
+     *
+     * @param \App\Models\DocumentApproval $approval The approval instance
+     * @return string|null Path to the signature file, or null if not found
+     */
     private function getSignaturePath($approval): ?string
     {
         $profile = $approval->approver ? $approval->approver->profile : null;
@@ -207,17 +254,19 @@ class PdfStampService
             $signature = $profile->ttd_path;
         }
 
-        if (!$signature) return null;
+        if (!$signature) {
+            return null;
+        }
 
-        $paths = [
+        $possiblePaths = [
             storage_path('app/public/' . $signature),
             storage_path('app/private/' . $signature),
             storage_path('app/private/private/' . $signature),
         ];
 
-        foreach ($paths as $p) {
-            if (file_exists($p) && !is_dir($p)) {
-                return $p;
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path) && !is_dir($path)) {
+                return $path;
             }
         }
 

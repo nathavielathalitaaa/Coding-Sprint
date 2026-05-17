@@ -7,27 +7,38 @@ use Hash;
 use Session;
 use Validator;
 use App\Models\User;
-use App\Models\Leave;
-use App\Models\Holiday;
-use App\Models\Absensi;
-use Illuminate\Http\Request;
 
+use App\Models\Absensi;
+use App\Models\ActivityLog;
+use App\Imports\KaryawanImport;
+use Illuminate\Http\Request;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class HRController extends Controller
 {
-    /** employee list */
+    /**
+     * Display the employee list page.
+     * Generates a new employee ID and loads reference data for the form.
+     *
+     * @return \Illuminate\View\View
+     */
     public function employeeList()
     {
-        // retrieve all employees
+        // ── Pengambilan Data Karyawan ───────────────────────────────────
         $employeeList = User::with('profile')->orderBy('created_at', 'desc')->get();
         
-        // get the latest user id and generate the next employee id
+        // ── Generate ID Karyawan Baru ───────────────────────────────────
         $latestUser = User::orderBy('id', 'DESC')->first();
-        $userId     = $latestUser ? (int) substr($latestUser->user_id, strrpos($latestUser->user_id, '-') + 1) + 1 : 1;
-        $employeeId = 'SNR-' . str_pad($userId, 4, '0', STR_PAD_LEFT); // prefix sinergi
+        $userId = $latestUser ? (int) substr($latestUser->user_id, strrpos($latestUser->user_id, '-') + 1) + 1 : 1;
+        $employeeId = 'SIN-' . str_pad($userId, 4, '0', STR_PAD_LEFT);
 
-        // retrieve necessary data for the view
+        // ── Pengambilan Data Referensi ──────────────────────────────────
         $roleName = DB::table('role_type_users')->get();
         $position = DB::table('position_types')->get();
         $statusUser = DB::table('user_types')->get();
@@ -35,33 +46,41 @@ class HRController extends Controller
         return view('hr.employee', compact('employeeList', 'employeeId', 'roleName', 'position', 'statusUser'));
     }
 
-    /** save record employee */
+
+    /**
+     * Store a new employee record.
+     * Handles file upload, user creation, role assignment, and profile creation.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function employeeSaveRecord(Request $request)
     {
+        // ── Validasi Input ──────────────────────────────────────────────
         $request->validate([
             'profile_image' => 'nullable|image|max:2048',
-            'name'         => 'required|string',
-            'email'        => 'required|string|email|max:255|unique:users',
-            'position'     => 'nullable|string',
-            'department'   => 'nullable|string',
-            'role_name'    => 'nullable|string',
-            'status'       => 'nullable|string',
-            'phone_number' => 'nullable|numeric',
-            'location'     => 'nullable|string',
-            'join_date'    => 'nullable|string',
-            'experience'   => 'nullable|string',
-            'designation'  => 'nullable|string',
+            'name'          => 'required|string',
+            'email'         => 'required|string|email|max:255|unique:users',
+            'position'      => 'nullable|string',
+            'department'    => 'nullable|string',
+            'role_name'     => 'nullable|string',
+            'status'        => 'nullable|string',
+            'phone_number'  => 'nullable|numeric',
+            'location'      => 'nullable|string',
+            'join_date'     => 'nullable|string',
+            'experience'    => 'nullable|string',
+            'designation'   => 'nullable|string',
         ]);
 
+        // ── Proses Penyimpanan Data ─────────────────────────────────────
         try {
-            // generate the photo file name
             $photo = null;
+            
             if ($request->hasFile('profile_image')) {
                 $photo = $request->name . '_' . time() . '.' . $request->file('profile_image')->extension();
                 $request->file('profile_image')->move(public_path('assets/images/user'), $photo);
             }
 
-            // create a new user instance and populate fields
             $register = new User();
             $register->fill([
                 'name'         => $request->name,
@@ -80,75 +99,88 @@ class HRController extends Controller
             ]);
             $register->save();
 
-            // 1. generate user_id otomatis jika belum ada
             if (empty($register->user_id)) {
                 $rolePrefix = match(strtolower($request->role_name ?? 'staff')) {
-                    'hr', 'admin'       => 'HR',
-                    'supervisor'        => 'SUP',
-                    'direktur'          => 'DIR',
-                    default             => 'STF',
+                    'hr', 'admin', 'human resource' => 'HR',
+                    'supervisor'                    => 'SUP',
+                    'direktur'                      => 'DIR',
+                    default                         => 'STF',
                 };
+                
                 $count = User::where('user_id', 'LIKE', $rolePrefix . '-%')->count() + 1;
                 $register->user_id = $rolePrefix . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
                 $register->saveQuietly();
             }
 
-            // assign role
-            $register->assignRole($request->role_name ?? 'staff');
+            $roleToAssign = strtolower($request->role_name ?? 'staff');
+            
+            if ($roleToAssign === 'human resource') {
+                $roleToAssign = 'hr';
+            }
+            
+            $register->assignRole($roleToAssign);
 
-            // create/update employee profile
             $register->profile()->updateOrCreate(
                 ['user_id' => $register->id],
                 [
-                    'nik'                    => $request->nik ?? null,
-                    'no_kk'                  => $request->no_kk ?? null,
-                    'npwp'                   => $request->npwp ?? null,
-                    'bpjs_kesehatan'         => $request->bpjs_kesehatan ?? null,
-                    'bpjs_ketenagakerjaan'   => $request->bpjs_ketenagakerjaan ?? null,
-                    'jabatan'                => $request->jabatan ?? null,
-                    'pendidikan_terakhir'    => $request->pendidikan_terakhir ?? null,
-                    'tgl_bergabung'          => $request->tgl_bergabung ?? $request->join_date ?? null,
-                    'tgl_kontrak_akhir'      => $request->tgl_kontrak_akhir ?? null,
-                    'status_pernikahan'      => $request->status_pernikahan ?? 'belum_menikah',
-                    'jumlah_anak'            => $request->jumlah_anak ?? 0,
-                    'alamat'                 => $request->alamat ?? null,
-                    'kota'                   => $request->kota ?? null,
-                    'provinsi'               => $request->provinsi ?? null,
-                    'kode_pos'               => $request->kode_pos ?? null,
+                    'nik'                  => $request->nik ?? null,
+                    'no_kk'                => $request->no_kk ?? null,
+                    'npwp'                 => $request->npwp ?? null,
+                    'bpjs_kesehatan'       => $request->bpjs_kesehatan ?? null,
+                    'bpjs_ketenagakerjaan' => $request->bpjs_ketenagakerjaan ?? null,
+                    'jabatan'              => $request->jabatan ?? null,
+                    'pendidikan_terakhir'  => $request->pendidikan_terakhir ?? null,
+                    'tgl_bergabung'        => $request->tgl_bergabung ?? $request->join_date ?? null,
+                    'tgl_kontrak_akhir'    => $request->tgl_kontrak_akhir ?? null,
+                    'status_pernikahan'    => $request->status_pernikahan ?? 'belum_menikah',
+                    'jumlah_anak'          => $request->jumlah_anak ?? 0,
+                    'alamat'               => $request->alamat ?? null,
+                    'kota'                 => $request->kota ?? null,
+                    'provinsi'             => $request->provinsi ?? null,
+                    'kode_pos'             => $request->kode_pos ?? null,
                 ]
             );
 
             $defaultPassword = 'Sinergi@' . date('Y');
+            
+            ActivityLog::log('create_employee', $register, "Menambahkan karyawan baru: {$register->name} ({$register->user_id})");
+
             flash()->success('Data karyawan berhasil disimpan. Password default: ' . $defaultPassword);
+            
             return redirect()->back();
         } catch (\Exception $e) {
             \Log::error('Error saving employee: ' . $e->getMessage());
             flash()->error('Gagal menambahkan data karyawan: ' . $e->getMessage());
+            
             return redirect()->back();
         }
     }
 
-    /** update record employee */
+
+    /**
+     * Update an existing employee record.
+     * Handles file replacement and data synchronization.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function employeeUpdateRecord(Request $request)
     {
+        // ── Proses Pembaruan Data ───────────────────────────────────────
         try {
             $user = User::findOrFail($request->id);
 
-            // handle photo upload
             if ($request->hasFile('photo')) {
                 $photo = $request->name . '-' . time() . '.' . $request->photo->extension();
                 $request->photo->move(public_path('assets/images/user'), $photo);
 
-                // delete old photo if exists
                 if (!empty($user->avatar) && file_exists(public_path('assets/images/user/' . $user->avatar))) {
                     unlink(public_path('assets/images/user/' . $user->avatar));
                 }
 
-                // update user avatar with new photo
                 $user->avatar = $photo;
             }
 
-            // update other fields
             $user->name         = $request->name;
             $user->email        = $request->email;
             $user->position     = $request->position;
@@ -161,122 +193,91 @@ class HRController extends Controller
             $user->experience   = $request->experience;
             $user->designation  = $request->designation;
 
-            // generate user_id if missing during update
             if (empty($user->user_id)) {
                 $rolePrefix = match(strtolower($user->role_name ?? 'staff')) {
-                    'hr', 'admin'   => 'HR',
-                    'supervisor'    => 'SUP',
-                    'direktur'      => 'DIR',
-                    default         => 'STF',
+                    'hr', 'admin', 'human resource' => 'HR',
+                    'supervisor'                    => 'SUP',
+                    'direktur'                      => 'DIR',
+                    default                         => 'STF',
                 };
+                
                 $count = User::where('user_id', 'LIKE', $rolePrefix . '-%')->count() + 1;
                 $user->user_id = $rolePrefix . '-' . str_pad($count, 4, '0', STR_PAD_LEFT);
             }
 
             $user->save();
 
-            // create/update employee profile
+            $roleToSync = strtolower($user->role_name ?? 'staff');
+            
+            if ($roleToSync === 'human resource') {
+                $roleToSync = 'hr';
+            }
+            
+            $user->syncRoles($roleToSync);
+
             $user->profile()->updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'nik'                    => $request->nik ?? null,
-                    'no_kk'                  => $request->no_kk ?? null,
-                    'npwp'                   => $request->npwp ?? null,
-                    'bpjs_kesehatan'         => $request->bpjs_kesehatan ?? null,
-                    'bpjs_ketenagakerjaan'   => $request->bpjs_ketenagakerjaan ?? null,
-                    'jabatan'                => $request->jabatan ?? null,
-                    'pendidikan_terakhir'    => $request->pendidikan_terakhir ?? null,
-                    'tgl_bergabung'          => $request->tgl_bergabung ?? $request->join_date ?? null,
-                    'tgl_kontrak_akhir'      => $request->tgl_kontrak_akhir ?? null,
-                    'status_pernikahan'      => $request->status_pernikahan ?? 'belum_menikah',
-                    'jumlah_anak'            => $request->jumlah_anak ?? 0,
-                    'alamat'                 => $request->alamat ?? null,
-                    'kota'                   => $request->kota ?? null,
-                    'provinsi'               => $request->provinsi ?? null,
-                    'kode_pos'               => $request->kode_pos ?? null,
+                    'nik'                  => $request->nik ?? null,
+                    'no_kk'                => $request->no_kk ?? null,
+                    'npwp'                 => $request->npwp ?? null,
+                    'bpjs_kesehatan'       => $request->bpjs_kesehatan ?? null,
+                    'bpjs_ketenagakerjaan' => $request->bpjs_ketenagakerjaan ?? null,
+                    'jabatan'              => $request->jabatan ?? null,
+                    'pendidikan_terakhir'  => $request->pendidikan_terakhir ?? null,
+                    'tgl_bergabung'        => $request->tgl_bergabung ?? $request->join_date ?? null,
+                    'tgl_kontrak_akhir'    => $request->tgl_kontrak_akhir ?? null,
+                    'status_pernikahan'    => $request->status_pernikahan ?? 'belum_menikah',
+                    'jumlah_anak'          => $request->jumlah_anak ?? 0,
+                    'alamat'               => $request->alamat ?? null,
+                    'kota'                 => $request->kota ?? null,
+                    'provinsi'             => $request->provinsi ?? null,
+                    'kode_pos'             => $request->kode_pos ?? null,
                 ]
             );
 
-            flash()->success('Data karyawan berhasil diperbarui.');
-            return redirect()->back();
+            ActivityLog::log('update_employee', $user, "Memperbarui data karyawan: {$user->name} ({$user->user_id})");
 
+            flash()->success('Data karyawan berhasil diperbarui.');
+            
+            return redirect()->back();
         } catch (\Exception $e) {
-            \Log::info($e);
+            \Log::error($e->getMessage());
             DB::rollback();
             flash()->error('Gagal memperbarui data karyawan.');
+            
             return redirect()->back();
         }
     }
 
-    /** delete record employee */
+
+    /**
+     * Delete an employee record and their associated photo.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function employeeDeleteRecord(Request $request)
     {
+        // ── Proses Penghapusan Data ─────────────────────────────────────
         try {
             $deleteRecord = User::findOrFail($request->id_delete);
             $deleteRecord->delete();
-            if (!empty($request->del_photo)) {
-                unlink(public_path('assets/images/user/'.$request->del_photo));
+            
+            if (!empty($request->del_photo) && file_exists(public_path('assets/images/user/' . $request->del_photo))) {
+                unlink(public_path('assets/images/user/' . $request->del_photo));
             }
+
+            ActivityLog::log('delete_employee', null, "Menghapus karyawan: {$deleteRecord->name} ({$deleteRecord->user_id})");
 
             flash()->success('Data karyawan berhasil dihapus.');
+            
             return redirect()->back();
-        } catch(\Exception $e) {
-            \Log::info($e);
+        } catch (\Exception $e) {
+            \Log::error($e->getMessage());
             DB::rollback();
             flash()->error('Gagal menghapus data karyawan.');
-            return redirect()->back();
-        }
-    }
-
-    /** holiday page */
-    public function holidayPage()
-    {
-        $holidayList = Holiday::all();
-        return view('hr.holidays',compact('holidayList'));
-    }
-
-    /** save record holiday */
-    public function holidaySaveRecord(Request $request)
-    {
-        $request->validate([
-            'holiday_type' => 'required|string',
-            'holiday_name' => 'required|string',
-            'holiday_date' => 'required|string',
-        ]);
-    
-        try {
-            // use updateorcreate to handle both creation and update
-            $holiday = Holiday::updateOrCreate(
-                ['id' => $request->idUpdate],
-                [
-                    'holiday_type' => $request->holiday_type,
-                    'holiday_name' => $request->holiday_name,
-                    'holiday_date' => $request->holiday_date,
-                ]
-            );
-    
-            flash()->success('Data hari libur berhasil disimpan.');
-            return redirect()->back();
-        } catch (\Exception $e) {
-            \Log::error($e); // log the error
-            flash()->error('Gagal menyimpan data hari libur.');
-            return redirect()->back();
-        }
-    }
-
-    /** delete record */
-    public function holidayDeleteRecord(Request $request) 
-    {
-        try {
-            // find the holiday record or fail if not found
-            $holiday = Holiday::findOrFail($request->id_delete);
-            $holiday->delete();
-
-            flash()->success('Data hari libur berhasil dihapus.');
-            return redirect()->back();
-        } catch (\Exception $e) {
-            \Log::error($e); // log the error
-            flash()->error('Gagal menghapus data hari libur.');
+            
             return redirect()->back();
         }
     }
@@ -284,81 +285,200 @@ class HRController extends Controller
 
 
 
-    /** attendance — redirect ke halaman absensi real */
-    public function attendance()
-    {
-        // attendance.blade.php masih berisi data dummy, redirect ke absensi real
-        flash()->info('Halaman absensi per karyawan dialihkan ke Rekap Absensi.');
-        return redirect()->route('hr/absensi/page');
-    }
 
-
-
-    /** attendance main */
-    public function attendanceMain()
-    {
-        try {
-            // total karyawan aktif
-            $totalEmployee = User::where('status', 'aktif')->count();
-            
-            // absensi hari ini (hadir)
-            $today = Carbon::today();
-            $hadirHariIni = Absensi::where('tanggal', $today)
-                ->where('status', 'hadir')
-                ->count();
-            
-            // absensi hari ini (total yang tidak hadir)
-            $absenHariIni = $totalEmployee - $hadirHariIni;
-            
-            // hitung hari kerja (senin-jumat) di bulan berjalan sampai hari ini
-            $hariKerja = 0;
-            $startMonth = Carbon::now()->startOfMonth();
-            $endDate = $today;
-            
-            $current = $startMonth->copy();
-            while ($current <= $endDate) {
-                // senin (1) sampai jumat (5)
-                if ($current->dayOfWeek >= 1 && $current->dayOfWeek <= 5) {
-                    $hariKerja++;
-                }
-                $current->addDay();
-            }
-            
-            // data absensi hari ini dengan relasi user
-            $absensiHariIni = Absensi::with('user')
-                ->where('tanggal', $today)
-                ->get();
-            
-            return view('hr.attendance.attendance-main', compact(
-                'totalEmployee',
-                'hadirHariIni',
-                'absenHariIni',
-                'hariKerja',
-                'absensiHariIni'
-            ));
-        } catch (\Exception $e) {
-            \Log::error('Error in attendanceMain: ' . $e->getMessage());
-            flash()->error('Terjadi kesalahan saat memuat data absensi');
-            return back();
-        }
-    }
-
-
-    /** show employee detail profile */
+    /**
+     * Display an employee's detailed profile.
+     *
+     * @param int $id The user ID
+     * @return \Illuminate\View\View
+     */
     public function showEmployee($id)
     {
-        $user    = User::findOrFail($id);
+        $user = User::findOrFail($id);
         $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
+        
         return view('pages.account-profile', compact('user', 'profile'));
     }
 
-    /** halaman edit profil karyawan (hr only) */
+
+    /**
+     * Display the edit form for an employee's profile.
+     *
+     * @param int $id The user ID
+     * @return \Illuminate\View\View
+     */
     public function editEmployee($id)
     {
-        $user    = User::with('profile')->findOrFail($id);
-        $position   = DB::table('position_types')->get();
-        $roleName   = DB::table('role_type_users')->get();
+        $user = User::with('profile')->findOrFail($id);
+        $position = DB::table('position_types')->get();
+        $roleName = DB::table('role_type_users')->get();
         $statusUser = DB::table('user_types')->get();
+        
         return view('hr.employee-edit', compact('user', 'position', 'roleName', 'statusUser'));
+    }
+
+
+    /**
+     * Handle the bulk import of employees via Excel.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function importKaryawan(Request $request)
+    {
+        // ── Validasi File Import ────────────────────────────────────────
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:5120',
+        ], [
+            'file.required' => 'File Excel wajib dipilih.',
+            'file.mimes'    => 'File harus berformat .xlsx atau .xls.',
+            'file.max'      => 'Ukuran file maksimal 5MB.',
+        ]);
+
+        // ── Proses Eksekusi Import ──────────────────────────────────────
+        try {
+            $import = new KaryawanImport();
+            $import->import($request->file('file')->getRealPath());
+
+            $result = $import->getResult();
+
+            $msg = $import->successCount . ' karyawan berhasil diimport.';
+            if ($import->failedCount > 0) {
+                $msg .= ' ' . $import->failedCount . ' baris gagal.';
+            }
+
+            flash()->success('Import selesai! ' . $msg);
+            
+            return redirect()->route('hr/employee/list')->with('import_result', $result);
+        } catch (\Throwable $e) {
+            \Log::error('Import Karyawan error: ' . $e->getMessage());
+            flash()->error('Gagal memproses file: ' . $e->getMessage());
+            
+            return redirect()->back();
+        }
+    }
+
+
+    /**
+     * Download the Excel template for bulk employee import.
+     * Generates the file dynamically if it doesn't exist.
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function downloadTemplate()
+    {
+        $path = public_path('assets/templates/template-import-karyawan.xlsx');
+
+        if (!file_exists($path)) {
+            $this->generateTemplate($path);
+        }
+
+        return response()->download($path, 'template-import-karyawan.xlsx');
+    }
+
+
+    /**
+     * Generate the XLSX template file for bulk import.
+     *
+     * @param string $outputPath Path to save the generated template
+     * @return void
+     */
+    private function generateTemplate(string $outputPath): void
+    {
+        $spreadsheet = new Spreadsheet();
+
+        // ── Pembuatan Sheet 1: Data Karyawan ────────────────────────────
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Data Karyawan');
+
+        $headers = [
+            'nama', 'email', 'role', 'departemen', 'posisi', 'jabatan_approval',
+            'nik', 'no_kk', 'npwp', 'bpjs_kesehatan', 'bpjs_ketenagakerjaan',
+            'tgl_bergabung', 'status_pernikahan', 'jumlah_anak',
+            'pendidikan_terakhir', 'no_telepon', 'alamat', 'kota', 'provinsi',
+        ];
+
+        $headerStyle = [
+            'font'      => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF'], 'size' => 11],
+            'fill'      => ['fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['argb' => 'FF4F6560']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER,
+                            'vertical'   => Alignment::VERTICAL_CENTER],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN,
+                                             'color' => ['argb' => 'FFADC5BB']]],
+        ];
+
+        $exampleStyle = [
+            'font'      => ['italic' => true, 'color' => ['argb' => 'FF6B7280'], 'size' => 10],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN,
+                                             'color' => ['argb' => 'FFD1D5DB']]],
+        ];
+
+        foreach ($headers as $colIdx => $header) {
+            $col = Coordinate::stringFromColumnIndex($colIdx + 1);
+            $sheet->setCellValue($col . '1', $header);
+            $sheet->getRowDimension(1)->setRowHeight(24);
+        }
+        
+        $lastCol = Coordinate::stringFromColumnIndex(count($headers));
+        $sheet->getStyle('A1:' . $lastCol . '1')->applyFromArray($headerStyle);
+
+        $example = [
+            'Budi Santoso', 'budi@sinergihotel.com', 'staff',
+            'Front Office', 'Staff', '',
+            '3201234567890001', '3201234567890001',
+            '12.345.678.9-012.345', '0001234567890',
+            '0001234567891', '2024-01-15', 'Single', '0',
+            'S1', '08123456789', 'Jl. Contoh No.1', 'Malang', 'Jawa Timur',
+        ];
+        
+        foreach ($example as $colIdx => $val) {
+            $col = Coordinate::stringFromColumnIndex($colIdx + 1);
+            $sheet->setCellValue($col . '2', $val);
+        }
+        
+        $sheet->getStyle('A2:' . $lastCol . '2')->applyFromArray($exampleStyle);
+
+        foreach (range(1, count($headers)) as $colIdx) {
+            $col = Coordinate::stringFromColumnIndex($colIdx);
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // ── Pembuatan Sheet 2: Panduan ──────────────────────────────────
+        $panduan = $spreadsheet->createSheet();
+        $panduan->setTitle('Panduan');
+
+        $instructions = [
+            ['PANDUAN PENGISIAN TEMPLATE IMPORT KARYAWAN'],
+            [''],
+            ['Kolom', 'Keterangan'],
+            ['role', 'Wajib diisi: hr, supervisor, atau staff'],
+            ['tgl_bergabung', 'Format: YYYY-MM-DD  (contoh: 2024-01-15)'],
+            ['status_pernikahan', 'Single / Married / Divorced'],
+            ['pendidikan_terakhir', 'SD / SMP / SMA-SMK / D3 / S1 / S2 / S3'],
+            ['email', 'Harus unik, tidak boleh sama dengan yang sudah ada di sistem'],
+            ['jabatan_approval', 'Isi jika user memiliki jabatan approval (hod, hr, purchasing, dst.)'],
+            [''],
+            ['Catatan:', 'Baris yang gagal diimpor akan ditampilkan di layar beserta alasannya.'],
+            ['Password default:', 'Sinergi@2026 (minta karyawan ganti setelah login pertama)'],
+        ];
+
+        foreach ($instructions as $rowIdx => $cols) {
+            foreach ($cols as $colIdx => $val) {
+                $col = Coordinate::stringFromColumnIndex($colIdx + 1);
+                $panduan->setCellValue($col . ($rowIdx + 1), $val);
+            }
+        }
+
+        $panduan->getStyle('A1:B1')->getFont()->setBold(true)->setSize(12);
+        $panduan->getStyle('A3:B3')->getFont()->setBold(true);
+        $panduan->getColumnDimension('A')->setWidth(25);
+        $panduan->getColumnDimension('B')->setWidth(70);
+
+        // ── Simpan Template ─────────────────────────────────────────────
+        @mkdir(dirname($outputPath), 0755, true);
+        $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $writer->save($outputPath);
     }
 }

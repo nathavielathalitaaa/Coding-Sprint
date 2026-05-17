@@ -7,18 +7,18 @@ use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
-    // fungsi untuk mencari karyawan dan departemen berdasarkan kata kunci
+    // cari karyawan & departemen berdasarkan keyword, return json utk autocomplete/search dropdown di frontend
     public function cari(Request $request)
     {
-        // ambil kata kunci dari query string
+        // ambil keyword dr query string parameter 'q'
         $kata = $request->q;
 
-        // kalau tidak ada kata kunci, kembalikan array kosong
+        // klo keyword kosong atau kurang dr 2 karakter, langsung return array kosong biar gk berat query-nya
         if (empty($kata) || strlen($kata) < 2) {
             return response()->json([]);
         }
 
-        // cari karyawan yang namanya, emailnya, atau posisinya mengandung kata kunci
+        // query cari user yg name/email/position/user_id-nya mengandung keyword, ambil 6 hasil teratas dgn field spesifik
         $karyawan = User::where('name', 'like', '%' . $kata . '%')
             ->orWhere('email', 'like', '%' . $kata . '%')
             ->orWhere('position', 'like', '%' . $kata . '%')
@@ -27,11 +27,10 @@ class SearchController extends Controller
             ->limit(6)
             ->get();
 
-
-
-        // format hasil untuk dikirim ke frontend
+        // format hasil search jd array dgn struktur yg bs langsung dipake frontend utk display search result
         $hasil = [];
 
+        // loop tiap hasil user, transform jd format standar: tipe, label, subtext, id, url, & avatar
         foreach ($karyawan as $k) {
             $hasil[] = [
                 'tipe'   => 'karyawan',
@@ -43,9 +42,6 @@ class SearchController extends Controller
             ];
         }
 
-
-
         return response()->json($hasil);
     }
 }
-

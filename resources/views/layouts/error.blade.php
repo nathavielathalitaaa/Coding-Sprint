@@ -25,6 +25,9 @@
     <script src="{{ URL::to('assets/libs/prismjs/prism.js') }}"></script>
     <script src="{{ URL::to('assets/libs/lucide/umd/lucide.js') }}"></script>
     <script src="{{ URL::to('assets/js/starcode.bundle.js') }}"></script>
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 
 </html>

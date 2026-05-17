@@ -1,6 +1,6 @@
 <?php
 
-/** for side bar menu active */
+/** buat bikin menu sidebar yg dipilih jd aktif */
 function set_active($route) {
     if (is_array($route )){
         return in_array(Request::path(), $route) ? 'active' : '';
@@ -8,10 +8,10 @@ function set_active($route) {
     return Request::path() == $route ? 'active' : '';
 }
 
-/** for side bar menu show */
+/** buat nampilin menu sidebar yg lg dibuka */
 function set_show($route) {
-    if (is_array($route )){
+     if (is_array($route )){
         return in_array(Request::path(), $route) ? 'show' : '';
     }
-    return Request::path() == $route ? 'show' : '';
+  return Request::path() == $route ? 'show' : '';
 }

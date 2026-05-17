@@ -11,11 +11,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-            'onboarding' => \App\Http\Middleware\CheckOnboarding::class,
-            'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
-            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+        $middleware->web(append: [
+            \App\Http\Middleware\SessionTimeout::class,
+            \App\Http\Middleware\PreventBackHistory::class,
         ]);
+        $middleware->alias([
+            'onboarding'     => \App\Http\Middleware\CheckOnboarding::class,
+            'force_password' => \App\Http\Middleware\ForceChangePassword::class,
+            'role'           => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission'     => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+        ]);
+    })
+    ->withSchedule(function ($schedule) {
+        $schedule->command('logs:archive')->monthly();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

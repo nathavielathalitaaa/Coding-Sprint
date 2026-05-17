@@ -9,6 +9,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Session;
 use Auth;
+use Illuminate\Support\Facades\DB;
+use App\Models\ActivityLog;
 
 class LoginController extends Controller
 {
@@ -57,6 +59,15 @@ class LoginController extends Controller
                 // update last login
                 $user->update(['last_login' => $todayDate]);
 
+                ActivityLog::log('login', $user, "{$user->name} berhasil login ke sistem");
+
+                // Invalidate all other sessions for this user
+                // This ensures one active session per user at a time
+                DB::table('sessions')
+                    ->where('user_id', auth()->id())
+                    ->where('id', '!=', request()->session()->getId())
+                    ->delete();
+
                 flash()->success('Login successful :)');
                 
                 // redirect berdasarkan role
@@ -85,6 +96,11 @@ class LoginController extends Controller
     /** logout and forget session */
     public function logout(Request $request)
     {
+        $user = auth()->user();
+        if ($user) {
+            ActivityLog::log('logout', null, "{$user->name} melakukan logout");
+        }
+        
         $request->session()->flush();
         Auth::logout();
         flash()->success('Logout successful :)');

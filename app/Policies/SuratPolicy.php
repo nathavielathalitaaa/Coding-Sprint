@@ -7,26 +7,29 @@ use App\Models\User;
 
 class SuratPolicy
 {
-    // Siapa saja bisa lihat list (difilter di controller)
+    // siapa saja bisa lihat list (difilter di controller)
     public function viewAny(User $user): bool
     {
         return true;
     }
 
-    // Lihat detail: staff hanya miliknya, approver sesuai jabatan, hr semua
+    // lihat detail: staff hanya miliknya, approver sesuai jabatan, hr semua
     public function view(User $user, Surat $surat): bool
     {
-        if ($user->hasRole('staff')) {
-            return $user->id === $surat->user_id;
+        // pemilik selalu bisa lihat
+        if ($user->id === $surat->user_id) {
+            return true;
         }
-        // Supervisor/hr dengan jabatan approval bisa lihat semua surat
+
+        // supervisor/hr dengan jabatan approval bisa lihat semua surat
         if ($user->profile?->jabatan) {
             return true;
         }
+        
         return $user->hasRole('hr');
     }
 
-    // Semua role bisa buat surat
+    // semua role bisa buat surat
     public function create(User $user): bool
     {
         return true;
@@ -37,7 +40,7 @@ class SuratPolicy
         return true;
     }
 
-    // Hanya staff pemilik surat yang berstatus 'revised'
+    // hanya staff pemilik surat yang berstatus 'revised'
     public function edit(User $user, Surat $surat): bool
     {
         return $user->hasRole('staff')
@@ -52,15 +55,18 @@ class SuratPolicy
             && $surat->status === 'revised';
     }
 
-    // Download: staff hanya miliknya, siapapun dengan jabatan approval, hr semua
+    // download: staff hanya miliknya, siapapun dengan jabatan approval, hr semua
     public function download(User $user, Surat $surat): bool
     {
-        if ($user->hasRole('staff')) {
-            return $user->id === $surat->user_id;
+        // pemilik selalu bisa download
+        if ($user->id === $surat->user_id) {
+            return true;
         }
+
         if ($user->profile?->jabatan) {
             return true;
         }
+        
         return $user->hasRole('hr');
     }
 }

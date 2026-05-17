@@ -3,7 +3,7 @@
 <head>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <meta charset="utf-8">
     <title>HR | Sinergi Hotel & Vila - HR Management System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -584,11 +584,6 @@
 </style>
 
 </head>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script>
-    lucide.createIcons();
-</script>
-@stack('scripts')
 <body class="text-base bg-body-bg text-body font-poppins dark:text-zink-100 dark:bg-zink-800 group-data-[skin=bordered]:bg-body-bordered group-data-[skin=bordered]:dark:bg-zink-700">
 
   <!-- floating sidebar (outside all containers) -->
@@ -634,6 +629,47 @@
 
     <!-- page content -->
     <div class="max-w-7xl mx-auto px-6">
+        @auth
+        @unless(auth()->user()->hasRole('staff'))
+            @php
+                $user = auth()->user();
+                $activeSuratIds = \App\Models\Surat::where('status', 'submitted')->pluck('id');
+                $myWaitingGlobal = \App\Models\DocumentApproval::where('status', 'waiting')
+                    ->where('document_type', 'LIKE', 'surat_%')
+                    ->whereIn('document_id', $activeSuratIds)
+                    ->where(function($q) use ($user) {
+                        $q->where('assigned_user_id', $user->id)
+                          ->orWhere(function($sq) use ($user) {
+                              $jabatan = $user->profile?->jabatan;
+                              $sq->whereNull('assigned_user_id');
+                              if ($jabatan) {
+                                  $sq->where('jabatan', $jabatan);
+                              } else {
+                                  $sq->where('jabatan', '___NONE___');
+                              }
+                          });
+                    })
+                    ->count();
+            @endphp
+            @if($myWaitingGlobal > 0)
+            <div class="mb-4 flex items-center justify-between gap-3 px-4 py-3 rounded-xl shadow-sm border border-red-200"
+                 style="background:rgba(254,242,242,0.9); backdrop-filter: blur(4px);">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="bell-ring" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
+                    <p class="text-sm text-red-800 font-medium">
+                        You have <strong>{{ $myWaitingGlobal }} letters</strong> waiting for your approval.
+                    </p>
+                </div>
+                @unless(request()->routeIs('surat.index'))
+                <a href="{{ route('surat.index') }}" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition flex-shrink-0">
+                    Review Now
+                </a>
+                @endunless
+            </div>
+            @endif
+        @endunless
+        @endauth
+
         @yield('content')
       </div>
     </div>
@@ -645,7 +681,6 @@
   <script src="{{ URL::to('assets/libs/lucide/umd/lucide.js') }}"></script>
   <script src="{{ URL::to('assets/js/layout.js') }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   
   <!-- mobile sidebar overlay -->
   <div id="sidebar-overlay" class="fixed inset-0 z-[999998] hidden bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0"></div>
@@ -690,5 +725,7 @@
     });
   </script>
 
+  @stack('modals')
+  @stack('scripts')
 </body>
 </html>

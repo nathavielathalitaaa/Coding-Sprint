@@ -29,55 +29,56 @@ class Surat extends Model
         'ttd_coordinates' => 'array',
     ];
 
-    // ── Helper: cek apakah punya final_pdf ─────────────
+    // ── helper: cek apakah punya final_pdf ─────────────
     public function hasFinalPdf(): bool
     {
         return !empty($this->final_pdf_path);
     }
 
-    // ── Relasi ke User (pembuat) ───────────────────────
+    // ── relasi ke user (pembuat) ───────────────────────
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // ── Relasi ke Jenis Surat ─────────────────────────
+    // ── relasi ke jenis surat ─────────────────────────
     public function suratType()
     {
         return $this->belongsTo(SuratType::class);
     }
 
-    // ── Relasi ke DocumentApproval (log 4 step) ────────
+    // ── relasi ke documentapproval (log 4 step) ────────
     public function approvals()
     {
         return $this->hasMany(DocumentApproval::class, 'document_id')
+            ->where('document_type', 'LIKE', 'surat_%')
             ->orderBy('step_order');
     }
 
-    // ── Helper: ambil step yang sedang waiting ─────────
+    // ── helper: ambil step yang sedang waiting ─────────
     public function waitingStep(): ?DocumentApproval
     {
         return $this->approvals()->where('status', 'waiting')->first();
     }
 
-    // ── Helper: cek apakah semua step sudah approved ───
+    // ── helper: cek apakah semua step sudah approved ───
     public function isFullyApproved(): bool
     {
         return $this->approvals()->whereNotIn('status', ['approved'])->doesntExist();
     }
 
-    // ── Helper: cek apakah bisa diedit (oleh pembuat) ──
+    // ── helper: cek apakah bisa diedit (oleh pembuat) ──
     public function canBeEdited(): bool
     {
-        // Hanya bisa diedit jika status 'revised' (setelah ditolak/perlu revisi)
-        // Status 'submitted' tidak bisa diedit lagi
+        // cuma bs diedit klo status 'revised' (abis ditolak/perlu revisi)
+        // status 'submitted' gk bs diedit lagi
         return $this->status === 'revised';
     }
 
-    // ── Helper: cek apakah bisa dihapus (oleh pembuat) ──
+    // ── helper: cek apakah bisa dihapus (oleh pembuat) ──
     public function canBeDeleted(): bool
     {
-        // Hanya bisa dihapus jika status submitted dan belum ada approval diproses
+        // cuma bs dihapus klo status submitted & blm ada approval diproses
         if ($this->status !== 'submitted') {
             return false;
         }
@@ -89,7 +90,7 @@ class Surat extends Model
         return !$hasProcessedApproval;
     }
 
-    // ── Label status untuk tampilan ────────────────────
+    // ── label status untuk tampilan ────────────────────
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
@@ -101,7 +102,7 @@ class Surat extends Model
         };
     }
 
-    // ── Warna badge per status ─────────────────────────
+    // ── warna badge per status ─────────────────────────
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {

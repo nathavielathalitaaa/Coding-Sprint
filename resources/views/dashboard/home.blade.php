@@ -128,6 +128,26 @@
     padding: 24px;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+}
+.hv-recent-list {
+    flex: 1;
+    max-height: 340px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+    padding-right: 4px;
+}
+.hv-recent-list::-webkit-scrollbar {
+    width: 4px;
+}
+.hv-recent-list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 999px;
+}
+.hv-recent-list::-webkit-scrollbar-track {
+    background: transparent;
 }
 .hv-recent-header {
     display: flex;
@@ -378,7 +398,10 @@
 
 <div>
 
-<p class="hv-welcome">Welcome, {{ auth()->user()->name }}</p>
+<div class="mb-8">
+    <h1 class="text-3xl font-playfair font-bold text-[#1A2B24]">Welcome back, {{ auth()->user()->name }}</h1>
+    <p class="text-[13px] font-light text-[#6B7280] mt-1">Here's what's happening in your HR dashboard today.</p>
+</div>
 
 {{-- ══════ hr ══════ --}}
 @if(auth()->user()->hasRole('hr'))
@@ -390,6 +413,8 @@
         <div class="hv-photo-card">
             @if(auth()->user()->avatar)
                 <img src="{{ URL::to('assets/images/user/'.auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}">
+            @else
+                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=E8F5EE&color=1A2B24&size=200" alt="{{ auth()->user()->name }}">
             @endif
             <div class="hv-photo-overlay">
                 <p class="hv-photo-name">{{ auth()->user()->name }}</p>
@@ -424,42 +449,34 @@
         <div class="hv-recent">
             <div class="hv-recent-header">
                 <p class="hv-recent-title">Recent Activity</p>
-                <a href="{{ route('surat.index') }}" class="hv-recent-viewall">View all</a>
+                {{-- Link ke halaman activity log --}}
+                <a href="{{ route('activity.log') }}" class="hv-recent-viewall">View all</a>
             </div>
-            <p class="hv-recent-sub">Latest HR & approval snapshot</p>
-            @php
-                $recentSurats = \App\Models\Surat::with('user')->orderBy('updated_at','desc')->limit(3)->get();
-            @endphp
-            @if($recentSurats->count())
+            <p class="hv-recent-sub">System-wide activity logs</p>
+            
+            @if(isset($recentActivities) && $recentActivities->count())
             <div class="hv-recent-list">
-                @foreach($recentSurats as $rs)
+                @foreach($recentActivities as $log)
                 <div class="hv-recent-item">
                     <div class="hv-recent-ava">
-                        @if($rs->user?->avatar)
-                            <img src="{{ URL::to('assets/images/user/'.$rs->user->avatar) }}" alt="">
+                        @if($log->user?->avatar)
+                            <img src="{{ URL::to('assets/images/user/'.$log->user->avatar) }}" alt="" style="width: 100%; height: 100%; border-radius: 50%;">
                         @else
-                            {{ strtoupper(substr($rs->user?->name ?? 'K', 0, 1)) }}
+                            {{ strtoupper(substr($log->user?->name ?? 'S', 0, 1)) }}
                         @endif
                     </div>
                     <div>
-                        <p class="hv-recent-name">{{ $rs->user?->name ?? '-' }}</p>
+                        <p class="hv-recent-name">{{ $log->user?->name ?? 'System' }}</p>
                         <p class="hv-recent-desc">
-                            {{ ucfirst(str_replace('_',' ',$rs->jenis_surat)) }} &mdash;
-                            @php echo match($rs->status){
-                                'approved_owner'=>'Fully Approved',
-                                'submitted'=>'Submitted',
-                                'rejected'=>'Rejected',
-                                'revised'=>'Needs Revision',
-                                default=>ucfirst($rs->status)
-                            } @endphp<br>
-                            <span style="opacity:.55;">{{ $rs->updated_at->diffForHumans() }}</span>
+                            {{ $log->description }}<br>
+                            <span style="opacity:.55;">{{ $log->created_at->diffForHumans() }}</span>
                         </p>
                     </div>
                 </div>
                 @endforeach
             </div>
             @else
-            <div class="hv-recent-empty">No recent activity</div>
+            <div class="hv-recent-empty">No activities logged yet</div>
             @endif
         </div>
 
@@ -564,7 +581,7 @@
             <p class="hv-actions-title">Quick Actions</p>
             <div class="hv-actions-list">
                 <a href="{{ route('surat.index') }}" class="hv-btn-primary">Review Letters</a>
-                <a href="{{ route('hr/attendance/main/page') }}" class="hv-btn-outline">Manage Attendance</a>
+                <a href="{{ route('hr/absensi/page') }}" class="hv-btn-outline">Manage Attendance</a>
                 <a href="{{ route('hr/employee/list') }}" class="hv-btn-outline">View Employees</a>
             </div>
         </div>
@@ -657,7 +674,6 @@
             <div class="hv-actions-list">
                 <a href="{{ route('surat.index') }}" class="hv-btn-primary">Approve Letters</a>
                 <a href="{{ route('hr/employee/list') }}" class="hv-btn-outline">View Employees</a>
-                <a href="{{ route('hr/attendance/main/page') }}" class="hv-btn-outline">Manage Attendance</a>
             </div>
         </div>
 
@@ -666,7 +682,7 @@
 
 
 {{-- ══════ staff ══════ --}}
-@elseif(auth()->user()->hasRole('staff'))
+@else {{-- Default / Staff --}}
 
     {{-- row 1 --}}
     <div class="hv-row1">
@@ -675,6 +691,8 @@
         <div class="hv-photo-card">
             @if(auth()->user()->avatar)
                 <img src="{{ URL::to('assets/images/user/'.auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}">
+            @else
+                <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=E8F5EE&color=1A2B24&size=200" alt="{{ auth()->user()->name }}">
             @endif
             <div class="hv-photo-overlay">
                 <p class="hv-photo-name">{{ auth()->user()->name }}</p>

@@ -1,11 +1,13 @@
 {{-- 
-  empty state component
-  gunakan: <x-empty-state icon="inbox" title="belum ada data" description="tidak ada data yang ditemukan untuk ditampilkan" />
+  ini tuh komponen ytk nampilin klo datanya lg kosong melompong.
+  jd klo di db gada isinya, apkh lu mau nampilin tabel kosong? jgn dong, pake ini aja.
+  contoh pake nya: <x-empty-state icon="inbox" title="belum ada data" description="gada data yg ketemu ytk ditampilin" />
 --}}
 
 <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
-    {{-- icon container --}}
+    {{-- wadah utk taro icon nya --}}
     <div class="mb-6 p-6 rounded-full bg-slate-100 dark:bg-zink-700">
+        {{-- ini cek icon apa yg dipake, jd gampang tinggal sebut namanya aja --}}
         @if($icon === 'inbox')
             <i data-lucide="inbox" class="w-12 h-12 text-slate-400 dark:text-zink-400"></i>
         @elseif($icon === 'users')
@@ -19,26 +21,28 @@
         @elseif($icon === 'clock')
             <i data-lucide="clock" class="w-12 h-12 text-slate-400 dark:text-zink-400"></i>
         @else
+            {{-- nah klo ga ada di list atas, yauda panggil lgsg icon nya apkh ada --}}
             <i data-lucide="{{ $icon }}" class="w-12 h-12 text-slate-400 dark:text-zink-400"></i>
         @endif
     </div>
 
-    {{-- title --}}
+    {{-- judul utama nya --}}
     <h3 class="text-lg font-semibold text-slate-700 dark:text-zink-100 mb-2">
         {{ $title }}
     </h3>
 
-    {{-- description --}}
+    {{-- trus klo ada dskripsinya, dia bakal nampil dimari --}}
     @if($description)
         <p class="text-sm text-slate-500 dark:text-zink-300 mb-6 max-w-sm">
             {{ $description }}
         </p>
     @endif
 
-    {{-- action button (optional) --}}
+    {{-- tombol opsional ni ytk user ngeklik kalo mau nambahin data misalny --}}
     @if($actionText && $actionUrl)
         <a href="{{ $actionUrl }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-custom-500 hover:bg-custom-600 text-white font-semibold rounded-lg transition-all duration-200">
             @if($actionIcon)
+                {{-- icon ytk di dalem tombolnya --}}
                 <i data-lucide="{{ $actionIcon }}" class="w-4 h-4"></i>
             @endif
             {{ $actionText }}
@@ -46,6 +50,7 @@
     @endif
 </div>
 
+{{-- ini script ytk manggil lib lucide nya, jd iconnya bisa jalan coy --}}
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {

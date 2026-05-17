@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 
 class DocumentSettingController extends Controller
 {
+    // nampilin halaman pengaturan dokumen dgn load semua setting dr database / pake default value klo blm ada
     public function index()
     {
         $settings = [
@@ -20,8 +21,11 @@ class DocumentSettingController extends Controller
         return view('hr.settings.document', compact('settings'));
     }
 
+    // update semua pengaturan dokumen (nama perusahaan, warna, font, footer) setelah validasi input, 
+    // lalu simpan ke database via model DocumentSetting
     public function update(Request $request)
     {
+        // validasi input: company_name wajib max 255 char, accent_color wajib 7 char, font_family wajib salah satu dari 4 opsi, footer_text optional max 500 char
         $request->validate([
             'company_name' => 'required|string|max:255',
             'accent_color' => 'required|string|size:7',
@@ -29,6 +33,7 @@ class DocumentSettingController extends Controller
             'footer_text' => 'nullable|string|max:500',
         ]);
 
+        // simpan semua setting yg udah divalidasi ke database pake method set dr model DocumentSetting
         DocumentSetting::set('company_name', $request->company_name);
         DocumentSetting::set('accent_color', $request->accent_color);
         DocumentSetting::set('font_family', $request->font_family);
@@ -38,12 +43,15 @@ class DocumentSettingController extends Controller
         return redirect()->route('hr.settings.document');
     }
 
+    // handle upload logo dokumen dgn validasi image, simpan ke public storage, lalu update path-nya di database
     public function uploadLogo(Request $request)
     {
+        // validasi: logo wajib, harus image, format png/jpg/jpeg, max 2mb
         $request->validate([
             'logo' => 'required|image|mimes:png,jpg,jpeg|max:2048',
         ]);
 
+        // proses upload klo file beneran ada: simpan ke folder 'document-logos' di public disk, update path di database, tampilin pesan sukses
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('document-logos', 'public');
             DocumentSetting::set('logo_path', $path);

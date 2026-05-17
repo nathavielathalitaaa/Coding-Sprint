@@ -22,13 +22,21 @@ class EmployeeProfile extends Model
         'bpjs_kesehatan',
         'bpjs_ketenagakerjaan',
         // Kepegawaian
+        'departemen',
+        'posisi',
         'jabatan',
+        'status',
         'pendidikan_terakhir',
+        'no_telepon',
         'tgl_bergabung',
         'tgl_kontrak_akhir',
         // Keluarga
         'status_pernikahan',
         'jumlah_anak',
+        // Pribadi
+        'jenis_kelamin',
+        'tempat_lahir',
+        'tgl_lahir',
         // Kontak
         'alamat',
         'kota',
@@ -45,9 +53,15 @@ class EmployeeProfile extends Model
     ];
 
     protected $casts = [
-        'tgl_bergabung'     => 'date',
-        'tgl_kontrak_akhir' => 'date',
-        'jumlah_anak'       => 'integer',
+        'tgl_bergabung'        => 'date',
+        'tgl_kontrak_akhir'    => 'date',
+        'tgl_lahir'            => 'date',
+        'jumlah_anak'          => 'integer',
+        'nik'                  => 'encrypted',
+        'no_kk'                => 'encrypted',
+        'npwp'                 => 'encrypted',
+        'bpjs_kesehatan'       => 'encrypted',
+        'bpjs_ketenagakerjaan' => 'encrypted',
     ];
 
     // ── Relasi ke User ─────────────────────────────────

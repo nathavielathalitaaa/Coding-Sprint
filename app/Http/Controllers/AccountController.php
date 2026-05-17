@@ -1,28 +1,28 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers; 
 
-use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\EmployeeProfile;
-use Session;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\Request; 
+use App\Models\User; 
+use App\Models\EmployeeProfile; 
+use Session; 
+use Illuminate\Support\Facades\Auth; 
+use Illuminate\Support\Facades\Storage; 
+use Illuminate\Support\Facades\Hash; 
+use App\Models\ActivityLog; 
 
-class AccountController extends Controller
+class AccountController extends Controller // class controller utk fitur manajemen akun & profil user
 {
-    /** page account profile - read only (old) */
     
-
+    // fungsi ini nampilin detail profil user berdasarkan user_id (bisa buat hr liat profil karyawan lain)
     public function profileDetail($user_id)
-{
-    $user    = User::where('user_id', $user_id)->first();
-    $profile = $user?->profile()->firstOrCreate(['user_id' => $user->id ?? 0]);
-    return view('pages.account-profile', compact('user', 'profile'));
-}
+    {
+        $user    = User::where('user_id', $user_id)->first();
+        $profile = $user?->profile()->firstOrCreate(['user_id' => $user->id ?? 0]);
+        return view('pages.account-profile', compact('user', 'profile'));
+    }
 
-    /** show current user's own profile */
+    // fungsi ini nampilin profil user yg lagi login aja, otomatis ambil data dr session auth
     public function showProfile()
     {
         $user = Auth::user();
@@ -31,17 +31,18 @@ class AccountController extends Controller
         return view('pages.account-profile', compact('user', 'profile'));
     }
 
-    /** update basic profile info */
+    // fungsi ini update info dasar profil (nama, no hp, lokasi), cuma bs diupdate oleh hr atau user itu sendiri
     public function updateProfile(Request $request, $id = null)
     {
         $id = $id ?? Auth::id();
         $user = User::findOrFail($id);
 
-        // security check: only hr or the user themselves can update
+        // cek security: klo yg login bukan user tsb & bukan hr, blokir akses
         if (Auth::id() != $id && !Auth::user()->hasRole('hr')) {
             abort(403, 'Unauthorized action.');
         }
 
+        // validasi input: nama wajib, no hp & lokasi optional dgn batas panjang tertentu
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'phone_number' => 'nullable|string|max:20',
@@ -51,23 +52,25 @@ class AccountController extends Controller
         $user->update($validated);
 
         flash()->success('Profil berhasil diperbarui');
-        return redirect()->back(); // redirect back to keep context (own profile or employee profile)
+        return redirect()->back(); // redirect balik biar konteks halaman tetep (profil sendiri / profil karyawan)
     }
     
-    /** update profile photo */
+    // fungsi ini handle upload & update foto profil user, pake validasi image & simpan ke public folder
     public function updatePhoto(Request $request)
     {
+        // validasi: file wajib, harus image, format jpeg/png/jpg/gif, max 2mb
         $request->validate([
             'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $user = Auth::user();
         
+        // if ini proses upload klo file beneran ada: generate nama unik, simpan ke folder, hapus foto lama klo ada, update db
         if ($request->hasFile('photo')) {
             $image = $request->file('photo');
             $filename = time() . '.' . $image->getClientOriginalExtension();
             
-            // simpan ke public/assets/images/user/
+            // simpan ke public itulah
             $image->move(public_path('assets/images/user'), $filename);
             
             // hapus foto lama jika ada
@@ -86,9 +89,24 @@ class AccountController extends Controller
         return response()->json(['success' => false, 'message' => 'Gagal upload foto'], 400);
     }
 
-    /** upload ttd image */
+    // fungsi ini hapus foto profil user dan reset ke initial
+    public function deletePhoto()
+    {
+        $user = Auth::user();
+
+        if ($user->avatar && file_exists(public_path('assets/images/user/' . $user->avatar))) {
+            @unlink(public_path('assets/images/user/' . $user->avatar));
+        }
+
+        $user->update(['avatar' => null]);
+
+        return response()->json(['success' => true]);
+    }
+
+    // fungsi ini handle upload ttd dgn validasi: wajib png, transparan, ukuran & resolusi spesifik, simpan ke private storage
     public function uploadTtd(Request $request)
     {
+        // validasi detail: wajib png krn support transparansi, max 2mb, resolusi landscape 300x100 s/d 1000x400 px
         $request->validate([
             'ttd' => 'required|image|mimes:png|max:2048|dimensions:min_width=300,min_height=100,max_width=1000,max_height=400',
         ], [
@@ -108,7 +126,7 @@ class AccountController extends Controller
         // always save as png
         $filename = 'ttd/' . $user->id . '.png';
 
-        // delete old ttd file if exists
+        // if ini hapus file ttd lama klo udah ada, biar gk numpuk di storage
         if ($profile->ttd_path) {
             Storage::disk('local')->delete('private/' . $profile->ttd_path);
         }
@@ -121,16 +139,18 @@ class AccountController extends Controller
         return redirect()->route('profile.show');
     }
 
-    /** upload digital signature (public storage) */
+    // fungsi ini handle upload digital signature ke public storage, bs buat hr update signature karyawan lain
     public function uploadSignature(Request $request, $id = null)
     {
         $id = $id ?? Auth::id();
         $user = User::findOrFail($id);
 
+        // cek authorization: cuma user sendiri atau hr yg bs update signature
         if (Auth::id() != $id && !Auth::user()->hasRole('hr')) {
             abort(403, 'Unauthorized action.');
         }
 
+        // validasi: file signature wajib image, format jpg/jpeg/png, max 2mb
         $request->validate([
             'signature' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ], [
@@ -142,35 +162,40 @@ class AccountController extends Controller
 
         $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
 
+        // if ini proses upload: hapus signature lama klo ada, simpen yg baru ke folder 'private/signatures' di local disk
         if ($request->hasFile('signature')) {
             // delete old signature if exists
             if ($profile->signature_path) {
-                Storage::disk('public')->delete($profile->signature_path);
+                Storage::disk('local')->delete('private/' . $profile->signature_path);
             }
 
-            // save new signature
-            $path = $request->file('signature')->store('signatures', 'public');
-            $profile->update(['signature_path' => $path]);
+            // save new signature to private storage
+            $filename = 'signatures/' . $user->id . '_' . time() . '.' . $request->file('signature')->getClientOriginalExtension();
+            Storage::disk('local')->putFileAs('private', $request->file('signature'), $filename);
+            
+            $profile->update(['signature_path' => $filename]);
         }
 
         flash()->success('Tanda tangan digital berhasil disimpan');
         return redirect()->back();
     }
 
-    /** delete digital signature (public storage) */
+    // fungsi ini hapus digital signature user dari public storage, cuma bs dilakukan oleh user sendiri atau hr
     public function deleteSignature($id = null)
     {
         $id = $id ?? Auth::id();
         $user = User::findOrFail($id);
 
+        // cek authorization: blokir klo bukan user tsb & bukan hr
         if (Auth::id() != $id && !Auth::user()->hasRole('hr')) {
             abort(403, 'Unauthorized action.');
         }
 
         $profile = $user->profile;
 
+        // if ini cek klo profile & signature_path ada, baru hapus file dr storage & update db jadi null
         if ($profile && $profile->signature_path) {
-            Storage::disk('public')->delete($profile->signature_path);
+            Storage::disk('local')->delete('private/' . $profile->signature_path);
             $profile->update(['signature_path' => null]);
             flash()->success('Tanda tangan digital berhasil dihapus');
         } else {
@@ -180,12 +205,13 @@ class AccountController extends Controller
         return redirect()->back();
     }
 
-    /** set or change pin */
+    // fungsi ini handle set/change pin approval user, dgn validasi 6 digit angka & verifikasi pin lama klo udah pernah set
     public function setPin(Request $request)
     {
         $user = Auth::user();
         $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
 
+        // validasi: pin baru wajib 6 digit, konfirmasi wajib sama, current_pin wajib klo user udah punya pin sebelumnya
         $request->validate([
             'pin' => 'required|digits:6',
             'pin_confirmation' => 'required|same:pin',
@@ -198,7 +224,7 @@ class AccountController extends Controller
             'current_pin.required' => 'PIN lama harus diisi',
         ]);
 
-        // if user already has pin, verify current pin
+        // if ini verifikasi pin lama klo user udah pernah set pin sebelumnya, klo salah return error
         if ($profile->pin) {
             if (!$profile->checkPin($request->current_pin)) {
                 return back()->withErrors(['current_pin' => 'PIN lama tidak sesuai']);
@@ -208,34 +234,53 @@ class AccountController extends Controller
         // set new pin
         $profile->setPin($request->pin);
 
+        ActivityLog::log('update_pin', null, auth()->user()->name . " memperbarui PIN approval");
+
         flash()->success('PIN approval berhasil diatur');
         return redirect()->route('profile.show');
     }
 
-    /** serve ttd image securely */
+    // fungsi ini serve file ttd user secara secure via storage facade, cuma bs diakses klo file beneran ada & user authorized
     public function showTtd()
     {
         $profile = Auth::user()->profile;
 
-        if (!$profile || !$profile->ttd_path) {
-            abort(404);
+        if (!$profile) abort(404);
+
+        $path = null;
+        if ($profile->signature_path) {
+            $path = storage_path('app/public/' . $profile->signature_path);
+            if (!file_exists($path)) {
+                $path = storage_path('app/private/' . $profile->signature_path);
+            }
         }
 
-        // correctly handle the path via storage facade to avoid double 'private' issues
-        $path = Storage::disk('local')->path('private/' . $profile->ttd_path);
-
-        if (!file_exists($path)) {
-            abort(404);
+        if (!$path || !file_exists($path)) {
+            if ($profile->ttd_path) {
+                $path = storage_path('app/private/' . $profile->ttd_path);
+                if (!file_exists($path)) {
+                    $path = storage_path('app/private/private/' . $profile->ttd_path);
+                }
+                if (!file_exists($path)) {
+                    $path = storage_path('app/public/' . $profile->ttd_path);
+                }
+            }
         }
 
-        return response()->file($path);
+        if (!$path || !file_exists($path)) {
+            abort(404, 'Signature file not found');
+        }
+
+        $mime = str_ends_with($path, '.png') ? 'image/png' : 'image/jpeg';
+        return response()->file($path, ['Content-Type' => $mime]);
     }
 
-    /** update email */
+    // fungsi ini update email user, wajib verifikasi password dulu buat keamanan
     public function updateEmail(Request $request)
     {
         $user = Auth::user();
 
+        // validasi: email wajib, format email valid, unique kecuali buat user ini sendiri, password wajib utk verifikasi
         $request->validate([
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'required',
@@ -244,6 +289,7 @@ class AccountController extends Controller
             'password.required' => 'Password diperlukan untuk verifikasi identitas',
         ]);
 
+        // if ini cek klo password yg diinput gk cocok dgn hash di db, return error
         if (!Hash::check($request->password, $user->password)) {
             return back()->withErrors(['password' => 'Password yang Anda masukkan salah']);
         }
@@ -254,11 +300,12 @@ class AccountController extends Controller
         return redirect()->route('profile.show');
     }
 
-    /** update password */
+    // fungsi ini update password user, wajib isi password lama & konfirmasi password baru
     public function updatePassword(Request $request)
     {
         $user = Auth::user();
 
+        // validasi: current_password wajib, new_password wajib min 8 karakter & confirmed
         $request->validate([
             'current_password' => 'required',
             'new_password' => 'required|min:8|confirmed',
@@ -269,33 +316,40 @@ class AccountController extends Controller
             'new_password.confirmed' => 'Konfirmasi password baru tidak cocok',
         ]);
 
+        // if ini verifikasi password lama, klo gk cocok return error
         if (!Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai']);
         }
 
         $user->update([
-            'password' => Hash::make($request->new_password)
+            'password'             => Hash::make($request->new_password),
+            'must_change_password' => false,
         ]);
+
+        ActivityLog::log('update_password', null, auth()->user()->name . " memperbarui password akun");
 
         flash()->success('Password berhasil diperbarui');
         return redirect()->route('profile.show');
     }
 
-    /** show onboarding page */
+    // fungsi ini nampilin halaman onboarding, nentuin step berikutnya based on kelengkapan ttd & pin user
     public function showOnboarding()
     {
         $user    = Auth::user();
         $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
+        // logic ini nentuin step: klo blm ada ttd -> step 'ttd', klo udah ttd tp blm pin -> step 'pin', klo udah semua -> 'done'
         $step    = !$profile->ttd_path ? 'ttd' : (!$profile->pin ? 'pin' : 'done');
 
+        // if ini redirect ke home klo user udah selesai onboarding (step 'done')
         if ($step === 'done') return redirect()->route('home');
 
         return view('pages.onboarding', compact('user', 'profile', 'step'));
     }
 
-    /** upload ttd during onboarding */
+    // fungsi ini handle upload ttd khusus selama proses onboarding, validasi lebih simpel & langsung redirect ke step pin
     public function onboardingTtd(Request $request)
     {
+        // validasi: ttd wajib, format png, max 2mb
         $request->validate([
             'ttd' => 'required|image|mimes:png|max:2048',
         ], [
@@ -311,6 +365,7 @@ class AccountController extends Controller
 
         Storage::makeDirectory('private/ttd');
 
+        // if ini hapus ttd lama klo ada sebelum simpan yg baru
         if ($profile->ttd_path) {
             Storage::delete('private/' . $profile->ttd_path);
         }
@@ -322,9 +377,10 @@ class AccountController extends Controller
         return redirect()->route('onboarding');
     }
 
-    /** set pin during onboarding */
+    // fungsi ini handle set pin khusus selama onboarding, gk perlu verifikasi pin lama krn ini pertama kali set
     public function onboardingPin(Request $request)
     {
+        // validasi: pin wajib 6 digit angka, konfirmasi wajib sama
         $request->validate([
             'pin'              => 'required|digits:6',
             'pin_confirmation' => 'required|same:pin',

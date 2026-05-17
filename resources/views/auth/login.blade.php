@@ -362,6 +362,28 @@
             <h2>Welcome back</h2>
             <p class="subtitle">Masuk ke akun Anda untuk melanjutkan</p>
 
+            @if(session('session_expired'))
+            <div style="
+                background: #FEF3C7;
+                border-left: 3px solid #F59E0B;
+                border-radius: 0 12px 12px 0;
+                padding: 12px 16px;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            ">
+                <i data-lucide="clock" 
+                   style="width:16px;height:16px;color:#92400E;flex-shrink:0;"></i>
+                <p style="
+                    font-family:'Poppins',sans-serif;
+                    font-size:12px;
+                    color:#92400E;
+                    margin:0;
+                ">{{ session('session_expired') }}</p>
+            </div>
+            @endif
+
             {{-- Error message --}}
             @if($errors->any())
             <div class="error-msg">

@@ -5,8 +5,8 @@
     {{-- breadcrumb / header --}}
     <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-3xl font-playfair font-semibold text-[#1A2B24]">Letter Details</h1>
-            <p class="text-sm text-gray-500 mt-1">Full information and approval status</p>
+            <h1 class="text-3xl font-playfair font-bold text-[#1A2B24]">Letter Details</h1>
+            <p class="text-[13px] font-light text-[#6B7280] mt-1">Full information and approval status</p>
         </div>
         <div class="flex items-center gap-3">
             <a href="{{ route('surat.index') }}" class="px-5 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-600 transition shadow-sm">
@@ -14,18 +14,29 @@
             </a>
             
             @if($surat->status === 'approved_owner' && ($surat->cover_pdf_path || $surat->hasFinalPdf()))
-            <a href="{{ $surat->hasFinalPdf() ? asset('storage/' . $surat->final_pdf_path) : Storage::url($surat->cover_pdf_path) }}"
-               target="_blank"
-               class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition shadow-sm">
-                <i data-lucide="download" class="w-4 h-4 inline-block"></i> Download Letter
-            </a>
+                @if($surat->final_pdf_path === 'ARCHIVED' || $surat->cover_pdf_path === 'ARCHIVED')
+                    <span class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-200 text-gray-500 rounded-xl text-sm font-semibold shadow-sm cursor-not-allowed">
+                        <i data-lucide="archive" class="w-4 h-4 inline-block"></i> Archived
+                    </span>
+                @else
+                    <a href="{{ route('surat.download', ['surat' => $surat->id, 'type' => 'final']) }}"
+                       class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition shadow-sm">
+                        <i data-lucide="download" class="w-4 h-4 inline-block"></i> Download Letter
+                    </a>
+                @endif
             @elseif($surat->file_pdf)
-                @can('download', $surat)
-                <a href="{{ route('surat.download', $surat->id) }}"
-                   class="inline-flex items-center gap-2 px-5 py-2.5 border border-[#4F6560] text-[#4F6560] bg-white hover:bg-gray-50 rounded-xl text-sm font-semibold transition shadow-sm">
-                    <i data-lucide="file-text" class="w-4 h-4 inline-block"></i> View Document
-                </a>
-                @endcan
+                @if($surat->file_pdf === 'ARCHIVED')
+                    <span class="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-200 text-gray-400 bg-gray-50 rounded-xl text-sm font-semibold shadow-sm cursor-not-allowed">
+                        <i data-lucide="archive" class="w-4 h-4 inline-block"></i> Archived
+                    </span>
+                @else
+                    @can('download', $surat)
+                    <a href="{{ route('surat.download', ['surat' => $surat->id, 'type' => 'original']) }}"
+                       class="inline-flex items-center gap-2 px-5 py-2.5 border border-[#4F6560] text-[#4F6560] bg-white hover:bg-gray-50 rounded-xl text-sm font-semibold transition shadow-sm">
+                        <i data-lucide="file-text" class="w-4 h-4 inline-block"></i> View Document
+                    </a>
+                    @endcan
+                @endif
             @endif
 
             @if(Auth::id() === $surat->user_id)
@@ -92,9 +103,11 @@
                     </div>
                     <div>
                         <p class="text-xs font-bold tracking-widest uppercase text-gray-400 mb-1.5">Attachment</p>
-                        @if($surat->file_pdf)
+                        @if($surat->file_pdf === 'ARCHIVED')
+                            <p class="text-gray-400 italic flex items-center gap-1"><i data-lucide="archive" class="w-3 h-3"></i> File Archived</p>
+                        @elseif($surat->file_pdf)
                             @can('download', $surat)
-                                <a href="{{ route('surat.download', $surat->id) }}" class="inline-flex items-center gap-2 text-[#4F6560] hover:text-[#3d504c] font-medium hover:underline">
+                                <a href="{{ route('surat.download', ['surat' => $surat->id, 'type' => 'original']) }}" class="inline-flex items-center gap-2 text-[#4F6560] hover:text-[#3d504c] font-medium hover:underline">
                                     <i data-lucide="file-text" class="w-4 h-4"></i> View Original Document
                                 </a>
                             @else
@@ -310,9 +323,14 @@
             {{-- download buttons --}}
             <div class="flex flex-col gap-3">
                 {{-- Tombol download PDF asli (lampiran dari pembuat) --}}
-                @if($surat->file_pdf)
+                @if($surat->file_pdf === 'ARCHIVED')
+                    <div class="inline-flex items-center justify-center gap-2 px-5 py-4 bg-gray-100 text-gray-400 rounded-full text-[13px] font-poppins font-medium w-full cursor-not-allowed">
+                        <i data-lucide="archive" class="w-5 h-5"></i>
+                        Original Document Archived
+                    </div>
+                @elseif($surat->file_pdf)
                     @can('download', $surat)
-                    <a href="{{ route('surat.download', $surat->id) }}" target="_blank"
+                    <a href="{{ route('surat.download', ['surat' => $surat->id, 'type' => 'original']) }}"
                        class="inline-flex items-center justify-center gap-2 px-5 py-4 bg-[#4F6560] text-white rounded-full text-[13px] font-poppins font-medium shadow-sm hover:bg-[#3d504c] transition w-full">
                         <i data-lucide="file-text" class="w-5 h-5"></i>
                         Download Original Document
@@ -322,6 +340,17 @@
                 
                 {{-- Lembar Persetujuan (cover PDF yang dibuat ApprovalService) --}}
                 @if($surat->status === 'approved_owner' && $surat->cover_pdf_path)
+                @if($surat->cover_pdf_path === 'ARCHIVED')
+                <div style="margin-top:16px;padding-top:16px;border-top:1px solid #F0F4F2;">
+                    <p style="font-size:11px;font-weight:500;color:#6B7280;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">
+                        Approval Sheet
+                    </p>
+                    <div style="display:inline-flex;align-items:center;gap:8px;background:#F3F4F6;color:#9CA3AF;border-radius:9999px;padding:10px 20px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;cursor:not-allowed;">
+                        <i data-lucide="archive" style="width:15px;height:15px;"></i>
+                        Approval Sheet Archived
+                    </div>
+                </div>
+                @else
                 @php
                     $coverExists = \Illuminate\Support\Facades\Storage::disk('public')->exists($surat->cover_pdf_path);
                 @endphp
@@ -330,8 +359,7 @@
                     <p style="font-size:11px;font-weight:500;color:#6B7280;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">
                         Approval Sheet
                     </p>
-                    <a href="{{ \Illuminate\Support\Facades\Storage::url($surat->cover_pdf_path) }}"
-                       target="_blank"
+                    <a href="{{ route('surat.download', ['surat' => $surat->id, 'type' => 'cover']) }}"
                        style="display:inline-flex;align-items:center;gap:8px;background:#4F6560;color:white;border-radius:9999px;padding:10px 20px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;text-decoration:none;">
                         <i data-lucide="file-check" style="width:15px;height:15px;"></i>
                         Download Approval Sheet (PDF)
@@ -346,14 +374,22 @@
                 </div>
                 @endif
                 @endif
+                @endif
                 
                 {{-- PDF Final (jika ada) --}}
                 @if($surat->hasFinalPdf())
-                <a href="{{ asset('storage/' . $surat->final_pdf_path) }}" target="_blank"
-                   class="inline-flex items-center justify-center gap-2 px-5 py-4 bg-emerald-600 text-white rounded-2xl text-sm font-semibold shadow-sm hover:bg-emerald-700 border border-emerald-500 transition">
-                    <i data-lucide="download" class="w-5 h-5"></i>
-                    Download Final PDF (Signed)
-                </a>
+                    @if($surat->final_pdf_path === 'ARCHIVED')
+                    <div class="inline-flex items-center justify-center gap-2 px-5 py-4 bg-gray-100 text-gray-400 rounded-2xl text-sm font-semibold shadow-sm cursor-not-allowed">
+                        <i data-lucide="archive" class="w-5 h-5"></i>
+                        Final PDF Archived
+                    </div>
+                    @else
+                    <a href="{{ route('surat.download', ['surat' => $surat->id, 'type' => 'final']) }}"
+                       class="inline-flex items-center justify-center gap-2 px-5 py-4 bg-emerald-600 text-white rounded-2xl text-sm font-semibold shadow-sm hover:bg-emerald-700 border border-emerald-500 transition">
+                        <i data-lucide="download" class="w-5 h-5"></i>
+                        Download Final PDF (Signed)
+                    </a>
+                    @endif
                 @endif
                 
                 {{-- Fallback jika tidak ada file apapun --}}

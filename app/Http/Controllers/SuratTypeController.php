@@ -18,8 +18,29 @@ class SuratTypeController extends Controller
 
     public function create()
     {
-        $users = \App\Models\User::role(['hr', 'supervisor'])->get();
-        return view('surat-type.create', compact('users'));
+        $approverUsers = \App\Models\User::with(['profile', 'roles'])
+            ->where(function($q) {
+                // Include: all hr and supervisor
+                $q->whereHas('roles', function($roleQuery) {
+                    $roleQuery->whereIn('name', ['hr', 'supervisor']);
+                })
+                // Include: anyone (including staff) who has jabatan set
+                ->orWhereHas('profile', function($profileQuery) {
+                    $profileQuery->whereNotNull('jabatan')
+                                 ->where('jabatan', '!=', '');
+                });
+            })
+            ->get()
+            ->map(function($user) {
+                return [
+                    'id'     => $user->id,
+                    'name'   => $user->name,
+                    'role'   => $user->roles->first()?->name ?? 'staff',
+                    'jabatan'=> $user->profile?->jabatan ?? '-',
+                ];
+            });
+
+        return view('surat-type.create', compact('approverUsers'));
     }
 
     public function store(Request $request)
@@ -30,7 +51,6 @@ class SuratTypeController extends Controller
             'nomor_format' => 'required|array',
             'approvers' => 'required|array|min:1',
             'approvers.*.jabatan_label' => 'required|string|max:100',
-            'approvers.*.label' => 'required|string|max:100',
             'approvers.*.user_id' => 'nullable|exists:users,id',
             'approvers.*.metode_ttd' => 'required|in:stamp,append',
         ]);
@@ -51,22 +71,41 @@ class SuratTypeController extends Controller
                     'urutan' => $index + 1,
                     'user_id' => $approver['user_id'] ?? null,
                     'jabatan_label' => $approver['jabatan_label'] ?? '-',
-                    'label' => $approver['label'],
                     'metode_ttd' => $approver['metode_ttd'] ?? 'stamp',
-                    'is_required' => $approver['is_required'] ?? true,
+                    'is_required' => isset($approver['is_required']),
                 ]);
             }
         });
 
-        flash()->success('Jenis surat berhasil dibuat.');
+        flash()->success('Document type created successfully.');
         return redirect()->route('surat-type.index');
     }
 
     public function edit($id)
     {
         $suratType = SuratType::with('approvers')->findOrFail($id);
-        $users = \App\Models\User::role(['hr', 'supervisor'])->get();
-        return view('surat-type.create', compact('suratType', 'users'));
+        
+        $approverUsers = \App\Models\User::with(['profile', 'roles'])
+            ->where(function($q) {
+                $q->whereHas('roles', function($roleQuery) {
+                    $roleQuery->whereIn('name', ['hr', 'supervisor']);
+                })
+                ->orWhereHas('profile', function($profileQuery) {
+                    $profileQuery->whereNotNull('jabatan')
+                                 ->where('jabatan', '!=', '');
+                });
+            })
+            ->get()
+            ->map(function($user) {
+                return [
+                    'id'     => $user->id,
+                    'name'   => $user->name,
+                    'role'   => $user->roles->first()?->name ?? 'staff',
+                    'jabatan'=> $user->profile?->jabatan ?? '-',
+                ];
+            });
+
+        return view('surat-type.create', compact('suratType', 'approverUsers'));
     }
 
     public function update(Request $request, $id)
@@ -79,7 +118,6 @@ class SuratTypeController extends Controller
             'nomor_format' => 'required|array',
             'approvers' => 'required|array|min:1',
             'approvers.*.jabatan_label' => 'required|string|max:100',
-            'approvers.*.label' => 'required|string|max:100',
             'approvers.*.user_id' => 'nullable|exists:users,id',
             'approvers.*.metode_ttd' => 'required|in:stamp,append',
         ]);
@@ -100,14 +138,13 @@ class SuratTypeController extends Controller
                     'urutan' => $index + 1,
                     'user_id' => $approver['user_id'] ?? null,
                     'jabatan_label' => $approver['jabatan_label'] ?? '-',
-                    'label' => $approver['label'],
                     'metode_ttd' => $approver['metode_ttd'] ?? 'stamp',
-                    'is_required' => $approver['is_required'] ?? true,
+                    'is_required' => isset($approver['is_required']),
                 ]);
             }
         });
 
-        flash()->success('Jenis surat berhasil diperbarui.');
+        flash()->success('Document type updated successfully.');
         return redirect()->route('surat-type.index');
     }
 
@@ -115,13 +152,35 @@ class SuratTypeController extends Controller
     {
         $suratType = SuratType::findOrFail($id);
 
-        if ($suratType->surats()->exists()) {
-            flash()->error('Jenis surat tidak bisa dihapus karena sudah digunakan.');
-            return redirect()->back();
-        }
+        DB::transaction(function () use ($suratType) {
+            // delete associated documents and their approvals
+            $surats = $suratType->surats;
+            foreach ($surats as $surat) {
+                // delete approvals first
+                $surat->approvals()->delete();
+                
+                // delete files from storage if they exist
+                if ($surat->file_pdf) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($surat->file_pdf);
+                }
+                if ($surat->cover_pdf_path) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($surat->cover_pdf_path);
+                }
+                if ($surat->final_pdf_path) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($surat->final_pdf_path);
+                }
+                
+                $surat->delete();
+            }
 
-        $suratType->delete();
-        flash()->success('Jenis surat berhasil dihapus.');
+            // delete approver configurations
+            $suratType->approvers()->delete();
+            
+            // finally delete the document type
+            $suratType->delete();
+        });
+
+        flash()->success('Document type and all associated records deleted successfully.');
         return redirect()->route('surat-type.index');
     }
 

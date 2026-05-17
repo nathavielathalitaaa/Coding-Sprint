@@ -293,10 +293,21 @@
     .hv-p-nomor { background: #F9FAFB; border: 1px dashed #D1D5DB; border-radius: 6px; padding: 6px; font-family: monospace; font-size: 11px; color: #4B5563; text-align: center; }
 </style>
 
-<div class="hv-top-bar">
-    <h1 class="hv-page-title">{{ isset($suratType) ? 'Edit Jenis Surat' : 'Tambah Jenis Surat' }}</h1>
-    <p class="hv-page-subtitle">Tentukan format nomor dan alur persetujuan surat Anda.</p>
+<div class="mb-8">
+    <h1 class="text-3xl font-playfair font-bold text-[#1A2B24]">{{ isset($suratType) ? 'Edit Document Type' : 'Add Document Type' }}</h1>
+    <p class="text-[13px] font-light text-[#6B7280] mt-1">Define the number format and approval workflow for your documents.</p>
 </div>
+
+@if($errors->any())
+<div style="background: #FEE2E2; border: 1px solid #EF4444; color: #B91C1C; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+    <p style="font-weight: 600; margin-bottom: 8px;">Wait, something is missing or wrong:</p>
+    <ul style="font-size: 13px; list-style-type: disc; margin-left: 20px;">
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
 
 <form action="{{ isset($suratType) ? route('surat-type.update', $suratType->id) : route('surat-type.store') }}" method="POST" id="suratTypeForm">
     @csrf
@@ -309,42 +320,42 @@
             <div class="hv-section-card">
                 <h2 class="hv-section-title">
                     <i data-lucide="info" style="width: 20px; height: 20px;"></i>
-                    Informasi Jenis Surat
+                    Document Type Information
                 </h2>
                 
                 <div class="hv-form-row">
                     <div class="hv-form-group">
-                        <label class="hv-label">Nama Surat</label>
-                        <input type="text" name="nama" id="input_nama" class="hv-input" placeholder="Contoh: Surat Izin Kerja" value="{{ $suratType->nama ?? '' }}" required>
+                        <label class="hv-label">Document Name</label>
+                        <input type="text" name="nama" id="input_nama" class="hv-input" placeholder="Example: Work Permit Letter" value="{{ $suratType->nama ?? '' }}" required>
                     </div>
                     <div class="hv-form-group">
-                        <label class="hv-label">Kode / Slug</label>
-                        <input type="text" name="kode" id="input_kode" class="hv-input" placeholder="Contoh: izin" value="{{ $suratType->kode ?? '' }}" required>
+                        <label class="hv-label">Code / Slug</label>
+                        <input type="text" name="kode" id="input_kode" class="hv-input" placeholder="Example: permit" value="{{ $suratType->kode ?? '' }}" required>
                     </div>
                 </div>
 
                 <div class="hv-form-group">
-                    <label class="hv-label">Deskripsi (Opsional)</label>
-                    <textarea name="deskripsi" id="input_deskripsi" class="hv-input hv-textarea" placeholder="Jelaskan kegunaan surat ini...">{{ $suratType->deskripsi ?? '' }}</textarea>
+                    <label class="hv-label">Description (Optional)</label>
+                    <textarea name="deskripsi" id="input_deskripsi" class="hv-input hv-textarea" placeholder="Explain the purpose of this document...">{{ $suratType->deskripsi ?? '' }}</textarea>
                 </div>
 
                 <div class="hv-form-row">
                     <div class="hv-form-group">
-                        <label class="hv-label">Reset Counter Nomor</label>
+                        <label class="hv-label">Number Counter Reset</label>
                         <select name="nomor_reset" class="hv-input">
-                            <option value="yearly" {{ (isset($suratType) && $suratType->nomor_reset == 'yearly') ? 'selected' : '' }}>Setiap Tahun</option>
-                            <option value="monthly" {{ (isset($suratType) && $suratType->nomor_reset == 'monthly') ? 'selected' : '' }}>Setiap Bulan</option>
-                            <option value="never" {{ (isset($suratType) && $suratType->nomor_reset == 'never') ? 'selected' : '' }}>Tidak Pernah</option>
+                            <option value="yearly" {{ (isset($suratType) && $suratType->nomor_reset == 'yearly') ? 'selected' : '' }}>Every Year</option>
+                            <option value="monthly" {{ (isset($suratType) && $suratType->nomor_reset == 'monthly') ? 'selected' : '' }}>Every Month</option>
+                            <option value="never" {{ (isset($suratType) && $suratType->nomor_reset == 'never') ? 'selected' : '' }}>Never</option>
                         </select>
                     </div>
                     <div class="hv-form-group">
-                        <label class="hv-label">Status Aktif</label>
+                        <label class="hv-label">Active Status</label>
                         <div style="display: flex; align-items: center; gap: 12px; height: 46px;">
                             <label class="hv-toggle">
                                 <input type="checkbox" name="is_active" value="1" {{ (!isset($suratType) || $suratType->is_active) ? 'checked' : '' }}>
                                 <span class="hv-toggle-slider"></span>
                             </label>
-                            <span style="font-size: 14px; color: #4B5563;">Aktif & Tersedia</span>
+                            <span style="font-size: 14px; color: #4B5563;">Active & Available</span>
                         </div>
                     </div>
                 </div>
@@ -354,10 +365,10 @@
             <div class="hv-section-card">
                 <h2 class="hv-section-title">
                     <i data-lucide="hash" style="width: 20px; height: 20px;"></i>
-                    Format Nomor Surat
+                    Document Number Format
                 </h2>
                 
-                <p class="hv-label" style="color: #9CA3AF; margin-bottom: 16px;">Klik komponen di bawah untuk menambahkannya ke format:</p>
+                <p class="hv-label" style="color: #9CA3AF; margin-bottom: 16px;">Click the components below to add them to the format:</p>
                 
                 <div class="hv-component-pool">
                     <div class="hv-pill hv-pill-tool" onclick="addFormatItem('NOMOR_URUT')">
@@ -393,7 +404,7 @@
             <div class="hv-section-card">
                 <h2 class="hv-section-title">
                     <i data-lucide="git-branch" style="width: 20px; height: 20px;"></i>
-                    Alur Approval
+                    Approval Workflow
                 </h2>
                 
                 <div class="hv-step-list" id="approver_container">
@@ -402,12 +413,12 @@
                 
                 <button type="button" class="hv-btn-add-step" onclick="addApproverStep()">
                     <i data-lucide="plus" style="display: inline; vertical-align: middle; width: 14px; height: 14px;"></i>
-                    Tambah Step Approval
+                    Add Approval Step
                 </button>
             </div>
 
             <button type="submit" class="hv-btn-submit">
-                {{ isset($suratType) ? 'Perbarui Jenis Surat' : 'Simpan Jenis Surat' }}
+                {{ isset($suratType) ? 'Update Document Type' : 'Save Document Type' }}
             </button>
         </div>
 
@@ -417,17 +428,17 @@
                 <div class="hv-card-preview">
                     <div class="hv-p-card">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <h2 class="hv-p-nama" id="p_nama">Nama Surat</h2>
-                            <span class="hv-p-kode" id="p_kode">KODE</span>
+                            <h2 class="hv-p-nama" id="p_nama">Document Name</h2>
+                            <span class="hv-p-kode" id="p_kode">CODE</span>
                         </div>
-                        <p class="hv-p-desc" id="p_desc">Deskripsi surat akan muncul di sini saat Anda mengetik...</p>
+                        <p class="hv-p-desc" id="p_desc">Document description will appear here as you type...</p>
                         
-                        <div class="hv-p-label">Alur Approval</div>
+                        <div class="hv-p-label">Approval Workflow</div>
                         <div class="hv-p-chain" id="p_chain">
                             {{-- preview steps --}}
                         </div>
                         
-                        <div class="hv-p-label">Contoh Nomor</div>
+                        <div class="hv-p-label">Example Number</div>
                         <div class="hv-p-nomor" id="p_nomor">001/KODE/V/2026</div>
                     </div>
                 </div>
@@ -442,7 +453,7 @@
     const approverContainer = document.getElementById('approver_container');
     const formatInputsContainer = document.getElementById('format_inputs_container');
 
-    const users = @json($users);
+    const users = @json($approverUsers);
     let formatItems = @json($suratType->nomor_format ?? []);
     let approverSteps = @json($suratType->approvers ?? []);
 
@@ -487,15 +498,38 @@
 
     function renderFormat() {
         formatContainer.innerHTML = '';
+        // formatInputsContainer is no longer used for inputs, just a clear indicator
         formatInputsContainer.innerHTML = '';
 
         formatItems.forEach((item, index) => {
             const el = document.createElement('div');
             el.className = 'hv-format-item';
+            el.style.flexDirection = 'column';
+            el.style.alignItems = 'flex-start';
+            el.style.gap = '4';
+            
+            let extraInput = '';
+            if (item.type === 'LEMBAGA' || item.type === 'CUSTOM') {
+                extraInput = `
+                    <div style="margin-top: 4px;">
+                        <input type="text" name="nomor_format[${index}][value]" class="hv-input" 
+                               style="padding: 2px 6px; font-size: 10px; width: 60px; height: auto;" 
+                               value="${item.value || ''}" 
+                               oninput="updateFormatValue(${index}, this.value)"
+                               onclick="event.stopPropagation()">
+                    </div>
+                `;
+            } else {
+                extraInput = `<input type="hidden" name="nomor_format[${index}][value]" value="">`;
+            }
+
             el.innerHTML = `
-                ${item.type}
-                <input type="hidden" name="nomor_format[${index}][type]" value="${item.type}">
-                <i data-lucide="x" class="hv-format-item-remove" onclick="removeFormatItem(${index})"></i>
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <span>${item.type}</span>
+                    <input type="hidden" name="nomor_format[${index}][type]" value="${item.type}">
+                    <i data-lucide="x" class="hv-format-item-remove" style="margin-left: auto;" onclick="removeFormatItem(${index})"></i>
+                </div>
+                ${extraInput}
             `;
             formatContainer.appendChild(el);
 
@@ -504,22 +538,6 @@
                 sep.className = 'hv-format-separator';
                 sep.innerText = '/';
                 formatContainer.appendChild(sep);
-            }
-
-            if (item.type === 'LEMBAGA' || item.type === 'CUSTOM') {
-                const group = document.createElement('div');
-                group.className = 'hv-format-input-group';
-                group.innerHTML = `
-                    <label class="hv-label">Nilai ${item.type} #${index + 1}</label>
-                    <input type="text" name="nomor_format[${index}][value]" class="hv-input" value="${item.value || ''}" oninput="updateFormatValue(${index}, this.value)">
-                `;
-                formatInputsContainer.appendChild(group);
-            } else {
-                const hiddenValue = document.createElement('input');
-                hiddenValue.type = 'hidden';
-                hiddenValue.name = `nomor_format[${index}][value]`;
-                hiddenValue.value = '';
-                formatInputsContainer.appendChild(hiddenValue);
             }
         });
         lucide.createIcons();
@@ -551,11 +569,10 @@
             el.className = 'hv-step-item';
             
             // Build user options
-            let userOptions = '<option value="">-- Pilih Approver --</option>';
+            let userOptions = '<option value="">-- Select Approver --</option>';
             users.forEach(u => {
                 const selected = (step.user_id == u.id) ? 'selected' : '';
-                const roleBadge = u.role_name ? `<span class="badge bg-light text-dark" style="font-size: 8px;">${u.role_name.toUpperCase()}</span>` : '';
-                userOptions += `<option value="${u.id}" ${selected}>${u.name} (${u.role_name})</option>`;
+                userOptions += `<option value="${u.id}" ${selected}>${u.name} [${u.role.toUpperCase()}] — ${u.jabatan}</option>`;
             });
 
             el.innerHTML = `
@@ -569,22 +586,18 @@
                 </div>
 
                 <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label class="hv-label" style="margin:0; font-size:9px;">Label di PDF (Jabatan)</label>
-                    <input type="text" name="approvers[${index}][jabatan_label]" class="hv-input" style="padding: 8px; font-size: 12px;" placeholder="Contoh: Manager" value="${step.jabatan_label || ''}" oninput="updateApproverData(${index}, 'jabatan_label', this.value)">
+                    <label class="hv-label" style="margin:0; font-size:9px;">PDF Label (Job Title)</label>
+                    <input type="text" name="approvers[${index}][jabatan_label]" class="hv-input" style="padding: 8px; font-size: 12px;" placeholder="Example: Manager" value="${step.jabatan_label || ''}" oninput="updateApproverData(${index}, 'jabatan_label', this.value)">
                 </div>
 
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label class="hv-label" style="margin:0; font-size:9px;">Label Workflow</label>
-                    <input type="text" name="approvers[${index}][label]" class="hv-input" style="padding: 8px; font-size: 12px;" placeholder="Contoh: Approved by" value="${step.label || ''}" oninput="updateApproverData(${index}, 'label', this.value)">
-                </div>
                 
                 <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
-                    <label class="hv-label" style="margin:0; font-size:9px;">Metode</label>
+                    <label class="hv-label" style="margin:0; font-size:9px;">Method</label>
                     <select name="approvers[${index}][metode_ttd]" class="hv-input" style="padding: 4px 8px; font-size: 11px; height: auto;" onchange="updateApproverData(${index}, 'metode_ttd', this.value)">
-                        <option value="stamp" ${step.metode_ttd === 'stamp' ? 'selected' : ''}>Stamp (tempatkan di koordinat)</option>
-                        <option value="append" ${step.metode_ttd === 'append' ? 'selected' : ''}>Append (halaman pengesahan baru)</option>
+                        <option value="stamp" ${step.metode_ttd === 'stamp' ? 'selected' : ''}>Stamp (place at coordinates)</option>
+                        <option value="append" ${step.metode_ttd === 'append' ? 'selected' : ''}>Append (new endorsement page)</option>
                     </select>
-                    <p style="font-family: 'Poppins', sans-serif; font-size: 11px; color: #6B7280; margin-top: 2px; line-height: 1.2;">Stamp: TTD ditempatkan pada titik yang dipilih di dokumen.<br>Append: TTD diterbitkan sebagai Lembar Pengesahan terpisah.</p>
+                    <p style="font-family: 'Poppins', sans-serif; font-size: 11px; color: #6B7280; margin-top: 2px; line-height: 1.2;">Stamp: Signature is placed at the selected point in the document.<br>Append: Signature is issued as a separate Endorsement Sheet.</p>
                 </div>
 
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
@@ -614,7 +627,6 @@
             newSteps.push({
                 user_id: item.querySelector('select[name*="[user_id]"]').value,
                 jabatan_label: item.querySelector('input[name*="[jabatan_label]"]').value,
-                label: item.querySelector('input[name*="[label]"]').value,
                 metode_ttd: item.querySelector('select[name*="[metode_ttd]"]').value,
                 is_required: item.querySelector('input[name*="[is_required]"]').checked
             });
@@ -624,22 +636,25 @@
     }
 
     function rebuildFormatItemsFromUI() {
-        // Logic to rebuild formatItems array from the DOM order
-        const newFormat = [];
+        const updatedItems = [];
         const formatElements = formatContainer.querySelectorAll('.hv-format-item');
-        formatElements.forEach((el, idx) => {
-            const type = el.innerText.trim();
-            const inputVal = formatInputsContainer.querySelectorAll('input[name*="[value]"]')[idx]?.value || '';
-            newFormat.push({ type: type, value: inputVal });
+        
+        formatElements.forEach(el => {
+            const typeInput = el.querySelector('input[name*="[type]"]');
+            const valInput = el.querySelector('input[name*="[value]"]');
+            if (typeInput && valInput) {
+                updatedItems.push({ type: typeInput.value, value: valInput.value });
+            }
         });
-        formatItems = newFormat;
+        
+        formatItems = updatedItems;
         renderFormat();
     }
 
     function updatePreview() {
-        document.getElementById('p_nama').innerText = document.getElementById('input_nama').value || 'Nama Surat';
-        document.getElementById('p_kode').innerText = (document.getElementById('input_kode').value || 'KODE').toUpperCase();
-        document.getElementById('p_desc').innerText = document.getElementById('input_deskripsi').value || 'Deskripsi surat akan muncul di sini...';
+        document.getElementById('p_nama').innerText = document.getElementById('input_nama').value || 'Document Name';
+        document.getElementById('p_kode').innerText = (document.getElementById('input_kode').value || 'CODE').toUpperCase();
+        document.getElementById('p_desc').innerText = document.getElementById('input_deskripsi').value || 'Document description will appear here...';
 
         // Chain preview
         const pChain = document.getElementById('p_chain');

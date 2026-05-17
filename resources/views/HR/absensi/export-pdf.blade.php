@@ -3,22 +3,90 @@
 <head>
 <meta charset="utf-8">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+  
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; padding: 20px; }
-  .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #04A54C; padding-bottom: 12px; }
-  .header h2 { font-size: 16px; color: #04A54C; margin-bottom: 4px; }
-  .header p { font-size: 11px; color: #555; }
-  .summary { display: flex; width: 100%; margin-bottom: 16px; border-collapse: collapse; }
-  .summary-table { width: 100%; text-align: center; margin-bottom: 16px; }
-  .summary-table td { border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; width: 20%; }
-  .summary-table .num { font-size: 18px; font-weight: bold; }
-  .summary-table .lbl { font-size: 10px; color: #888; margin-top: 2px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-  thead tr { background: #04A54C; color: white; }
-  thead th { padding: 7px 8px; text-align: left; font-size: 11px; font-weight: bold; }
-  tbody tr:nth-child(even) { background: #f8fafb; }
-  tbody td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; font-size: 10px; }
-  .footer { margin-top: 16px; font-size: 9px; color: #aaa; text-align: right; }
+  body { 
+    font-family: Arial, sans-serif; 
+    font-size: 11px; 
+    color: #374151; 
+    padding: 20px; 
+  }
+  .header { 
+    text-align: center; 
+    margin-bottom: 24px; 
+    border-bottom: 2px solid #1A2B24; 
+    padding-bottom: 12px; 
+  }
+  .header h2 { 
+    font-family: 'Playfair Display', serif;
+    font-size: 18px; 
+    color: #1A2B24; 
+    margin-bottom: 6px; 
+    font-weight: 700;
+  }
+  .header p { 
+    font-size: 11px; 
+    color: #6B7280; 
+  }
+  .summary-table { 
+    width: 100%; 
+    text-align: center; 
+    margin-bottom: 20px; 
+    border-collapse: collapse;
+  }
+  .summary-table td { 
+    border: 1px solid #E5E7EB; 
+    padding: 12px 8px; 
+    border-radius: 8px; 
+    width: 20%; 
+    background-color: #F9FAFB;
+  }
+  .summary-table .num { 
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; 
+    font-weight: 600; 
+    margin-bottom: 4px;
+  }
+  .summary-table .lbl { 
+    font-size: 10px; 
+    color: #6B7280; 
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  table.data-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    margin-top: 8px; 
+  }
+  .data-table thead tr { 
+    background: #4F6560; 
+    color: white; 
+  }
+  .data-table thead th { 
+    padding: 8px; 
+    text-align: left; 
+    font-size: 11px; 
+    font-weight: 600; 
+    font-family: 'Playfair Display', serif;
+    letter-spacing: 0.3px;
+  }
+  .data-table tbody tr:nth-child(even) { 
+    background: #F3F4F6; 
+  }
+  .data-table tbody td { 
+    padding: 7px 8px; 
+    border-bottom: 1px solid #E5E7EB; 
+    font-size: 10px; 
+  }
+  .footer { 
+    margin-top: 24px; 
+    font-size: 9px; 
+    color: #9CA3AF; 
+    text-align: right; 
+    border-top: 1px solid #E5E7EB;
+    padding-top: 8px;
+  }
 </style>
 </head>
 <body>
@@ -31,29 +99,29 @@
 <table class="summary-table">
   <tr>
     <td>
-      <div class="num" style="color:#1a1a1a;">{{ $ringkasan['total_karyawan'] }}</div>
+      <div class="num" style="color:#1A2B24;">{{ $ringkasan['total_karyawan'] }}</div>
       <div class="lbl">Total Karyawan</div>
     </td>
     <td>
-      <div class="num" style="color:#16a34a;">{{ $ringkasan['total_hadir'] }}</div>
+      <div class="num" style="color:#2E7D5E;">{{ $ringkasan['total_hadir'] }}</div>
       <div class="lbl">Total Hari Hadir</div>
     </td>
     <td>
-      <div class="num" style="color:#dc2626;">{{ $ringkasan['total_alfa'] }}</div>
+      <div class="num" style="color:#991B1B;">{{ $ringkasan['total_alfa'] }}</div>
       <div class="lbl">Total Tidak Hadir</div>
     </td>
     <td>
-      <div class="num" style="color:#d97706;">{{ $ringkasan['total_terlambat_kali'] }}</div>
+      <div class="num" style="color:#92400E;">{{ $ringkasan['total_terlambat_kali'] }}</div>
       <div class="lbl">Total Terlambat (Kali)</div>
     </td>
     <td>
-      <div class="num" style="color:#7c3aed;">{{ $ringkasan['total_lembur_jam'] }}</div>
+      <div class="num" style="color:#1E40AF;">{{ $ringkasan['total_lembur_jam'] }}</div>
       <div class="lbl">Total Lembur (Jam)</div>
     </td>
   </tr>
 </table>
 
-<table>
+<table class="data-table">
   <thead>
     <tr>
       <th width="30">No</th>

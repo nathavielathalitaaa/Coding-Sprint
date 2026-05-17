@@ -41,13 +41,9 @@
 @section('content')
 
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4 custom-header-fix">
-      <div class="custom-header-title">
-        <h1 class="text-3xl font-playfair font-bold text-[#1A2B24]">
-          Approval Center
-        </h1>
-        <p class="text-xs text-gray-500 mt-1">
-          Review and approve employee requests
-        </p>
+      <div class="mb-8">
+        <h1 class="text-3xl font-playfair font-bold text-[#1A2B24]">Approval Center</h1>
+        <p class="text-[13px] font-light text-[#6B7280] mt-1">Review and approve employee requests</p>
       </div>
       @can('create', App\Models\Surat::class)
       <div class="w-full sm:w-auto shrink-0 custom-header-btn">
@@ -69,34 +65,6 @@
         </div>
     @endif
 
-    {{-- notifikasi approval — hanya tampil jika user punya jabatan (bukan staff) --}}
-    @php
-        $user = auth()->user();
-        $myWaiting = \App\Models\DocumentApproval::where('status', 'waiting')
-            ->where('document_type', 'LIKE', 'surat_%')
-            ->where(function($q) use ($user) {
-                $q->where('assigned_user_id', $user->id)
-                  ->orWhere(function($sq) use ($user) {
-                      $jabatan = $user->profile?->jabatan;
-                      $sq->whereNull('assigned_user_id');
-                      if ($jabatan) {
-                          $sq->where('jabatan', $jabatan);
-                      } else {
-                          $sq->where('jabatan', '___NONE___');
-                      }
-                  });
-            })
-            ->count();
-    @endphp
-    @if($myWaiting > 0)
-    <div class="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl"
-         style="background:rgba(239,68,68,0.08); border-left:3px solid #ef4444;">
-        <i data-lucide="bell-ring" class="w-4 h-4 text-red-500 flex-shrink-0"></i>
-        <p class="text-sm text-red-700 font-medium">
-            There are <strong>{{ $myWaiting }} letters</strong> waiting for your approval.
-        </p>
-    </div>
-    @endif
 
     <div class="w-full">
         <div class="skeleton-wrapper w-full">

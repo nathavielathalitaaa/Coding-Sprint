@@ -12,7 +12,13 @@
     align-items: start;
   }
   @media (max-width: 1023px) {
-    .bento-grid { grid-template-columns: 1fr; }
+    .bento-grid { 
+      grid-template-columns: 1fr; 
+    }
+    /* Move Center Column (Photo) to top on mobile */
+    .bento-grid > div:nth-child(1) { order: 2; } /* Left Column */
+    .bento-grid > div:nth-child(2) { order: 1; } /* Center Column (Photo) */
+    .bento-grid > div:nth-child(3) { order: 3; } /* Right Column */
   }
 
   .bento-card {
@@ -146,6 +152,22 @@
   }
   .profile-hero-upload:hover { background: #fff; transform: scale(1.08); }
 
+  .profile-hero-delete {
+    position: absolute;
+    top: 14px; left: 58px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.88);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    transition: all 0.2s;
+    z-index: 10;
+    color: #EF4444;
+  }
+  .profile-hero-delete:hover { background: #fff; transform: scale(1.08); }
+
   .ttd-preview-box {
     background: #fff;
     border: 2px dashed #E5E7EB;
@@ -178,16 +200,7 @@
 @section('content')
 <div class="profile-page">
 
-  {{-- breadcrumb --}}
-  <div class="mb-5">
-    <nav class="text-sm" aria-label="breadcrumb">
-      <ol class="flex items-center gap-2">
-        <li><a href="{{ route('home') }}" style="color:#80BB9B;font-weight:600;" class="hover:opacity-80">Home</a></li>
-        <li style="color:#6B7280;">/</li>
-        <li style="color:#2C2C2A;font-weight:600;">My Profile</li>
-      </ol>
-    </nav>
-  </div>
+
 
   {{-- page header --}}
   <div class="flex items-center justify-between mb-6">
@@ -212,16 +225,19 @@
             <div><div class="skeleton h-3 w-1/4 mb-2"></div><div class="skeleton h-4 w-1/2"></div></div>
           </div>
         </div>
+        @unless($user->hasRole('staff'))
         <div class="bento-card">
           <div class="skeleton h-6 w-1/2 mb-4"></div>
           <div class="skeleton h-32 w-full rounded-xl"></div>
         </div>
+        @endunless
       </div>
       {{-- CENTER SKELETON --}}
       <div class="flex flex-col gap-6">
         <div class="bento-card !p-0 overflow-hidden">
           <div class="skeleton w-full h-[280px] sm:h-[320px]"></div>
         </div>
+        @unless($user->hasRole('staff'))
         <div class="bento-card">
           <div class="skeleton h-6 w-1/3 mb-4"></div>
           <div class="space-y-4">
@@ -229,6 +245,7 @@
              <div><div class="skeleton h-3 w-1/4 mb-2"></div><div class="skeleton h-4 w-3/4"></div></div>
           </div>
         </div>
+        @endunless
       </div>
       {{-- RIGHT SKELETON --}}
       <div class="flex flex-col gap-6">
@@ -304,12 +321,13 @@
       </div>
 
       {{-- Digital Signature Card --}}
+      @unless($user->hasRole('staff'))
       <div class="bento-card" x-data="{ showUpload: {{ ($profile->signature_path || $profile->ttd_path) ? 'false' : 'true' }} }">
         <p class="card-title">Digital Signature</p>
 
         @if($profile->signature_path || $profile->ttd_path)
           <div class="ttd-preview-box mb-4">
-            <img src="{{ Storage::url($profile->signature_path ?? $profile->ttd_path) }}?v={{ time() }}"
+            <img src="{{ route('ttd.preview.user', $user->id) }}?v={{ time() }}"
                  alt="Signature"
                  style="max-height:90px;width:auto;object-fit:contain;display:block;margin:0 auto;"
                  onerror="this.parentElement.innerHTML='<p class=\'text-xs text-gray-400\'>Preview failed</p>'">
@@ -355,6 +373,7 @@
 
         <p class="text-center mt-3" style="font-size:10.5px;color:#9CA3AF;">Supported formats: PNG, JPG. Max size: 2MB</p>
       </div>
+      @endunless
 
     </div>
     {{-- END LEFT --}}
@@ -385,6 +404,11 @@
         </label>
         <input type="file" id="photo-upload" class="hidden" accept="image/*" onchange="uploadPhoto(event)">
 
+        {{-- delete photo button --}}
+        <button type="button" id="delete-photo-btn" onclick="deletePhoto()" class="profile-hero-delete" title="Delete photo" style="{{ $user->avatar ? '' : 'display:none;' }}">
+          <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+        </button>
+
         {{-- overlay --}}
         <div class="profile-hero-overlay">
           <p style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#fff;line-height:1.2;margin-bottom:4px;">
@@ -399,6 +423,7 @@
       </div>
 
       {{-- Security & PIN Card --}}
+      @unless($user->hasRole('staff'))
       <div class="bento-card" x-data="{ showEmailForm: false, showPasswordForm: false, showPinForm: false }">
         <p class="card-title">Security & PIN</p>
 
@@ -491,6 +516,7 @@
           </form>
         </div>
       </div>
+      @endunless
 
     </div>
     {{-- END CENTER --}}
@@ -629,15 +655,46 @@
       if (result.success) {
         const preview = document.getElementById('avatar-preview');
         const initials = document.getElementById('avatar-initials');
+        const deleteBtn = document.getElementById('delete-photo-btn');
         preview.src = result.url;
         preview.style.display = 'block';
         if (initials) initials.style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'flex';
         Swal.fire({ icon: 'success', title: 'Success', text: 'Profile photo updated', timer: 1500, showConfirmButton: false });
       } else {
         Swal.fire({ icon: 'error', title: 'Failed', text: result.message || 'Upload failed' });
       }
     } catch (error) {
       console.error('Upload error:', error);
+      Swal.fire({ icon: 'error', title: 'Error', text: 'System error occurred' });
+    }
+  }
+
+  async function deletePhoto() {
+    if (!confirm('Are you sure you want to delete your profile photo?')) return;
+    try {
+      const response = await fetch('{{ route("profile.photo.delete") }}', {
+        method: 'DELETE',
+        headers: { 
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+      });
+      const result = await response.json();
+      if (result.success) {
+        const preview = document.getElementById('avatar-preview');
+        const initials = document.getElementById('avatar-initials');
+        const deleteBtn = document.getElementById('delete-photo-btn');
+        if (preview) {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+        if (initials) initials.style.display = 'flex';
+        if (deleteBtn) deleteBtn.style.display = 'none';
+        Swal.fire({ icon: 'success', title: 'Success', text: 'Profile photo deleted', timer: 1500, showConfirmButton: false });
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
       Swal.fire({ icon: 'error', title: 'Error', text: 'System error occurred' });
     }
   }

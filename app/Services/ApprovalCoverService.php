@@ -10,9 +10,9 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * ApprovalCoverService
- * Mengelola pembuatan PDF cover approval.
- * Digunakan oleh: SuratController
+ * approvalcoverservice
+ * mengelola pembuatan pdf cover approval.
+ * digunakan oleh: suratcontroller
  */
 class ApprovalCoverService
 {
@@ -24,10 +24,10 @@ class ApprovalCoverService
     {
         $documentType = 'surat_' . $surat->jenis_surat;
 
-        // Ambil pengaturan dari step flow (override) atau global
+        // ambil pengaturan dari step flow (override) atau global
         $overrides = [];
         if ($surat->suratType) {
-            // Future: SuratType settings overrides could be added here
+            // future: surattype settings overrides could be added here
         } else {
             $step = ApprovalStep::where('document_type', $documentType)->first();
             $overrides = $step->setting_overrides ?? [];
@@ -41,7 +41,7 @@ class ApprovalCoverService
             'logo_path'    => $overrides['logo_path']    ?? DocumentSetting::get('logo_path', ''),
         ];
 
-        // Logo base64
+        // logo base64
         $logoBase64 = null;
         if ($settings['logo_path']) {
             $fullLogoPath = storage_path('app/public/' . $settings['logo_path']);
@@ -60,7 +60,7 @@ class ApprovalCoverService
             $ttdBase64 = null;
 
             if ($step->ttd_snapshot && $step->metode_ttd === 'stamp') {
-                // Try multiple possible paths due to potential nested 'private' directory
+                // try multiple possible paths due to potential nested 'private' directory
                 $possiblePaths = [
                     storage_path('app/private/private/' . $step->ttd_snapshot),
                     storage_path('app/private/' . $step->ttd_snapshot),
@@ -121,7 +121,7 @@ class ApprovalCoverService
         $documentType = 'surat_' . $surat->jenis_surat;
         $isModeAppend = false;
         if ($surat->suratType) {
-            $isModeAppend = true; // Default for new system
+            $isModeAppend = true; // default for new system
         } else {
             $step = \App\Models\ApprovalStep::where('document_type', $documentType)->first();
             $isModeAppend = $step?->isModeAppend() ?? false;
@@ -131,7 +131,7 @@ class ApprovalCoverService
             $originalPdf = storage_path('app/public/' . $surat->file_pdf);
             $coverPdf    = storage_path('app/public/' . $surat->cover_pdf_path);
             
-            // ← TAMBAH validasi ini sebelum merge:
+            // ← tambah validasi ini sebelum merge:
             if (!file_exists($originalPdf)) {
                 \Log::error('processMerge: originalPdf tidak ditemukan: ' . $originalPdf);
                 return null;

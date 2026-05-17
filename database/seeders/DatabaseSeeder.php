@@ -17,7 +17,6 @@ class DatabaseSeeder extends Seeder
         // panggil seeder dasar
         $this->call([
             DataAwalSeeder::class,
-            DashboardDummySeeder::class,
         ]);
     }
 }
