@@ -17,13 +17,13 @@ class ForceChangePassword
             // Routes yang diizinkan: profile, logout, password update
             $allowedRoutes = [
                 'profile.show',
-                'profile.update.password',
+                'profile.password',
                 'logout',
             ];
 
             $allowedPrefixes = [
                 'account/profile',
-                'account/update-password',
+                'profile/password',
                 'logout',
             ];
 

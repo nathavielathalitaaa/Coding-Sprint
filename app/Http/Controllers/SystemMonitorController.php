@@ -152,43 +152,63 @@ class SystemMonitorController extends Controller
         $zip = new \ZipArchive();
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === TRUE) {
             $filesAdded = 0;
+            $filesToDelete = []; // Kumpulkan file yang akan dihapus SETELAH zip ditutup
+            $suratsToUpdate = []; // Kumpulkan surat yang perlu diupdate di DB
             
             foreach ($surats as $surat) {
                 $baseName = 'Surat_' . str_replace('/', '_', $surat->nomor_surat ?? $surat->id);
+                $updateFields = [];
                 
                 // Cek dan tambahkan original file
-                if ($surat->file_pdf && Storage::disk('public')->exists($surat->file_pdf)) {
+                if ($surat->file_pdf && $surat->file_pdf !== 'ARCHIVED' && Storage::disk('public')->exists($surat->file_pdf)) {
                     $zip->addFile(Storage::disk('public')->path($surat->file_pdf), $baseName . '_Original.pdf');
-                    Storage::disk('public')->delete($surat->file_pdf);
-                    $surat->file_pdf = 'ARCHIVED';
+                    $filesToDelete[] = $surat->file_pdf;
+                    $updateFields['file_pdf'] = 'ARCHIVED';
                     $filesAdded++;
                 }
 
                 // Cek dan tambahkan cover file
-                if ($surat->cover_pdf_path && Storage::disk('public')->exists($surat->cover_pdf_path)) {
+                if ($surat->cover_pdf_path && $surat->cover_pdf_path !== 'ARCHIVED' && Storage::disk('public')->exists($surat->cover_pdf_path)) {
                     $zip->addFile(Storage::disk('public')->path($surat->cover_pdf_path), $baseName . '_Cover.pdf');
-                    Storage::disk('public')->delete($surat->cover_pdf_path);
-                    $surat->cover_pdf_path = 'ARCHIVED';
+                    $filesToDelete[] = $surat->cover_pdf_path;
+                    $updateFields['cover_pdf_path'] = 'ARCHIVED';
                     $filesAdded++;
                 }
 
                 // Cek dan tambahkan final file
-                if ($surat->final_pdf_path && Storage::disk('public')->exists($surat->final_pdf_path)) {
+                if ($surat->final_pdf_path && $surat->final_pdf_path !== 'ARCHIVED' && Storage::disk('public')->exists($surat->final_pdf_path)) {
                     $zip->addFile(Storage::disk('public')->path($surat->final_pdf_path), $baseName . '_Final.pdf');
-                    Storage::disk('public')->delete($surat->final_pdf_path);
-                    $surat->final_pdf_path = 'ARCHIVED';
+                    $filesToDelete[] = $surat->final_pdf_path;
+                    $updateFields['final_pdf_path'] = 'ARCHIVED';
                     $filesAdded++;
                 }
                 
-                $surat->save();
+                if (!empty($updateFields)) {
+                    $suratsToUpdate[] = ['surat' => $surat, 'fields' => $updateFields];
+                }
             }
-            
-            $zip->close();
 
             if ($filesAdded > 0) {
+                // PENTING: Tutup zip DULU sebelum hapus file dan update DB
+                // ZipArchive baru membaca file saat close() dipanggil
+                $zip->close();
+
+                // Setelah zip berhasil ditutup, baru hapus file asli dan update DB
+                foreach ($filesToDelete as $fileToDelete) {
+                    Storage::disk('public')->delete($fileToDelete);
+                }
+
+                foreach ($suratsToUpdate as $item) {
+                    foreach ($item['fields'] as $field => $value) {
+                        $item['surat']->{$field} = $value;
+                    }
+                    $item['surat']->save();
+                }
+
                 // Return ZIP file as a download and delete it after sending to save space
                 return response()->download($zipPath)->deleteFileAfterSend(true);
             } else {
+                $zip->close();
                 // Hapus zip kosong
                 File::delete($zipPath);
                 return redirect()->back()->with('error', 'Files exist in database but are physically missing from server.');

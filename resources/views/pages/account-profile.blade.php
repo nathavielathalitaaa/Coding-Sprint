@@ -195,6 +195,28 @@
   }
 
   [x-cloak] { display: none !important; }
+
+  .pw-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .pw-wrap .soft-input {
+    padding-right: 38px;
+  }
+  .pw-eye {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9CA3AF;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+  }
+  .pw-eye:hover { color: #4F6560; }
 </style>
 
 @section('content')
@@ -243,6 +265,13 @@
           <div class="space-y-4">
              <div><div class="skeleton h-3 w-1/4 mb-2"></div><div class="skeleton h-4 w-full"></div></div>
              <div><div class="skeleton h-3 w-1/4 mb-2"></div><div class="skeleton h-4 w-3/4"></div></div>
+          </div>
+        </div>
+        @else
+        <div class="bento-card">
+          <div class="skeleton h-6 w-1/3 mb-4"></div>
+          <div class="space-y-4">
+             <div><div class="skeleton h-3 w-1/4 mb-2"></div><div class="skeleton h-4 w-full"></div></div>
           </div>
         </div>
         @endunless
@@ -422,7 +451,7 @@
         </div>
       </div>
 
-      {{-- Security & PIN Card --}}
+      {{-- Security & PIN Card (non-staff: full card with PIN, Email, Password) --}}
       @unless($user->hasRole('staff'))
       <div class="bento-card" x-data="{ showEmailForm: false, showPasswordForm: false, showPinForm: false }">
         <p class="card-title">Security & PIN</p>
@@ -500,23 +529,83 @@
             @csrf
             <div class="mb-3">
               <label class="field-label block mb-1">Current Password</label>
-              <input type="password" name="current_password" required class="soft-input" placeholder="••••••••">
+              <div class="pw-wrap">
+                <input type="password" name="current_password" required class="soft-input" placeholder="••••••••">
+                <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              </div>
               @error('current_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-3">
               <label class="field-label block mb-1">New Password</label>
-              <input type="password" name="new_password" required class="soft-input" placeholder="Min. 8 characters">
+              <div class="pw-wrap">
+                <input type="password" name="new_password" required class="soft-input" placeholder="Min. 8 characters">
+                <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              </div>
               @error('new_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-4">
               <label class="field-label block mb-1">Confirm New Password</label>
-              <input type="password" name="new_password_confirmation" required class="soft-input" placeholder="Repeat new password">
+              <div class="pw-wrap">
+                <input type="password" name="new_password_confirmation" required class="soft-input" placeholder="Repeat new password">
+                <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              </div>
             </div>
             <button type="submit" class="hivi-btn-primary w-full">Save Password</button>
           </form>
         </div>
       </div>
       @endunless
+
+      {{-- Change Password Card (staff only) --}}
+      @if($user->hasRole('staff'))
+      <div class="bento-card" x-data="{ showPasswordForm: {{ $errors->has('current_password') || $errors->has('new_password') ? 'true' : ($user->must_change_password ? 'true' : 'false') }} }">
+        <p class="card-title">Security</p>
+
+        @if($user->must_change_password)
+          <div class="sng-box-danger mb-4 flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <span>Anda diwajibkan mengganti password sebelum melanjutkan.</span>
+          </div>
+        @endif
+
+        {{-- Password --}}
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <p class="field-label" style="margin-bottom:0;">Change Password</p>
+            <button @click="showPasswordForm = !showPasswordForm" type="button" class="edit-pill">
+              <span x-text="showPasswordForm ? 'Close' : 'Edit'"></span>
+            </button>
+          </div>
+          <form action="{{ route('profile.password') }}" method="POST" x-show="showPasswordForm" x-transition class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+            @csrf
+            <div class="mb-3">
+              <label class="field-label block mb-1">Current Password</label>
+              <div class="pw-wrap">
+                <input type="password" name="current_password" required class="soft-input" placeholder="••••••••">
+                <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              </div>
+              @error('current_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            </div>
+            <div class="mb-3">
+              <label class="field-label block mb-1">New Password</label>
+              <div class="pw-wrap">
+                <input type="password" name="new_password" required class="soft-input" placeholder="Min. 8 characters">
+                <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              </div>
+              @error('new_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            </div>
+            <div class="mb-4">
+              <label class="field-label block mb-1">Confirm New Password</label>
+              <div class="pw-wrap">
+                <input type="password" name="new_password_confirmation" required class="soft-input" placeholder="Repeat new password">
+                <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              </div>
+            </div>
+            <button type="submit" class="hivi-btn-primary w-full">Save Password</button>
+          </form>
+        </div>
+      </div>
+      @endif
 
     </div>
     {{-- END CENTER --}}
@@ -668,6 +757,19 @@
       console.error('Upload error:', error);
       Swal.fire({ icon: 'error', title: 'Error', text: 'System error occurred' });
     }
+  }
+
+  function togglePw(btn) {
+    const input = btn.closest('.pw-wrap').querySelector('input');
+    const icon  = btn.querySelector('i');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.setAttribute('data-lucide', 'eye-off');
+    } else {
+      input.type = 'password';
+      icon.setAttribute('data-lucide', 'eye');
+    }
+    lucide.createIcons();
   }
 
   async function deletePhoto() {
