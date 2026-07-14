@@ -21,8 +21,8 @@
             <i data-lucide="monitor"></i>
         </a>
 
-        {{-- karyawan (hr only) --}}
-        @if(auth()->user()->hasRole('hr'))
+        {{-- karyawan (hr only; visible to hr and super-admin) --}}
+        @if(auth()->user()->hasAnyRole(['hr','super-admin']))
         <a href="{{ route('hr/employee/list') }}"
            class="{{ request()->routeIs('hr/employee/list') ? 'active' : '' }}"
            title="Employees">
@@ -30,8 +30,8 @@
         </a>
         @endif
 
-        {{-- absensi (hr only) --}}
-        @if(auth()->user()->hasRole('hr'))
+        {{-- absensi (hr only; visible to hr and super-admin) --}}
+        @if(auth()->user()->hasAnyRole(['hr','super-admin']))
         <a href="{{ route('hr/absensi/page') }}"
            class="{{ request()->routeIs('hr/absensi*') ? 'active' : '' }}"
            title="Attendance">
@@ -46,8 +46,8 @@
             <i data-lucide="mail"></i>
         </a>
 
-        {{-- jenis surat (hr only) --}}
-        @if(auth()->user()->hasRole('hr'))
+        {{-- jenis surat (hr only; visible to hr and super-admin) --}}
+        @if(auth()->user()->hasAnyRole(['hr','super-admin']))
         <a href="{{ route('surat-type.index') }}"
            class="{{ request()->routeIs('surat-type.*') ? 'active' : '' }}"
            title="Letter Types">
@@ -55,8 +55,8 @@
         </a>
         @endif
 
-        {{-- system monitor (hr only) --}}
-        @if(auth()->user()->hasRole('hr'))
+        {{-- system monitor (hr only; visible to hr and super-admin) --}}
+        @if(auth()->user()->hasAnyRole(['hr','super-admin']))
         <a href="{{ route('hr/system/monitor') }}"
            class="{{ request()->routeIs('hr/system/monitor') ? 'active' : '' }}"
            title="System Health">
@@ -64,8 +64,8 @@
         </a>
         @endif
 
-        {{-- pengaturan (hr only) --}}
-        @if(auth()->user()->hasRole('hr'))
+        {{-- pengaturan (hr only; visible to hr and super-admin) --}}
+        @if(auth()->user()->hasAnyRole(['hr','super-admin']))
         <a href="{{ route('hr.settings.master') }}"
            class="{{ request()->routeIs('hr.settings.*') ? 'active' : '' }}"
            title="Pengaturan">

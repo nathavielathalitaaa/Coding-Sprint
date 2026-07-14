@@ -25,11 +25,12 @@ class HomeController extends Controller
         // data dasar yg dikirim ke semua role: nama role yg diformat & pesan selamat datang
         $data = [
             'userRoleName'    => match(true) {
+                $user->hasRole('super-admin')        => 'Super Admin',
                 $user->hasRole('hr')                 => 'HR',
-                $user->hasRole('supervisor')          => 'Supervisor',
-                $user->hasRole('staff')               => 'Staff',
+                $user->hasRole('supervisor')         => 'Supervisor',
+                $user->hasRole('staff')              => 'Staff',
                 $user->hasRole('head_of_department') => 'Head of Department',
-                default                               => 'Karyawan'
+                default                              => 'Karyawan'
             },
             'userDisplayName' => 'Selamat datang kembali',
         ];

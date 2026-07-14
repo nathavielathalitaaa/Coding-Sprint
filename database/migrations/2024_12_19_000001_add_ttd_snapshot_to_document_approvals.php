@@ -11,14 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('document_approvals', function (Blueprint $table) {
-            // Simpan path TTD approver saat dia approve (snapshot)
-            $table->string('ttd_snapshot')->nullable()->after('approver_id')
-                  ->comment('Path TTD approver saat approval dilakukan');
-            // Path PDF cover yang digenerate setelah semua approve
-            $table->string('cover_pdf_path')->nullable()->after('ttd_snapshot')
-                  ->comment('Path PDF cover approval final');
-        });
+        // Moved to 2026_12_19_000001_add_ttd_snapshot_to_document_approvals.php
     }
 
     /**
@@ -26,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('document_approvals', function (Blueprint $table) {
-            $table->dropColumn(['ttd_snapshot', 'cover_pdf_path']);
-        });
+        // Moved to 2026_12_19_000001_add_ttd_snapshot_to_document_approvals.php
     }
 };

@@ -9,7 +9,10 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles {
+        HasRoles::hasRole as traitHasRole;
+        HasRoles::hasAnyRole as traitHasAnyRole;
+    }
 
     protected $fillable = [
         'user_id',
@@ -70,6 +73,30 @@ class User extends Authenticatable
     public function hasJabatan(string $jabatan): bool
     {
         return $this->profile?->jabatan === $jabatan;
+    }
+
+    /**
+     * Override HasRoles::hasRole to grant super-admin implicit access.
+     */
+    public function hasRole($roles, $guard = null): bool
+    {
+        if ($this->traitHasRole('super-admin')) {
+            return true;
+        }
+
+        return $this->traitHasRole($roles, $guard);
+    }
+
+    /**
+     * Override HasRoles::hasAnyRole to grant super-admin implicit access.
+     */
+    public function hasAnyRole($roles, $guard = null): bool
+    {
+        if ($this->traitHasAnyRole('super-admin')) {
+            return true;
+        }
+
+        return $this->traitHasAnyRole($roles, $guard);
     }
 }
 

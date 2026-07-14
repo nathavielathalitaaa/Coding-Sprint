@@ -92,12 +92,10 @@
                                 <div>
                                     <label class="block text-sm font-medium text-[#1A2B24] mb-1">Approval Role</label>
                                     <select name="jabatan" class="w-full px-4 py-2 rounded-xl border border-gray-200 bg-white/70 focus:outline-none focus:ring-2 focus:ring-[#80BB9B]">
-                                        <option value="">-- None --</option>
-                                        <option value="hod" {{ $user->profile?->jabatan == 'hod' ? 'selected' : '' }}>Head of Department</option>
-                                        <option value="hr" {{ $user->profile?->jabatan == 'hr' ? 'selected' : '' }}>Human Resources</option>
-                                        <option value="purchasing" {{ $user->profile?->jabatan == 'purchasing' ? 'selected' : '' }}>Purchasing</option>
-                                        <option value="owner_rep" {{ $user->profile?->jabatan == 'owner_rep' ? 'selected' : '' }}>Owner Representative</option>
-                                        <option value="direktur" {{ $user->profile?->jabatan == 'direktur' ? 'selected' : '' }}>Director</option>
+                                        <option value="">-- Select Approval Role --</option>
+                                        <option value="anggota" {{ $user->profile?->jabatan == 'anggota' ? 'selected' : '' }}>Anggota</option>
+                                        <option value="pembina" {{ $user->profile?->jabatan == 'pembina' ? 'selected' : '' }}>Pembina</option>
+                                        <option value="bph" {{ $user->profile?->jabatan == 'bph' ? 'selected' : '' }}>BPH</option>
                                     </select>
                                 </div>
                                 <div>

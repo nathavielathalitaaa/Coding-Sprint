@@ -11,10 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('surats', function (Blueprint $table) {
-            $table->string('cover_pdf_path')->nullable()->after('file_pdf')
-                  ->comment('Path PDF cover approval setelah semua step approved');
-        });
+        // Moved to 2026_12_19_000002_add_cover_pdf_path_to_surats.php
     }
 
     /**
@@ -22,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('surats', function (Blueprint $table) {
-            $table->dropColumn('cover_pdf_path');
-        });
+        // Moved to 2026_12_19_000002_add_cover_pdf_path_to_surats.php
     }
 };
