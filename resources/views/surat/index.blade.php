@@ -1,3 +1,30 @@
+@extends('layouts.app')
+
+@section('title', 'Surat - SIMORA')
+
+@section('content')
+<section class="page-section">
+  <x-page-header title="Ajukan surat" subtitle="Pilih jenis surat yang ingin anda kirim" />
+
+  <div class="card-list">
+    <article class="content-card">
+      <h3>Surat Keterangan</h3>
+      <p>Untuk kebutuhan administrasi akademik dan organisasi.</p>
+      <a href="{{ url('/surat/create') }}" class="action-btn primary">Buat surat</a>
+    </article>
+    <article class="content-card">
+      <h3>Surat Izin</h3>
+      <p>Digunakan untuk keperluan izin kegiatan dan aktivitas tertentu.</p>
+      <a href="{{ url('/surat/create') }}" class="action-btn primary">Buat surat</a>
+    </article>
+    <article class="content-card">
+      <h3>Surat Pemberitahuan</h3>
+      <p>Berisi pemberitahuan resmi kepada pihak terkait.</p>
+      <a href="{{ url('/surat/create') }}" class="action-btn primary">Buat surat</a>
+    </article>
+  </div>
+</section>
+@endsection
 @extends('layouts.master')
 
 <style>

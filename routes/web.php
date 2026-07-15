@@ -12,9 +12,13 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 
-// ── root redirect ─────────────────────────────────────
-Route::get('/', fn() => redirect('/home'));
-Route::get('/dashboard', fn() => redirect('/home'))->middleware('auth');
+// Simple view routes for UI pages (development, pixel-perfect views)
+Route::get('/', function() { return view('dashboard.index'); });
+Route::get('/dashboard', function() { return view('dashboard.index'); });
+Route::get('/surat', function() { return view('surat.index'); });
+Route::get('/surat/create', function() { return view('surat.create'); });
+Route::get('/persetujuan', function() { return view('approval.index'); });
+Route::get('/daftar-surat', function() { return view('daftar-surat.index'); });
 
 // ══════════════════════════════════════════════
 // auth

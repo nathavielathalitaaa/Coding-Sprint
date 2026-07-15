@@ -1,192 +1,47 @@
-@extends('layouts.master')
+@extends('layouts.app')
+
+@section('title', 'Ajukan Surat - SIMORA')
+
 @section('content')
+<section class="page-section">
+  <x-page-header title="Ajukan surat" subtitle="Isi formulir berikut untuk mengajukan dokumen baru" />
 
-        {{-- Header --}}
-        <div class="flex items-center justify-between mb-8">
-            <div>
-                <h1 class="text-3xl font-playfair font-bold text-[#1A2B24]">Buat Surat Baru</h1>
-                <p class="text-[13px] font-light text-[#6B7280] mt-1">Isi formulir di bawah untuk mengajukan surat baru</p>
-            </div>
-            <a href="{{ route('surat.index') }}"
-               class="px-5 py-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-600 transition shadow-sm">
-                Kembali
-            </a>
+  <form class="form-shell" action="#" method="post" enctype="multipart/form-data">
+    <div class="form-grid">
+      <div class="form-column">
+        <label class="field-group">
+          <span class="field-label">Jenis surat</span>
+          <select class="field-control" name="jenis_surat">
+            <option value="">Pilih jenis surat</option>
+            <option value="keterangan">Surat Keterangan</option>
+            <option value="izin">Surat Izin</option>
+            <option value="pemberitahuan">Surat Pemberitahuan</option>
+          </select>
+        </label>
+
+        <label class="field-group">
+          <span class="field-label">Perihal</span>
+          <textarea class="field-control textarea" name="perihal" rows="4" placeholder="Tuliskan perihal surat"></textarea>
+        </label>
+
+        <label class="field-group">
+          <span class="field-label">Upload PDF</span>
+          <input class="field-control" type="file" name="file_pdf" accept=".pdf">
+        </label>
+      </div>
+
+      <div class="form-column form-column-preview">
+        <div class="preview-card">
+          <div class="preview-header">Preview PDF</div>
+          <div class="preview-body">Dokumen PDF akan tampil di sini setelah file dipilih.</div>
         </div>
+        <button class="action-btn primary full-width" type="submit">Simpan dan Ajukan</button>
+      </div>
+    </div>
+  </form>
+</section>
+@endsection
 
-        {{-- Card --}}
-        <div style="background: #ffffff; border-radius: 24px; padding: 36px; border: 1px solid #f3f4f6; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-
-            @if ($errors->any())
-                <div class="mb-6 p-4 rounded-xl" style="background:rgba(239,68,68,0.08);border-left:3px solid #ef4444;">
-                    <p class="text-sm font-semibold text-red-800 mb-2">Terjadi Kesalahan:</p>
-                    <ul class="text-sm text-red-700 list-disc list-inside">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <form action="{{ route('surat.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; margin-bottom: 32px;">
-
-                    {{-- Kolom Kiri: Form fields --}}
-                    <div class="flex flex-col gap-6">
-
-                        {{-- Jenis Surat --}}
-                        <div>
-                            <label for="surat_type_id" class="block text-sm font-bold text-[#1A2B24] mb-2">
-                                Jenis Surat <span class="text-red-500">*</span>
-                            </label>
-                            <select id="jenis_surat" name="surat_type_id"
-                                style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid #e5e7eb; font-size: 14px; background: #ffffff; outline: none; transition: all 0.2s;"
-                                onfocus="this.style.borderColor='#80BB9B'; this.style.boxShadow='0 0 0 2px rgba(128,187,155,0.2)'"
-                                onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'"
-                                required>
-                                <option value="">-- Pilih Jenis Surat --</option>
-                                @foreach(\App\Models\SuratType::where('is_active', true)->get() as $type)
-                                    <option value="{{ $type->id }}" data-kode="{{ $type->kode }}" @if(old('surat_type_id') == $type->id) selected @endif>
-                                        {{ $type->nama }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('surat_type_id')
-                                <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        {{-- Perihal --}}
-                        <div>
-                            <label for="perihal" class="block text-sm font-bold text-[#1A2B24] mb-2">
-                                Perihal <span class="text-red-500">*</span>
-                            </label>
-                            <textarea id="perihal" name="perihal" rows="4"
-                                style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid #e5e7eb; font-size: 14px; background: #ffffff; outline: none; transition: all 0.2s;"
-                                onfocus="this.style.borderColor='#80BB9B'; this.style.boxShadow='0 0 0 2px rgba(128,187,155,0.2)'"
-                                onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'"
-                                placeholder="Jelaskan perihal surat Anda" required>{{ old('perihal') }}</textarea>
-                            @error('perihal')
-                                <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        {{-- Ketentuan File PDF Notice --}}
-                        <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 20px; padding: 16px 20px; margin-bottom: 16px;">
-                            <div class="flex items-center gap-2 mb-2">
-                                <i data-lucide="info" style="width: 16px; height: 16px; color: #92400E;"></i>
-                                <h3 style="font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 13px; color: #92400E; margin: 0;">Ketentuan File PDF</h3>
-                            </div>
-                            <div style="font-family: 'Poppins', sans-serif; font-weight: 400; font-size: 12px; color: #B45309; line-height: 1.6;">
-                                <p class="mb-2">Untuk hasil terbaik, gunakan file PDF yang dihasilkan langsung dari browser (misalnya melalui fitur Save as PDF) atau dari aplikasi pengolah dokumen standar.</p>
-                                <p class="mb-1">Beberapa kondisi yang dapat menyebabkan file tidak dapat diproses tanda tangan digital:</p>
-                                <ul class="list-disc ml-5 mb-2">
-                                    <li>File menggunakan teknik kompresi yang tidak didukung sistem</li>
-                                    <li>File merupakan hasil scan atau konversi dari gambar</li>
-                                    <li>File dilindungi kata sandi atau memiliki pembatasan izin</li>
-                                    <li>Ukuran file terlalu besar atau struktur file tidak standar</li>
-                                </ul>
-                                <p class="m-0">Jika tanda tangan gagal ditempatkan pada dokumen, sistem akan otomatis menerbitkan Lembar Pengesahan terpisah sebagai gantinya.</p>
-                            </div>
-                        </div>
-
-                        {{-- File PDF --}}
-                        <div>
-                            <label for="file_pdf" class="block text-sm font-bold text-[#1A2B24] mb-2">
-                                File PDF <span class="text-red-500">*</span>
-                            </label>
-                            <input type="file" id="file_pdf" name="file_pdf" accept=".pdf" required
-                                style="width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid #e5e7eb; font-size: 14px; background: #ffffff; outline: none; transition: all 0.2s;"
-                                onfocus="this.style.borderColor='#80BB9B'; this.style.boxShadow='0 0 0 2px rgba(128,187,155,0.2)'"
-                                onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'">
-                            <p class="text-xs text-gray-400 mt-2">Format: PDF, Ukuran maksimal: 5MB</p>
-                            @error('file_pdf')
-                                <span class="text-xs text-red-500 mt-1 block">{{ $message }}</span>
-                            @enderror
-
-                            {{-- Mode info badge --}}
-                            <div id="ttd-mode-info" style="display: none; margin-top: 16px; padding: 16px; border-radius: 12px; border: 1px solid #e5e7eb;">
-                                <p class="text-sm font-medium" id="ttd-mode-text"></p>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {{-- Kolom Kanan: PDF Preview + TTD Marker --}}
-                    <div>
-                        <input type="hidden" name="ttd_coordinates" id="ttd_coordinates">
-
-                        {{-- Placeholder saat belum ada jenis / mode append --}}
-                        <div id="ttd-placeholder"
-                             style="height: 100%; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; border: 2px dashed rgba(128,187,155,0.4); background: #f8faf9;">
-                            <i data-lucide="file-search" class="w-12 h-12 text-[#80BB9B]/50 mb-3"></i>
-                            <p class="text-sm font-semibold text-[#4F6560]/60">Pilih jenis surat terlebih dahulu</p>
-                            <p class="text-xs text-gray-400 mt-1">Preview TTD akan muncul jika mode stamp aktif</p>
-                        </div>
-
-                        {{-- Section TTD Marker (hanya mode stamp) --}}
-                        <div id="ttd-marker-section" style="display: none; height: 100%;">
-                            <div style="padding: 20px; background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 100%; display: flex; flex-direction: column; gap: 16px;">
-
-                                {{-- Header --}}
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <h6 class="text-sm font-bold text-[#1A2B24]">Posisi Tanda Tangan</h6>
-                                        <p class="text-xs text-gray-400 mt-0.5">Klik pada preview PDF untuk menempatkan TTD</p>
-                                    </div>
-                                    <div id="marker-status"
-                                         class="text-xs font-bold text-amber-600 px-3 py-1 bg-amber-50 rounded-full border border-amber-100">
-                                        Belum ditandai
-                                    </div>
-                                </div>
-
-                                {{-- Approver buttons --}}
-                                <div id="approver-buttons" class="flex flex-wrap gap-2"></div>
-
-                                {{-- PDF Canvas area --}}
-                                <div class="relative flex-1 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-inner" style="min-height:420px;">
-
-                                    {{-- Upload hint (tampil sebelum PDF di-upload) --}}
-                                    <div id="pdf-upload-hint"
-                                         style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10;">
-                                        <i data-lucide="upload-cloud" class="w-10 h-10 text-[#80BB9B] mb-2"></i>
-                                        <p class="text-sm font-semibold text-[#4F6560]">Upload PDF untuk melihat preview</p>
-                                        <p class="text-xs text-gray-400 mt-1">Lalu klik posisi tanda tangan</p>
-                                    </div>
-
-                                    {{-- PDF scroll container --}}
-                                    <div id="pdf-container"
-                                         style="display: none; position: relative; width: 100%; height: 100%; overflow: auto; text-align: center; padding: 16px; background: #e2e8f0;">
-                                        <div class="relative inline-block shadow-xl">
-                                            <canvas id="pdf-canvas" class="block cursor-crosshair"></canvas>
-                                            <div id="marker-layer" class="absolute inset-0 pointer-events-none"></div>
-                                        </div>
-                                    </div>
-
-                                    {{-- Page nav --}}
-                                    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow border border-slate-200 z-20">
-                                        <button type="button" id="prev-page"
-                                                class="p-1 hover:bg-slate-100 rounded-full disabled:opacity-30">
-                                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                                        </button>
-                                        <span class="text-xs font-bold text-slate-700 min-w-[70px] text-center">
-                                            Hal <span id="current-page">1</span> / <span id="total-pages">1</span>
-                                        </span>
-                                        <button type="button" id="next-page"
-                                                class="p-1 hover:bg-slate-100 rounded-full disabled:opacity-30">
-                                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                {{-- Footer buttons --}}
                 <div class="flex justify-end gap-3 pt-6 border-t border-gray-100">
                     <a href="{{ route('surat.index') }}"
                        style="padding: 10px 24px; border-radius: 12px; border: 1px solid #d1d5db; background: #ffffff; font-size: 14px; font-weight: 600; color: #374151; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;"
