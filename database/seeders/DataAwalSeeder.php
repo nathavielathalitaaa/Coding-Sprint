@@ -14,89 +14,103 @@ class DataAwalSeeder extends Seeder
      */
     public function run(): void
     {
-        // buat 3 role untuk spatie permission: staff, supervisor, hr
-        DB::table('roles')->insert([
-            [
-                'name' => 'hr',
-                'guard_name' => 'web',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'supervisor',
-                'guard_name' => 'web',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'staff',
-                'guard_name' => 'web',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        // buat role untuk spatie permission: staff, supervisor, hr, super-admin
+        foreach (['hr', 'supervisor', 'staff', 'super-admin'] as $role) {
+            DB::table('roles')->updateOrInsert(
+                ['name' => $role],
+                [
+                    'guard_name' => 'web',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+        }
 
         // ambil role ids
         $hrRole = DB::table('roles')->where('name', 'hr')->first();
         $supervisorRole = DB::table('roles')->where('name', 'supervisor')->first();
         $staffRole = DB::table('roles')->where('name', 'staff')->first();
+        $superAdminRole = DB::table('roles')->where('name', 'super-admin')->first();
 
         // buat user hr demo
-        $hrUser = DB::table('users')->insertGetId([
-            'user_id' => 'HR-0001',
-            'name' => 'Admin Utama',
-            'email' => 'admin@company.com',
-            'password' => Hash::make('password'),
-            'status' => 'aktif',
-            'role_name' => 'hr',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // assign role hr ke user hr
-        DB::table('model_has_roles')->insert([
+        DB::table('users')->updateOrInsert(
+            ['email' => 'admin@company.com'],
+            [
+                'user_id' => 'HR-0001',
+                'name' => 'Admin Utama',
+                'password' => Hash::make('password'),
+                'status' => 'aktif',
+                'role_name' => 'hr',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+        $hrUser = DB::table('users')->where('email', 'admin@company.com')->value('id');
+        DB::table('model_has_roles')->updateOrInsert([
             'role_id' => $hrRole->id,
             'model_type' => 'App\\Models\\User',
             'model_id' => $hrUser,
-        ]);
+        ], []);
 
         // buat user supervisor demo
-        $supervisorUser = DB::table('users')->insertGetId([
-            'user_id' => 'SUP-0001',
-            'name' => 'Supervisor HR',
-            'email' => 'supervisor@company.com',
-            'password' => Hash::make('password'),
-            'status' => 'aktif',
-            'role_name' => 'supervisor',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // assign role supervisor ke user supervisor
-        DB::table('model_has_roles')->insert([
+        DB::table('users')->updateOrInsert(
+            ['email' => 'supervisor@company.com'],
+            [
+                'user_id' => 'SUP-0001',
+                'name' => 'Supervisor HR',
+                'password' => Hash::make('password'),
+                'status' => 'aktif',
+                'role_name' => 'supervisor',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+        $supervisorUser = DB::table('users')->where('email', 'supervisor@company.com')->value('id');
+        DB::table('model_has_roles')->updateOrInsert([
             'role_id' => $supervisorRole->id,
             'model_type' => 'App\\Models\\User',
             'model_id' => $supervisorUser,
-        ]);
+        ], []);
 
         // buat user staff demo
-        $staffUser = DB::table('users')->insertGetId([
-            'user_id' => 'STF-0001',
-            'name' => 'Staff Karyawan',
-            'email' => 'staff@company.com',
-            'password' => Hash::make('password'),
-            'status' => 'aktif',
-            'role_name' => 'staff',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // assign role staff ke user staff
-        DB::table('model_has_roles')->insert([
+        DB::table('users')->updateOrInsert(
+            ['email' => 'staff@company.com'],
+            [
+                'user_id' => 'STF-0001',
+                'name' => 'Staff Karyawan',
+                'password' => Hash::make('password'),
+                'status' => 'aktif',
+                'role_name' => 'staff',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+        $staffUser = DB::table('users')->where('email', 'staff@company.com')->value('id');
+        DB::table('model_has_roles')->updateOrInsert([
             'role_id' => $staffRole->id,
             'model_type' => 'App\\Models\\User',
             'model_id' => $staffUser,
-        ]);
+        ], []);
+
+        // buat user super-admin dengan approval tertinggi
+        DB::table('users')->updateOrInsert(
+            ['email' => 'admin@admin.com'],
+            [
+                'user_id' => 'SUPER-0001',
+                'name' => 'Super Admin',
+                'password' => Hash::make('admin123'),
+                'status' => 'aktif',
+                'role_name' => 'super-admin',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+        $superAdminUser = DB::table('users')->where('email', 'admin@admin.com')->value('id');
+        DB::table('model_has_roles')->updateOrInsert([
+            'role_id' => $superAdminRole->id,
+            'model_type' => 'App\\Models\\User',
+            'model_id' => $superAdminUser,
+        ], []);
 
         // buat data shift awal
         DB::table('shifts')->insert([

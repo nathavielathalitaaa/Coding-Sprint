@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         // panggil seeder dasar
         $this->call([
             DataAwalSeeder::class,
+            \Database\Seeders\RoleAndPermissionSeeder::class,
         ]);
     }
 }

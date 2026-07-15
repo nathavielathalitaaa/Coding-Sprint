@@ -9,7 +9,10 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles {
+        HasRoles::hasRole as traitHasRole;
+        HasRoles::hasAnyRole as traitHasAnyRole;
+    }
 
     protected $fillable = [
         'user_id',
@@ -64,6 +67,34 @@ class User extends Authenticatable
     public function getJabatanAttribute(): ?string
     {
         return $this->profile?->jabatan;
+    }
+
+    public function hasRole($roles, $guardName = null): bool
+    {
+        // if no role requested, return false early (Spatie expects string|array/Role)
+        if (is_null($roles)) {
+            return false;
+        }
+
+        // top-level override: pembina (super-admin equivalent) should bypass checks
+        if (strtolower($this->role_name ?? '') === 'pembina') {
+            return true;
+        }
+
+        return $this->traitHasRole($roles, $guardName);
+    }
+
+    public function hasAnyRole($roles, $guardName = null): bool
+    {
+        if (is_null($roles)) {
+            return false;
+        }
+
+        if (strtolower($this->role_name ?? '') === 'pembina') {
+            return true;
+        }
+
+        return $this->traitHasAnyRole($roles, $guardName);
     }
 
     // ── helper: cek jabatan untuk sistem approval

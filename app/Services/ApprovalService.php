@@ -123,23 +123,23 @@ class ApprovalService
 
         // ── Proses Approval & Update Step ───────────────────────────────
         try {
-            DB::transaction(function () use ($currentStep, $approver, $catatan, $documentType, $documentId, $ttdSnapshot) {
-                $currentStep->update([
-                    'status'       => 'approved',
-                    'approver_id'  => $approver->id,
-                    'catatan'      => $catatan,
-                    'actioned_at'  => now(),
-                    'ttd_snapshot' => $ttdSnapshot,
-                ]);
+
+DB::transaction(function () use ($currentStep, $approver, $catatan, $documentType, $documentId, $ttdSnapshot) {
 
                 $nextStep = DocumentApproval::forDocument($documentType, $documentId)
                     ->where('step_order', $currentStep->step_order + 1)
                     ->where('status', 'pending')
                     ->first();
 
+                $nextStep = DocumentApproval::forDocument($documentType, $documentId)
+                    ->where('step_order', $currentStep->step_order + 1)
+                    ->where('status', 'pending')
+                    ->first();
+                    
                 if ($nextStep) {
                     $nextStep->update(['status' => 'waiting']);
                 }
+
             });
 
             // ── Pengecekan Status Selesai ───────────────────────────────

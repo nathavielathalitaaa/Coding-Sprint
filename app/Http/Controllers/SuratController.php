@@ -224,6 +224,7 @@ class SuratController extends Controller
      */
     public function approve(Request $request, Surat $surat)
     {
+        
         // ── Validasi Request ────────────────────────────────────────────
         $request->validate([
             'catatan' => 'nullable|string|max:500',
@@ -231,13 +232,14 @@ class SuratController extends Controller
         ], [
             'pin.required' => 'PIN wajib diisi untuk menyetujui surat.',
         ]);
-
+        
         $user = Auth::user()->load('profile');
 
         if (!$this->pinService->verify($user, $request->pin)) {
             flash()->error('PIN salah. Silakan coba lagi.');
             return redirect()->back();
         }
+
 
         // ── Pengecekan Otorisasi Approval ───────────────────────────────
         $documentType = 'surat_' . $surat->jenis_surat;
@@ -246,6 +248,8 @@ class SuratController extends Controller
             flash()->error('Bukan giliran Anda untuk approve surat ini.');
             return redirect()->back();
         }
+        
+        
 
         // ── Proses Approval ─────────────────────────────────────────────
         $ttdSnapshot = $this->pinService->getTtdPath($user);
@@ -258,14 +262,18 @@ class SuratController extends Controller
             $ttdSnapshot
         );
 
+
         if (!$approvalResult['success']) {
             flash()->error($approvalResult['message']);
             return redirect()->back();
         }
 
+        
         // ── Penanganan Penyelesaian Approval ────────────────────────────
         if ($approvalResult['selesai']) {
             $surat->update(['status' => 'approved_owner']);
+
+            dd('6');
 
             $this->notifService->send(
                 $surat->user_id,
@@ -274,15 +282,21 @@ class SuratController extends Controller
                 route('surat.show', $surat->id)
             );
 
+        dd('7');
+
             try {
                 $documentType = 'surat_' . $surat->jenis_surat;
                 
+                dd('8');
+
                 if ($surat->suratType) {
                     $ttdMode = 'stamp';
                 } else {
                     $step = ApprovalStep::where('document_type', $documentType)->first();
                     $ttdMode = $step?->ttd_mode ?? 'append';
                 }
+
+                dd('9');
 
                 if ($ttdMode === 'stamp') {
                     $finalPath = $this->stampService->stamp($surat);

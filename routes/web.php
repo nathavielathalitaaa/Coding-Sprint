@@ -196,69 +196,68 @@ Route::middleware('auth')->group(function () {
         // ══════════════════════════════════════════════
         // surat (role: staff, supervisor, hr)
         // ══════════════════════════════════════════════
-        Route::controller(SuratController::class)
-        ->prefix('surat')
-        ->name('surat.')
-        ->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::get('create', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
+       Route::controller(SuratController::class)
+    ->prefix('surat')
+    ->name('surat.')
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
 
-            Route::get('ttd-mode', 'getTtdMode')->name('ttd-mode');
-            Route::get('ttd-preview/{jabatan}', 'getTtdPreview')->name('ttd-preview');
-            Route::get('{surat}', 'show')->name('show');
-            Route::get('{surat}/edit', 'edit')->name('edit');
-            Route::put('{surat}', 'update')->name('update');
-            Route::get('{surat}/download', 'download')->name('download');
-            Route::delete('{surat}', 'destroy')->name('destroy');
+        Route::get('ttd-mode', 'getTtdMode')->name('ttd-mode');
+        Route::get('ttd-preview/{jabatan}', 'getTtdPreview')->name('ttd-preview');
 
-            // approve & reject berbasis jabatan (hod→purchasing→owner rep→direktur)
-            Route::middleware(['role:hr|supervisor|super-admin'])->group(function () {
-                Route::post('{surat}/approve', 'approve')->name('approve');
-                Route::post('{surat}/reject', 'reject')->name('reject');
-            });
+        Route::get('{surat}', 'show')->name('show');
+        Route::get('{surat}/edit', 'edit')->name('edit');
+        Route::put('{surat}', 'update')->name('update');
+        Route::get('{surat}/download', 'download')->name('download');
+        Route::delete('{surat}', 'destroy')->name('destroy');
 
-            // route sementara untuk regenerate cover pdf / stamp
-            Route::get('{id}/regenerate-final', function($id) {
-                $surat = \App\Models\Surat::findOrFail($id);
-                $coverService = app(\App\Services\ApprovalCoverService::class);
-                $stampService = app(\App\Services\PdfStampService::class);
-                try {
-                    $documentType = 'surat_' . $surat->jenis_surat;
-                    $step = \App\Models\ApprovalStep::where('document_type', $documentType)->first();
-                    $ttdMode = $step?->ttd_mode ?? 'append';
+        Route::post('{surat}/approve', 'approve')->name('approve');
+        Route::post('{surat}/reject', 'reject')->name('reject');
 
-                    if ($ttdMode === 'stamp') {
-                        $path = $stampService->stamp($surat);
-                        $surat->update(['final_pdf_path' => $path]);
-                    } else {
-                        $path = $coverService->generateCover($surat);
-                        $surat->update(['cover_pdf_path' => $path]);
-                        $finalPath = $coverService->processMerge($surat);
-                        if ($finalPath) {
-                            $surat->update(['final_pdf_path' => $finalPath]);
-                            $path = $finalPath;
-                        }
+        Route::get('{id}/regenerate-final', function ($id) {
+            $surat = \App\Models\Surat::findOrFail($id);
+            $coverService = app(\App\Services\ApprovalCoverService::class);
+            $stampService = app(\App\Services\PdfStampService::class);
+
+            try {
+                $documentType = 'surat_' . $surat->jenis_surat;
+                $step = \App\Models\ApprovalStep::where('document_type', $documentType)->first();
+                $ttdMode = $step?->ttd_mode ?? 'append';
+
+                if ($ttdMode === 'stamp') {
+                    $path = $stampService->stamp($surat);
+                    $surat->update(['final_pdf_path' => $path]);
+                } else {
+                    $path = $coverService->generateCover($surat);
+                    $surat->update(['cover_pdf_path' => $path]);
+
+                    $finalPath = $coverService->processMerge($surat);
+
+                    if ($finalPath) {
+                        $surat->update(['final_pdf_path' => $finalPath]);
+                        $path = $finalPath;
                     }
-                    return response()->json(['success' => true, 'path' => $path]);
-                } catch (\Exception $e) {
-                    return response()->json(['error' => $e->getMessage()], 500);
                 }
-            })->name('regenerate-final');
-        });
+
+                return response()->json([
+                    'success' => true,
+                    'path' => $path,
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+        })->name('regenerate-final');
+    });
 
         // ══════════════════════════════════════════════
         // surat type management (role: hr)
         // ══════════════════════════════════════════════
-        Route::middleware('role:hr')->prefix('surat-type')->name('surat-type.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\SuratTypeController::class, 'index'])->name('index');
-            Route::get('/create', [\App\Http\Controllers\SuratTypeController::class, 'create'])->name('create');
-            Route::post('/', [\App\Http\Controllers\SuratTypeController::class, 'store'])->name('store');
-            Route::get('/{id}/edit', [\App\Http\Controllers\SuratTypeController::class, 'edit'])->name('edit');
-            Route::put('/{id}', [\App\Http\Controllers\SuratTypeController::class, 'update'])->name('update');
-            Route::delete('/{id}', [\App\Http\Controllers\SuratTypeController::class, 'destroy'])->name('destroy');
-            Route::patch('/{id}/toggle', [\App\Http\Controllers\SuratTypeController::class, 'toggle'])->name('toggle');
-        });
+        // Ganti menjadi middleware permission
+        // Ganti baris 254-256 di web.php menjadi ini:
 
     }); // end middleware('onboarding')
 

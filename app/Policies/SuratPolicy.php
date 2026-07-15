@@ -7,29 +7,20 @@ use App\Models\User;
 
 class SuratPolicy
 {
-    // siapa saja bisa lihat list (difilter di controller)
+    // Semua role bisa lihat daftar surat
     public function viewAny(User $user): bool
     {
         return true;
     }
 
-    // lihat detail: staff hanya miliknya, approver sesuai jabatan, hr semua
+    // Lihat detail: Pemilik, BPH yang bertugas, atau Pembina (Super Admin)
     public function view(User $user, Surat $surat): bool
     {
-        // pemilik selalu bisa lihat
-        if ($user->id === $surat->user_id) {
-            return true;
-        }
-
-        // supervisor/hr dengan jabatan approval bisa lihat semua surat
-        if ($user->profile?->jabatan) {
-            return true;
-        }
-        
-        return $user->hasRole('hr');
+        return $user->id === $surat->user_id || 
+               $user->hasRole('pembina') || 
+               $surat->approvals()->where('assigned_user_id', $user->id)->exists();
     }
 
-    // semua role bisa buat surat
     public function create(User $user): bool
     {
         return true;
@@ -40,33 +31,26 @@ class SuratPolicy
         return true;
     }
 
-    // hanya staff pemilik surat yang berstatus 'revised'
+    // Hanya anggota pemilik surat yang berstatus 'revised' yang bisa edit
     public function edit(User $user, Surat $surat): bool
     {
-        return $user->hasRole('staff')
-            && $user->id === $surat->user_id
+        return $user->hasRole('anggota') 
+            && $user->id === $surat->user_id 
             && $surat->status === 'revised';
     }
 
     public function update(User $user, Surat $surat): bool
     {
-        return $user->hasRole('staff')
-            && $user->id === $surat->user_id
+        return $user->hasRole('anggota') 
+            && $user->id === $surat->user_id 
             && $surat->status === 'revised';
     }
 
-    // download: staff hanya miliknya, siapapun dengan jabatan approval, hr semua
+    // Download: Pemilik, BPH yang bertugas, atau Pembina
     public function download(User $user, Surat $surat): bool
     {
-        // pemilik selalu bisa download
-        if ($user->id === $surat->user_id) {
-            return true;
-        }
-
-        if ($user->profile?->jabatan) {
-            return true;
-        }
-        
-        return $user->hasRole('hr');
+        return $user->id === $surat->user_id || 
+               $user->hasRole('pembina') || 
+               $surat->approvals()->where('assigned_user_id', $user->id)->exists();
     }
 }
