@@ -25,19 +25,17 @@ class HomeController extends Controller
         // data dasar yg dikirim ke semua role: nama role yg diformat & pesan selamat datang
         $data = [
             'userRoleName'    => match(true) {
-                $user->hasRole('super-admin')        => 'Super Admin',
-                $user->hasRole('hr')                 => 'HR',
-                $user->hasRole('supervisor')         => 'Supervisor',
-                $user->hasRole('staff')              => 'Staff',
-                $user->hasRole('head_of_department') => 'Head of Department',
-                default                              => 'Karyawan'
+                $user->hasRole('Pembina') => 'Pembina',
+                $user->hasRole('BPH')     => 'BPH',
+                $user->hasRole('Anggota') => 'Anggota',
+                default                   => 'Anggota'
             },
             'userDisplayName' => 'Selamat datang kembali',
         ];
 
-        // ── hr: statistik penuh ───────────────────────────────
-        // klo user hr, tambahin data statistik lengkap: total karyawan, hadir bulan ini, total lembur, chart absensi, & count surat menunggu/selesai
-        if ($user->hasRole('hr')) {
+        // ── BPH: statistik penuh ───────────────────────────────
+        // klo user BPH, tambahin data statistik lengkap: total karyawan, hadir bulan ini, total lembur, chart absensi, & count surat menunggu/selesai
+        if ($user->hasRole('BPH')) {
             $data = array_merge($data, [
                 'totalKaryawan'       => User::where('status', 'aktif')->count(),
                 'hadirBulanIni'       => Absensi::where('tanggal', now()->format('Y-m-01'))->where('status', 'hadir')->count(),
@@ -49,62 +47,8 @@ class HomeController extends Controller
             ]);
         }
 
-        // ── supervisor: monitoring + approval ────────────────
-        // klo user supervisor, tambahin data monitoring tim & list surat yg butuh approval berdasarkan jabatan atau assigned user
-        elseif ($user->hasRole('supervisor')) {
-            $jabatan = $user->profile?->jabatan;
-            $data = array_merge($data, [
-                'totalKaryawan'      => User::where('status', 'aktif')->count(),
-                'hadirBulanIni'      => Absensi::where('tanggal', now()->format('Y-m-01'))->where('status', 'hadir')->count(),
-                'suratMenungguCount' => DocumentApproval::where('status', 'waiting')
-                                            ->where(function($q) use ($jabatan, $user) {
-                                                $q->where('jabatan', $jabatan)
-                                                  ->orWhere('assigned_user_id', $user->id);
-                                            })
-                                            ->where('document_type', 'LIKE', 'surat_%')
-                                            ->count(),
-                'suratMenungguList'  => Surat::whereHas('approvals', function($q) use ($jabatan, $user) {
-                                                $q->where(function($q2) use ($jabatan, $user) {
-                                                    $q2->where('jabatan', $jabatan)
-                                                       ->orWhere('assigned_user_id', $user->id);
-                                                })->where('status', 'waiting');
-                                            })
-                                            ->with('user')
-                                            ->orderBy('created_at', 'desc')
-                                            ->take(5)
-                                            ->get(),
-            ]);
-        }
-
-        // ── head_of_department: monitoring + approval ─────────
-        // klo user hod, logic mirip supervisor: monitoring tim & approval surat berdasarkan jabatan atau assigned user
-        elseif ($user->hasRole('head_of_department')) {
-            $jabatan = $user->profile?->jabatan ?? 'hod';
-            $data = array_merge($data, [
-                'totalKaryawan'      => User::where('status', 'aktif')->count(),
-                'hadirBulanIni'      => Absensi::where('tanggal', now()->format('Y-m-01'))->where('status', 'hadir')->count(),
-                'suratMenungguCount' => DocumentApproval::where('status', 'waiting')
-                                            ->where(function($q) use ($jabatan, $user) {
-                                                $q->where('jabatan', $jabatan)
-                                                  ->orWhere('assigned_user_id', $user->id);
-                                            })
-                                            ->where('document_type', 'LIKE', 'surat_%')
-                                            ->count(),
-                'suratMenungguList'  => Surat::whereHas('approvals', function($q) use ($jabatan, $user) {
-                                                $q->where(function($q2) use ($jabatan, $user) {
-                                                    $q2->where('jabatan', $jabatan)
-                                                       ->orWhere('assigned_user_id', $user->id);
-                                                })->where('status', 'waiting');
-                                            })
-                                            ->with('user')
-                                            ->orderBy('created_at', 'desc')
-                                            ->take(5)
-                                            ->get(),
-            ]);
-        }
-
-        // ── staff / default: surat milik sendiri ────────────────────────
-        // klo user staff atau role lain yg gk terdaftar, cuma tampilin data surat milik sendiri
+        // ── Anggota / default: surat milik sendiri ─────────────────────────
+        // klo user Anggota atau role lain, cuma tampilin data surat milik sendiri
         else {
             $suratStaff = Surat::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
             $data = array_merge($data, [
@@ -125,7 +69,7 @@ class HomeController extends Controller
     public function activityLog(Request $request)
     {
         // Hanya HR yang bisa mengakses halaman ini
-        if (!auth()->user()->hasRole('hr')) {
+        if (!auth()->user()->hasRole('BPH')) {
             abort(403);
         }
 

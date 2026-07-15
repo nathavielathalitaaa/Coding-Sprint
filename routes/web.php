@@ -161,7 +161,7 @@ Route::middleware('auth')->group(function () {
         // ══════════════════════════════════════════════
         Route::controller(\App\Http\Controllers\DocumentSettingController::class)
             ->prefix('settings')
-            ->middleware('role:hr|super-admin')
+            ->middleware('role:hr|super-admin|bph')
             ->group(function () {
                 Route::get('document', 'index')->name('hr.settings.document');
                 Route::post('document', 'update')->name('hr.settings.document.update');
@@ -171,7 +171,7 @@ Route::middleware('auth')->group(function () {
         // Master Data Management
         Route::controller(\App\Http\Controllers\MasterDataController::class)
             ->prefix('settings')
-            ->middleware('role:hr')
+            ->middleware('role:hr|super-admin|bph')
             ->group(function () {
                 Route::get('master', 'index')->name('hr.settings.master');
                 
@@ -213,7 +213,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('{surat}', 'destroy')->name('destroy');
 
             // approve & reject berbasis jabatan (hod→purchasing→owner rep→direktur)
-            Route::middleware(['role:hr|supervisor|super-admin'])->group(function () {
+            Route::middleware(['role:hr|supervisor|super-admin|bph'])->group(function () {
                 Route::post('{surat}/approve', 'approve')->name('approve');
                 Route::post('{surat}/reject', 'reject')->name('reject');
             });
@@ -250,7 +250,7 @@ Route::middleware('auth')->group(function () {
         // ══════════════════════════════════════════════
         // surat type management (role: hr)
         // ══════════════════════════════════════════════
-        Route::middleware('role:hr')->prefix('surat-type')->name('surat-type.')->group(function () {
+        Route::middleware('role:hr|bph')->prefix('surat-type')->name('surat-type.')->group(function () {
             Route::get('/', [\App\Http\Controllers\SuratTypeController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\SuratTypeController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\SuratTypeController::class, 'store'])->name('store');

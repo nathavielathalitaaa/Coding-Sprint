@@ -24,7 +24,7 @@ class AbsensiController extends Controller
      */
     public function index(Request $request)
     {
-        if (!auth()->user()->hasRole('hr')) {
+        if (!auth()->user()->hasRole('BPH')) {
             abort(403, 'Akses ditolak.');
         }
 
@@ -88,7 +88,7 @@ class AbsensiController extends Controller
      */
     public function processAI(Request $request)
     {
-        if (!auth()->user()->hasRole('hr')) {
+        if (!auth()->user()->hasRole('BPH')) {
             return response()->json(['error' => 'Akses ditolak.'], 403);
         }
 
@@ -232,7 +232,7 @@ class AbsensiController extends Controller
      */
     public function confirmImport(Request $request)
     {
-        if (!auth()->user()->hasRole('hr')) {
+        if (!auth()->user()->hasRole('BPH')) {
             return response()->json(['error' => 'Akses ditolak.'], 403);
         }
 
@@ -307,7 +307,7 @@ class AbsensiController extends Controller
      */
     public function mapFingerprint(Request $request)
     {
-        if (!auth()->user()->hasRole('hr')) {
+        if (!auth()->user()->hasRole('BPH')) {
             return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
         }
 
@@ -338,7 +338,7 @@ class AbsensiController extends Controller
      */
     public function rekapData(Request $request)
     {
-        if (!auth()->user()->hasRole('hr')) {
+        if (!auth()->user()->hasRole('BPH')) {
             return response()->json(['error' => 'Akses ditolak.'], 403);
         }
 

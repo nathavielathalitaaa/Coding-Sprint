@@ -38,7 +38,7 @@ class ProductionSeeder extends Seeder
 
         // ── STEP 2: Ensure roles exist ────────────────────────────────
         $this->command->info('Setting up roles...');
-        $roles = ['hr', 'supervisor', 'staff', 'head_of_department'];
+        $roles = ['Anggota', 'BPH', 'Pembina'];
         foreach ($roles as $role) {
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'web']);
         }
@@ -46,14 +46,14 @@ class ProductionSeeder extends Seeder
         // ── STEP 3: Create the one admin HR account ───────────────────
         $this->command->info('Creating admin HR account...');
         $admin = User::create([
-            'name'      => 'Admin HR',
+            'name'      => 'Admin BPH',
             'email'     => 'admin@sinergihotel.com',
             'password'  => bcrypt('Sinergi@2026'),
             'user_id'   => 'SIN-0001',
             'status'    => 'aktif',
-            'role_name' => 'hr',
+            'role_name' => 'BPH',
         ]);
-        $admin->assignRole('hr');
+        $admin->assignRole('BPH');
 
         EmployeeProfile::create([
             'user_id'           => $admin->id,

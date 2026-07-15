@@ -73,14 +73,14 @@ class KaryawanImport
         $validator = Validator::make($data, [
             'nama'  => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
-            'role'  => 'required|in:hr,supervisor,staff',
+            'role'  => 'required|in:Anggota,BPH,Pembina',
         ], [
             'nama.required'  => 'Kolom nama wajib diisi.',
             'email.required' => 'Kolom email wajib diisi.',
             'email.email'    => 'Format email tidak valid.',
             'email.unique'   => 'Email sudah terdaftar.',
             'role.required'  => 'Kolom role wajib diisi.',
-            'role.in'        => 'Role harus hr, supervisor, atau staff.',
+            'role.in'        => 'Role harus BPH, Anggota, atau Pembina.',
         ]);
 
         if ($validator->fails()) {
@@ -97,7 +97,7 @@ class KaryawanImport
         try {
             DB::beginTransaction();
 
-            $roleName = strtolower(trim($data['role']));
+            $roleName = trim($data['role']);
             $password = !empty($data['password']) ? $data['password'] : 'Sinergi@2026';
 
             // 1. Save to users table

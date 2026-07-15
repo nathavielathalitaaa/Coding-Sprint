@@ -26,7 +26,7 @@ class SuratPolicy
             return true;
         }
         
-        return $user->hasRole('hr');
+        return $user->hasRole('BPH');
     }
 
     // semua role bisa buat surat
@@ -43,14 +43,14 @@ class SuratPolicy
     // hanya staff pemilik surat yang berstatus 'revised'
     public function edit(User $user, Surat $surat): bool
     {
-        return $user->hasRole('staff')
+        return $user->hasRole('Anggota')
             && $user->id === $surat->user_id
             && $surat->status === 'revised';
     }
 
     public function update(User $user, Surat $surat): bool
     {
-        return $user->hasRole('staff')
+        return $user->hasRole('Anggota')
             && $user->id === $surat->user_id
             && $surat->status === 'revised';
     }
@@ -67,6 +67,6 @@ class SuratPolicy
             return true;
         }
         
-        return $user->hasRole('hr');
+        return $user->hasRole('BPH');
     }
 }

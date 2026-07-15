@@ -11,7 +11,7 @@ class SuratTypeSeeder extends Seeder
 {
     public function run()
     {
-        $adminId = User::where('role_name', 'super-admin')->first()?->id ?? 1;
+        $adminId = User::where('role_name', 'Pembina')->first()?->id ?? 1;
 
         $types = [
             [

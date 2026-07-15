@@ -307,9 +307,9 @@ class ApprovalService
             return (int) $step->assigned_user_id === (int) $user->id;
         }
 
-        $userRole = strtolower($user->role_name ?? '');
+        $userRole = $user->role_name ?? '';
         
-        if ($userRole === 'super-admin') {
+        if ($userRole === 'Pembina') {
             return true;
         }
 
@@ -321,7 +321,7 @@ class ApprovalService
             return true;
         }
 
-        if ($jabatanStep === 'hr' && in_array($userRole, ['hr', 'supervisor'])) {
+        if ($jabatanStep === 'bph' && in_array($userRole, ['BPH'])) {
             return true;
         }
 

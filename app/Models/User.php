@@ -76,10 +76,14 @@ class User extends Authenticatable
     }
 
     /**
-     * Override HasRoles::hasRole to grant super-admin implicit access.
+     * Override HasRoles::hasRole to grant Pembina implicit access.
      */
-    public function hasRole($roles, $guard = null): bool
+    public function hasRole($roles = null, $guard = null): bool
     {
+        if (empty($roles)) {
+            return false;
+        }
+
         if ($this->traitHasRole('super-admin')) {
             return true;
         }
@@ -87,12 +91,9 @@ class User extends Authenticatable
         return $this->traitHasRole($roles, $guard);
     }
 
-    /**
-     * Override HasRoles::hasAnyRole to grant super-admin implicit access.
-     */
     public function hasAnyRole($roles, $guard = null): bool
     {
-        if ($this->traitHasAnyRole('super-admin')) {
+        if ($this->traitHasRole('super-admin')) {
             return true;
         }
 

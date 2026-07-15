@@ -38,7 +38,7 @@ class AccountController extends Controller // class controller utk fitur manajem
         $user = User::findOrFail($id);
 
         // cek security: klo yg login bukan user tsb & bukan hr, blokir akses
-        if (Auth::id() != $id && !Auth::user()->hasRole('hr')) {
+        if (Auth::id() != $id && !Auth::user()->hasRole('BPH')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -146,7 +146,7 @@ class AccountController extends Controller // class controller utk fitur manajem
         $user = User::findOrFail($id);
 
         // cek authorization: cuma user sendiri atau hr yg bs update signature
-        if (Auth::id() != $id && !Auth::user()->hasRole('hr')) {
+        if (Auth::id() != $id && !Auth::user()->hasRole('BPH')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -187,7 +187,7 @@ class AccountController extends Controller // class controller utk fitur manajem
         $user = User::findOrFail($id);
 
         // cek authorization: blokir klo bukan user tsb & bukan hr
-        if (Auth::id() != $id && !Auth::user()->hasRole('hr')) {
+        if (Auth::id() != $id && !Auth::user()->hasRole('BPH')) {
             abort(403, 'Unauthorized action.');
         }
 

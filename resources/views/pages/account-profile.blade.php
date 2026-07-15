@@ -229,7 +229,7 @@
     <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#1a1a1a;">
       Account Profile {{ $user->id === auth()->id() ? 'Mine' : $user->name }}
     </h2>
-    @if(auth()->user()->hasRole('hr') && isset($user) && $user->id !== auth()->id())
+    @if(auth()->user()->hasRole('BPH') && isset($user) && $user->id !== auth()->id())
     <a href="{{ route('hr/employee/edit', $user->id) }}" class="hivi-btn-primary">
       <i data-lucide="edit" class="w-4 h-4"></i> Edit Employee Data
     </a>
@@ -247,7 +247,7 @@
             <div><div class="skeleton h-3 w-1/4 mb-2"></div><div class="skeleton h-4 w-1/2"></div></div>
           </div>
         </div>
-        @unless($user->hasRole('staff'))
+    @unless($user->hasRole('Anggota'))
         <div class="bento-card">
           <div class="skeleton h-6 w-1/2 mb-4"></div>
           <div class="skeleton h-32 w-full rounded-xl"></div>
@@ -259,7 +259,7 @@
         <div class="bento-card !p-0 overflow-hidden">
           <div class="skeleton w-full h-[280px] sm:h-[320px]"></div>
         </div>
-        @unless($user->hasRole('staff'))
+    @unless($user->hasRole('Anggota'))
         <div class="bento-card">
           <div class="skeleton h-6 w-1/3 mb-4"></div>
           <div class="space-y-4">
@@ -557,7 +557,7 @@
       @endunless
 
       {{-- Change Password Card (staff only) --}}
-      @if($user->hasRole('staff'))
+      @if($user->hasRole('Anggota'))
       <div class="bento-card" x-data="{ showPasswordForm: {{ $errors->has('current_password') || $errors->has('new_password') ? 'true' : ($user->must_change_password ? 'true' : 'false') }} }">
         <p class="card-title">Security</p>
 

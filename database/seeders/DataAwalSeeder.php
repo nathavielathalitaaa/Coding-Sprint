@@ -17,19 +17,19 @@ class DataAwalSeeder extends Seeder
         // buat 3 role untuk spatie permission: staff, supervisor, hr
         DB::table('roles')->insert([
             [
-                'name' => 'hr',
+                'name' => 'BPH',
                 'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'name' => 'supervisor',
+                'name' => 'Anggota',
                 'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'name' => 'staff',
+                'name' => 'Pembina',
                 'guard_name' => 'web',
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -37,65 +37,45 @@ class DataAwalSeeder extends Seeder
         ]);
 
         // ambil role ids
-        $hrRole = DB::table('roles')->where('name', 'hr')->first();
-        $supervisorRole = DB::table('roles')->where('name', 'supervisor')->first();
-        $staffRole = DB::table('roles')->where('name', 'staff')->first();
+        $bphRole = DB::table('roles')->where('name', 'BPH')->first();
+        $anggotaRole = DB::table('roles')->where('name', 'Anggota')->first();
 
         // buat user hr demo
-        $hrUser = DB::table('users')->insertGetId([
-            'user_id' => 'HR-0001',
-            'name' => 'Admin Utama',
-            'email' => 'admin@company.com',
+        $bphUser = DB::table('users')->insertGetId([
+            'user_id' => 'BPH-0001',
+            'name' => 'Admin BPH',
+            'email' => 'bph@company.com',
             'password' => Hash::make('password'),
             'status' => 'aktif',
-            'role_name' => 'hr',
+            'role_name' => 'BPH',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // assign role hr ke user hr
+        // assign role BPH ke user bph
         DB::table('model_has_roles')->insert([
-            'role_id' => $hrRole->id,
+            'role_id' => $bphRole->id,
             'model_type' => 'App\\Models\\User',
-            'model_id' => $hrUser,
+            'model_id' => $bphUser,
         ]);
 
-        // buat user supervisor demo
-        $supervisorUser = DB::table('users')->insertGetId([
-            'user_id' => 'SUP-0001',
-            'name' => 'Supervisor HR',
-            'email' => 'supervisor@company.com',
+        // buat user anggota demo
+        $anggotaUser = DB::table('users')->insertGetId([
+            'user_id' => 'ANG-0001',
+            'name' => 'Anggota Demo',
+            'email' => 'anggota@company.com',
             'password' => Hash::make('password'),
             'status' => 'aktif',
-            'role_name' => 'supervisor',
+            'role_name' => 'Anggota',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // assign role supervisor ke user supervisor
+        // assign role Anggota ke user anggota
         DB::table('model_has_roles')->insert([
-            'role_id' => $supervisorRole->id,
+            'role_id' => $anggotaRole->id,
             'model_type' => 'App\\Models\\User',
-            'model_id' => $supervisorUser,
-        ]);
-
-        // buat user staff demo
-        $staffUser = DB::table('users')->insertGetId([
-            'user_id' => 'STF-0001',
-            'name' => 'Staff Karyawan',
-            'email' => 'staff@company.com',
-            'password' => Hash::make('password'),
-            'status' => 'aktif',
-            'role_name' => 'staff',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // assign role staff ke user staff
-        DB::table('model_has_roles')->insert([
-            'role_id' => $staffRole->id,
-            'model_type' => 'App\\Models\\User',
-            'model_id' => $staffUser,
+            'model_id' => $anggotaUser,
         ]);
 
         // buat data shift awal

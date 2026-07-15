@@ -71,7 +71,7 @@ class LoginController extends Controller
                 flash()->success('Login successful :)');
                 
                 // redirect berdasarkan role
-                if ($user->hasRole('hr')) {
+                if ($user->hasRole('BPH')) {
                     return redirect()->route('home');
                 }
                 

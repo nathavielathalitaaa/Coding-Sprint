@@ -16,7 +16,7 @@ class SuperAdminSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Ensure super-admin role exists
-        Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Pembina', 'guard_name' => 'web']);
 
         // Create or update the super-admin user
         $user = User::updateOrCreate(
@@ -26,13 +26,13 @@ class SuperAdminSeeder extends Seeder
                 'password'            => bcrypt('admin123'),
                 'user_id'             => 'ADM-0001',
                 'status'              => 'aktif',
-                'role_name'           => 'super-admin',
+                'role_name'           => 'Pembina',
                 'must_change_password' => false,
             ]
         );
 
         // Assign role
-        $user->syncRoles(['super-admin']);
+        $user->syncRoles(['Pembina']);
 
         // Create employee profile if it doesn't exist
         EmployeeProfile::firstOrCreate(

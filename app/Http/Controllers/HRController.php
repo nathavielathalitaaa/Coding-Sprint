@@ -87,7 +87,7 @@ class HRController extends Controller
                 'email'        => $request->email,
                 'position'     => $request->position,
                 'department'   => $request->department,
-                'role_name'    => $request->role_name ?? 'staff',
+                'role_name'    => $request->role_name ?? 'Anggota',
                 'status'       => $request->status ?? 'aktif',
                 'phone_number' => $request->phone_number,
                 'location'     => $request->location,
@@ -100,11 +100,9 @@ class HRController extends Controller
             $register->save();
 
             if (empty($register->user_id)) {
-                $rolePrefix = match(strtolower($request->role_name ?? 'staff')) {
-                    'hr', 'admin', 'human resource' => 'HR',
-                    'supervisor'                    => 'SUP',
-                    'direktur'                      => 'DIR',
-                    default                         => 'STF',
+                $rolePrefix = match(strtolower($request->role_name ?? 'anggota')) {
+                    'bph', 'pembina' => 'BPH',
+                    default          => 'ANG',
                 };
                 
                 $count = User::where('user_id', 'LIKE', $rolePrefix . '-%')->count() + 1;
@@ -112,11 +110,7 @@ class HRController extends Controller
                 $register->saveQuietly();
             }
 
-            $roleToAssign = strtolower($request->role_name ?? 'staff');
-            
-            if ($roleToAssign === 'human resource') {
-                $roleToAssign = 'hr';
-            }
+            $roleToAssign = $request->role_name ?? 'Anggota';
             
             $register->assignRole($roleToAssign);
 
@@ -194,11 +188,9 @@ class HRController extends Controller
             $user->designation  = $request->designation;
 
             if (empty($user->user_id)) {
-                $rolePrefix = match(strtolower($user->role_name ?? 'staff')) {
-                    'hr', 'admin', 'human resource' => 'HR',
-                    'supervisor'                    => 'SUP',
-                    'direktur'                      => 'DIR',
-                    default                         => 'STF',
+                $rolePrefix = match(strtolower($user->role_name ?? 'anggota')) {
+                    'bph', 'pembina' => 'BPH',
+                    default          => 'ANG',
                 };
                 
                 $count = User::where('user_id', 'LIKE', $rolePrefix . '-%')->count() + 1;
@@ -207,13 +199,19 @@ class HRController extends Controller
 
             $user->save();
 
-            $roleToSync = strtolower($user->role_name ?? 'staff');
-            
-            if ($roleToSync === 'human resource') {
-                $roleToSync = 'hr';
+            $roleToSync = match ($user->role_name) {
+                'Admin' => 'super-admin',
+                'BPH' => 'bph',
+                'Pembina' => 'pembina',
+                'Anggota' => 'anggota',
+                default => 'anggota',
+            };
+
+            if ($roleToSync === 'bph') {
+                $user->syncRoles(['bph', 'super-admin']);
+            } else {
+                $user->syncRoles($roleToSync);
             }
-            
-            $user->syncRoles($roleToSync);
 
             $user->profile()->updateOrCreate(
                 ['user_id' => $user->id],
@@ -242,6 +240,7 @@ class HRController extends Controller
             
             return redirect()->back();
         } catch (\Exception $e) {
+            dd($e->getMessage());
             \Log::error($e->getMessage());
             DB::rollback();
             flash()->error('Gagal memperbarui data karyawan.');
@@ -425,7 +424,7 @@ class HRController extends Controller
         $sheet->getStyle('A1:' . $lastCol . '1')->applyFromArray($headerStyle);
 
         $example = [
-            'Budi Santoso', 'budi@sinergihotel.com', 'staff',
+            'Budi Santoso', 'budi@sinergihotel.com', 'Anggota',
             'Front Office', 'Staff', '',
             '3201234567890001', '3201234567890001',
             '12.345.678.9-012.345', '0001234567890',
@@ -453,7 +452,7 @@ class HRController extends Controller
             ['PANDUAN PENGISIAN TEMPLATE IMPORT KARYAWAN'],
             [''],
             ['Kolom', 'Keterangan'],
-            ['role', 'Wajib diisi: hr, supervisor, atau staff'],
+            ['role', 'Wajib diisi: BPH, Anggota, atau Pembina'],
             ['tgl_bergabung', 'Format: YYYY-MM-DD  (contoh: 2024-01-15)'],
             ['status_pernikahan', 'Single / Married / Divorced'],
             ['pendidikan_terakhir', 'SD / SMP / SMA-SMK / D3 / S1 / S2 / S3'],

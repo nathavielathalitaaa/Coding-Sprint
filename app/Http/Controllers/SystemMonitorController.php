@@ -13,7 +13,7 @@ class SystemMonitorController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:hr']);
+        $this->middleware(['auth', 'role:hr|super-admin|bph']);
     }
 
     public function index()
