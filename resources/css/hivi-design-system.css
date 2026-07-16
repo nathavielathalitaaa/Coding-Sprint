@@ -6,8 +6,8 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-        "Segoe UI Symbol", "Noto Color Emoji";
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 :root {
@@ -43,7 +43,7 @@
     border-radius: var(--radius-pill);
     padding: 14px 24px;
     font-size: 15px;
-    font-family: "Poppins", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 600;
     border: none;
     cursor: pointer;
@@ -63,7 +63,7 @@
     border-radius: var(--radius-pill);
     padding: 12px 28px;
     border: 1px solid var(--color-primary);
-    font-family: "Poppins", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -81,7 +81,7 @@
     border-radius: var(--radius-pill);
     padding: 8px 16px;
     border: 1px solid var(--color-border);
-    font-family: "Poppins", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 500;
     font-size: 13px;
     cursor: pointer;
@@ -113,7 +113,7 @@
     background: #E5E7EB;
     border-radius: var(--radius-input);
     padding: 14px 20px;
-    font-family: "Poppins", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 14px;
     font-weight: 400;
     width: 100%;
@@ -131,7 +131,7 @@
 /* Table */
 .hivi-table { width: 100%; border-collapse: separate; border-spacing: 0; }
 .hivi-table thead th {
-    font-family: "Poppins", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 13px;
     font-weight: 500;
     color: #6B7280;
@@ -151,7 +151,7 @@
     padding: 0 16px;
     font-size: 14px;
     color: #111111;
-    font-family: "Poppins", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-weight: 400;
     border-bottom: 1px solid #F3F4F6;
 }
@@ -161,7 +161,7 @@
 
 /* Section Title */
 .hivi-section-title {
-    font-family: "Poppins", sans-serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 20px;
     font-weight: 600;
     color: #111111;
