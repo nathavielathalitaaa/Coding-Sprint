@@ -13,11 +13,13 @@ class ApprovalStep extends Model
         'user_id',       // approver spesifik (nullable — jika null, semua dengan jabatan ini bisa approve)
         'label',
         'ttd_mode',
+        'is_signer',
         'ttd_coordinates',
         'setting_overrides',
     ];
 
     protected $casts = [
+        'is_signer' => 'boolean',
         'ttd_coordinates' => 'array',
         'setting_overrides' => 'array',
     ];
@@ -30,6 +32,11 @@ class ApprovalStep extends Model
     public function isModeAppend(): bool
     {
         return $this->ttd_mode === 'append';
+    }
+
+    public function isSigner(): bool
+    {
+        return $this->is_signer;
     }
 
     /**

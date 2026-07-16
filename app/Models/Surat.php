@@ -14,6 +14,8 @@ class Surat extends Model
     protected $fillable = [
         'user_id',
         'surat_type_id',
+        'organisasi_id',
+        'komisi_id',
         'nomor_surat',
         'jenis_surat',
         'perihal',
@@ -23,6 +25,8 @@ class Surat extends Model
         'status',
         'catatan_revisi',
         'ttd_coordinates',
+        'pic_user_id',
+        'status_pelaksanaan',
     ];
 
     protected $casts = [
@@ -47,7 +51,47 @@ class Surat extends Model
         return $this->belongsTo(SuratType::class);
     }
 
-    // ── relasi ke documentapproval (log 4 step) ────────
+    // ── relasi ke organisasi pengaju ──────────────────
+    public function organisasi()
+    {
+        return $this->belongsTo(Organisasi::class);
+    }
+
+    // ── relasi ke komisi (khusus flow MPK) ───────────
+    public function komisi()
+    {
+        return $this->belongsTo(Komisi::class);
+    }
+
+    // ── relasi ke detail kegiatan (1-to-1) ───────────
+    public function kegiatanDetail()
+    {
+        return $this->hasOne(SuratKegiatanDetail::class);
+    }
+
+    // ── relasi ke surat turunan (1-to-many) ───────────
+    public function suratTurunans()
+    {
+        return $this->hasMany(SuratTurunan::class);
+    }
+
+    // ── relasi PIC, Progress, dan LPJ ────────────────
+    public function picUser()
+    {
+        return $this->belongsTo(User::class, 'pic_user_id');
+    }
+
+    public function progressUpdates()
+    {
+        return $this->hasMany(ProgressUpdate::class, 'surat_id');
+    }
+
+    public function lpj()
+    {
+        return $this->hasOne(LaporanPertanggungjawaban::class, 'surat_id');
+    }
+
+    // ── relasi ke documentapproval (log multi step) ────
     public function approvals()
     {
         return $this->hasMany(DocumentApproval::class, 'document_id')
@@ -70,14 +114,16 @@ class Surat extends Model
     // ── helper: cek apakah bisa diedit (oleh pembuat) ──
     public function canBeEdited(): bool
     {
-        // cuma bs diedit klo status 'revised' (abis ditolak/perlu revisi)
-        // status 'submitted' gk bs diedit lagi
-        return $this->status === 'revised';
+        // cuma bs diedit klo status 'revised' (abis ditolak/perlu revisi) atau 'rejected_admin' (ditolak admin) atau 'pending_admin'
+        return in_array($this->status, ['revised', 'rejected_admin', 'pending_admin']);
     }
 
     // ── helper: cek apakah bisa dihapus (oleh pembuat) ──
     public function canBeDeleted(): bool
     {
+        if ($this->status === 'pending_admin' || $this->status === 'rejected_admin') {
+            return true;
+        }
         // cuma bs dihapus klo status submitted & blm ada approval diproses
         if ($this->status !== 'submitted') {
             return false;

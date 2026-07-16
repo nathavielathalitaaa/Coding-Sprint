@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'embedding' => [
+        'url' => env('EMBEDDING_SERVICE_URL'),
+    ],
+
 ];

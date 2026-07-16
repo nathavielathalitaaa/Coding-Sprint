@@ -4,143 +4,165 @@ namespace Database\Seeders;
 
 use DB;
 use Hash;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DataAwalSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     * Setup roles, permissions, dan user awal untuk SIMORA.
      */
     public function run(): void
     {
-        // buat role untuk spatie permission: staff, supervisor, hr, super-admin
-        foreach (['hr', 'supervisor', 'staff', 'super-admin', 'pembina', 'BPH', 'anggota'] as $role) {
-            DB::table('roles')->updateOrInsert(
-                ['name' => $role],
-                [
-                    'guard_name' => 'web',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]
-            );
+        // ── Buat Roles Spatie Permission ───────────────────────────────
+        // Role dasar sistem
+        $roles = [
+            ['name' => 'admin',           'guard_name' => 'web'],
+            ['name' => 'guru',            'guard_name' => 'web'],
+            ['name' => 'anggota',         'guard_name' => 'web'],
+            // Role global (tidak terikat Organisasi, approve semua surat step akhir)
+            ['name' => 'pengawas_pusat',  'guard_name' => 'web'],
+            ['name' => 'kepala_sekolah',  'guard_name' => 'web'],
+            // Super admin (bypass semua approval)
+            ['name' => 'super-admin',     'guard_name' => 'web'],
+        ];
+
+        foreach ($roles as $role) {
+            DB::table('roles')->insertOrIgnore(array_merge($role, [
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]));
         }
 
-        // ambil role ids
-        $hrRole = DB::table('roles')->where('name', 'hr')->first();
-        $supervisorRole = DB::table('roles')->where('name', 'supervisor')->first();
-        $staffRole = DB::table('roles')->where('name', 'staff')->first();
-        $superAdminRole = DB::table('roles')->where('name', 'super-admin')->first();
+        // ── Ambil Role IDs ──────────────────────────────────────────────
+        $adminRole          = DB::table('roles')->where('name', 'admin')->first();
+        $guruRole           = DB::table('roles')->where('name', 'guru')->first();
+        $anggotaRole        = DB::table('roles')->where('name', 'anggota')->first();
+        $pengawasPusatRole  = DB::table('roles')->where('name', 'pengawas_pusat')->first();
+        $kepalaSekolahRole  = DB::table('roles')->where('name', 'kepala_sekolah')->first();
+        $superAdminRole     = DB::table('roles')->where('name', 'super-admin')->first();
 
-        // buat user hr demo
-        DB::table('users')->updateOrInsert(
-            ['email' => 'admin@company.com'],
-            [
-                'user_id' => 'HR-0001',
-                'name' => 'Admin Utama',
-                'password' => Hash::make('password'),
-                'status' => 'aktif',
-                'role_name' => 'pembina', // diubah dari 'hr' ke enum yang valid
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-        $hrUser = DB::table('users')->where('email', 'admin@company.com')->value('id');
-        DB::table('model_has_roles')->updateOrInsert([
-            'role_id' => $hrRole->id,
-            'model_type' => 'App\\Models\\User',
-            'model_id' => $hrUser,
-        ], []);
-
-        // buat user supervisor demo
-        DB::table('users')->updateOrInsert(
-            ['email' => 'supervisor@company.com'],
-            [
-                'user_id' => 'SUP-0001',
-                'name' => 'Supervisor HR',
-                'password' => Hash::make('password'),
-                'status' => 'aktif',
-                'role_name' => 'BPH', // diubah dari 'supervisor' ke enum yang valid
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-        $supervisorUser = DB::table('users')->where('email', 'supervisor@company.com')->value('id');
-        DB::table('model_has_roles')->updateOrInsert([
-            'role_id' => $supervisorRole->id,
-            'model_type' => 'App\\Models\\User',
-            'model_id' => $supervisorUser,
-        ], []);
-
-        // buat user staff demo
-        DB::table('users')->updateOrInsert(
-            ['email' => 'staff@company.com'],
-            [
-                'user_id' => 'STF-0001',
-                'name' => 'Staff Karyawan',
-                'password' => Hash::make('password'),
-                'status' => 'aktif',
-                'role_name' => 'anggota', // diubah dari 'staff' ke enum yang valid
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-        $staffUser = DB::table('users')->where('email', 'staff@company.com')->value('id');
-        DB::table('model_has_roles')->updateOrInsert([
-            'role_id' => $staffRole->id,
-            'model_type' => 'App\\Models\\User',
-            'model_id' => $staffUser,
-        ], []);
-
-        // buat user super-admin dengan approval tertinggi
-        DB::table('users')->updateOrInsert(
-            ['email' => 'admin@admin.com'],
-            [
-                'user_id' => 'SUPER-0001',
-                'name' => 'Super Admin',
-                'password' => Hash::make('admin123'),
-                'status' => 'aktif',
-                'role_name' => 'pembina', // diubah dari 'super-admin' ke enum yang valid
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]
-        );
-        $superAdminUser = DB::table('users')->where('email', 'admin@admin.com')->value('id');
-        DB::table('model_has_roles')->updateOrInsert([
-            'role_id' => $superAdminRole->id,
-            'model_type' => 'App\\Models\\User',
-            'model_id' => $superAdminUser,
-        ], []);
-
-        // buat data shift awal (Dihapus karena tabel shifts sudah tidak ada)
-        /*
-        DB::table('shifts')->insert([
-            [
-                'nama_shift' => 'shift pagi',
-                'jam_masuk' => '08:00:00',
-                'jam_keluar' => '17:00:00',
-                'toleransi_menit' => 15,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_shift' => 'shift siang',
-                'jam_masuk' => '14:00:00',
-                'jam_keluar' => '22:00:00',
-                'toleransi_menit' => 15,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'nama_shift' => 'shift malam',
-                'jam_masuk' => '22:00:00',
-                'jam_keluar' => '06:00:00',
-                'toleransi_menit' => 15,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+        // ── Buat User Admin (Super Admin) ───────────────────────────────
+        $adminId = DB::table('users')->insertGetId([
+            'user_id'    => 'ADMIN-001',
+            'name'       => 'Admin SIMORA',
+            'email'      => 'admin@smktelkom-sdj.sch.id',
+            'password'   => Hash::make('password'),
+            'status'     => 'aktif',
+            'role_name'  => 'super-admin',
+            'must_change_password' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
-        */
+        // Berikan role super-admin agar memiliki akses penuh
+        DB::table('model_has_roles')->insert([
+            'role_id'    => $superAdminRole->id,
+            'model_type' => 'App\\Models\\User',
+            'model_id'   => $adminId,
+        ]);
+        // Juga pertahankan role admin untuk kompatibilitas
+        DB::table('model_has_roles')->insert([
+            'role_id'    => $adminRole->id,
+            'model_type' => 'App\\Models\\User',
+            'model_id'   => $adminId,
+        ]);
 
+        // ── Buat User Pengawas Pusat ────────────────────────────────────
+        $pengawasPusatId = DB::table('users')->insertGetId([
+            'user_id'    => 'GURU-001',
+            'name'       => 'Pengawas Pusat SMK',
+            'email'      => 'pengawas.pusat@smktelkom-sdj.sch.id',
+            'password'   => Hash::make('password'),
+            'status'     => 'aktif',
+            'role_name'  => 'pengawas_pusat',
+            'must_change_password' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('model_has_roles')->insert([
+            'role_id'    => $pengawasPusatRole->id,
+            'model_type' => 'App\\Models\\User',
+            'model_id'   => $pengawasPusatId,
+        ]);
+
+        // ── Buat User Kepala Sekolah ────────────────────────────────────
+        $kepalaSekolahId = DB::table('users')->insertGetId([
+            'user_id'    => 'GURU-002',
+            'name'       => 'Kepala Sekolah SMK Telkom Sidoarjo',
+            'email'      => 'kepsek@smktelkom-sdj.sch.id',
+            'password'   => Hash::make('password'),
+            'status'     => 'aktif',
+            'role_name'  => 'kepala_sekolah',
+            'must_change_password' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('model_has_roles')->insert([
+            'role_id'    => $kepalaSekolahRole->id,
+            'model_type' => 'App\\Models\\User',
+            'model_id'   => $kepalaSekolahId,
+        ]);
+
+        // ── Buat User Guru Demo (bisa jadi Pembina/Pengawas via OrganisasiMember) ──
+        $guru1Id = DB::table('users')->insertGetId([
+            'user_id'    => 'GURU-003',
+            'name'       => 'Bapak Pembina OSIS',
+            'email'      => 'pembina.osis@smktelkom-sdj.sch.id',
+            'password'   => Hash::make('password'),
+            'status'     => 'aktif',
+            'role_name'  => 'guru',
+            'must_change_password' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('model_has_roles')->insert([
+            'role_id'    => $guruRole->id,
+            'model_type' => 'App\\Models\\User',
+            'model_id'   => $guru1Id,
+        ]);
+
+        $guru2Id = DB::table('users')->insertGetId([
+            'user_id'    => 'GURU-004',
+            'name'       => 'Ibu Pembina MPK',
+            'email'      => 'pembina.mpk@smktelkom-sdj.sch.id',
+            'password'   => Hash::make('password'),
+            'status'     => 'aktif',
+            'role_name'  => 'guru',
+            'must_change_password' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::table('model_has_roles')->insert([
+            'role_id'    => $guruRole->id,
+            'model_type' => 'App\\Models\\User',
+            'model_id'   => $guru2Id,
+        ]);
+
+        // ── Buat User Anggota Demo ──────────────────────────────────────
+        $anggotaUsers = [
+            ['user_id' => 'ANT-001', 'name' => 'Ketua OSIS',       'email' => 'ketua.osis@smktelkom-sdj.sch.id'],
+            ['user_id' => 'ANT-002', 'name' => 'BPH OSIS 1',       'email' => 'bph.osis1@smktelkom-sdj.sch.id'],
+            ['user_id' => 'ANT-003', 'name' => 'Ketua MPK',        'email' => 'ketua.mpk@smktelkom-sdj.sch.id'],
+            ['user_id' => 'ANT-004', 'name' => 'BPH MPK 1',        'email' => 'bph.mpk1@smktelkom-sdj.sch.id'],
+            ['user_id' => 'ANT-005', 'name' => 'Anggota ROHIS',    'email' => 'bph.rohis1@smktelkom-sdj.sch.id'],
+        ];
+
+        $anggotaIds = [];
+        foreach ($anggotaUsers as $u) {
+            $uid = DB::table('users')->insertGetId(array_merge($u, [
+                'password'   => Hash::make('password'),
+                'status'     => 'aktif',
+                'role_name'  => 'anggota',
+                'must_change_password' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]));
+            DB::table('model_has_roles')->insert([
+                'role_id'    => $anggotaRole->id,
+                'model_type' => 'App\\Models\\User',
+                'model_id'   => $uid,
+            ]);
+            $anggotaIds[$u['user_id']] = $uid;
+        }
     }
 }

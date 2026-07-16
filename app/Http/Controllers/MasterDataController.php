@@ -15,7 +15,7 @@ class MasterDataController extends Controller
         $userTypes = DB::table('user_types')->get();
         $roleTypes = DB::table('role_type_users')->get();
 
-        return view('hr.settings.master', compact('positions', 'userTypes', 'roleTypes'));
+        return view('users.settings.master', compact('positions', 'userTypes', 'roleTypes'));
     }
 
     // --- Position Methods ---
@@ -60,7 +60,7 @@ class MasterDataController extends Controller
         }
 
         $isUsedInUsers = DB::table('users')->where('position', $data->position)->exists();
-        $isUsedInProfiles = DB::table('employee_profiles')->where('jabatan', $data->position)->exists();
+        $isUsedInProfiles = DB::table('user_profiles')->where('jabatan', $data->position)->exists();
 
         if ($isUsedInUsers || $isUsedInProfiles) {
             flash()->error('Data masih digunakan oleh karyawan aktif.');

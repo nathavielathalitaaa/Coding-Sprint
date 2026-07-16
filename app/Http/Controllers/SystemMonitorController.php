@@ -13,44 +13,85 @@ class SystemMonitorController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:hr']);
+        $this->middleware(['auth', 'role:admin|super-admin']);
     }
 
     public function index()
     {
         // 1. Log Statistics
-        $logCount = ActivityLog::count();
-        $logsThisMonth = ActivityLog::whereMonth('created_at', now()->month)->count();
-        
+        $logCount       = ActivityLog::count();
+        $logsThisMonth  = ActivityLog::whereMonth('created_at', now()->month)
+                            ->whereYear('created_at', now()->year)->count();
+        $logsToday      = ActivityLog::whereDate('created_at', today())->count();
+
+        // Top 5 aksi terbanyak di log
+        $topActions = ActivityLog::select('action', DB::raw('COUNT(*) as total'))
+            ->groupBy('action')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        // 10 log aktivitas terbaru
+        $recentLogs = ActivityLog::with('user')
+            ->latest()
+            ->limit(10)
+            ->get();
+
         // 2. Archive Statistics
-        $archivePath = storage_path('app/archives/logs');
-        $archiveSize = $this->getDirectorySize($archivePath);
-        $totalArchives = Storage::disk('local')->exists('archives/logs') ? count(Storage::disk('local')->files('archives/logs')) : 0;
+        $archivePath   = storage_path('app/archives/logs');
+        $archiveSize   = $this->getDirectorySize($archivePath);
+        $totalArchives = Storage::disk('local')->exists('archives/logs')
+                            ? count(Storage::disk('local')->files('archives/logs'))
+                            : 0;
 
         // 3. Storage Statistics (Documents)
         $storagePath = storage_path('app/public/surat');
         $storageSize = $this->getDirectorySize($storagePath);
-        $totalFiles = File::exists($storagePath) ? count(File::files($storagePath)) : 0;
+        $totalFiles  = File::exists($storagePath) ? count(File::files($storagePath)) : 0;
 
-        // 4. Database Statistics (Simplified for MySQL/SQLite)
+        // Hitung juga file surat turunan
+        $storageTurunanPath  = storage_path('app/public/surat-turunan');
+        $storageTurunanSize  = $this->getDirectorySize($storageTurunanPath);
+        $totalTurunanFiles   = File::exists($storageTurunanPath) ? count(File::files($storageTurunanPath)) : 0;
+
+        // 4. Database Statistics
         $dbSize = $this->getDatabaseSize();
 
-        // 5. System Info
-        $phpVersion = PHP_VERSION;
+        // 5. Surat Statistics
+        $totalSurat         = Surat::count();
+        $suratApproved      = Surat::where('status', 'approved_owner')->count();
+        $suratPending       = Surat::whereIn('status', ['pending_admin', 'submitted'])->count();
+        $suratBulanIni      = Surat::whereMonth('created_at', now()->month)
+                                ->whereYear('created_at', now()->year)->count();
+
+        // Surat per bulan (6 bulan terakhir) untuk grafik mini
+        $suratPerBulan = collect(range(5, 0))->map(function ($i) {
+            $date = now()->subMonths($i);
+            return [
+                'bulan' => $date->translatedFormat('M Y'),
+                'total' => Surat::whereMonth('created_at', $date->month)
+                            ->whereYear('created_at', $date->year)->count(),
+            ];
+        });
+
+        // 6. System Info
+        $phpVersion     = PHP_VERSION;
         $laravelVersion = app()->version();
-        $serverInfo = request()->server('SERVER_SOFTWARE');
+        $serverInfo     = request()->server('SERVER_SOFTWARE') ?? 'N/A';
+        $memoryUsage    = $this->formatBytes(memory_get_usage(true));
+        $uptime         = $this->getServerUptime();
 
         return view('system.monitor', compact(
-            'logCount', 
-            'logsThisMonth', 
-            'archiveSize',
-            'totalArchives',
-            'storageSize', 
-            'totalFiles', 
+            'logCount', 'logsThisMonth', 'logsToday',
+            'topActions', 'recentLogs',
+            'archiveSize', 'totalArchives',
+            'storageSize', 'totalFiles',
+            'storageTurunanSize', 'totalTurunanFiles',
             'dbSize',
-            'phpVersion',
-            'laravelVersion',
-            'serverInfo'
+            'totalSurat', 'suratApproved', 'suratPending', 'suratBulanIni',
+            'suratPerBulan',
+            'phpVersion', 'laravelVersion', 'serverInfo',
+            'memoryUsage', 'uptime'
         ));
     }
 
@@ -90,6 +131,19 @@ class SystemMonitorController extends Controller
         $bytes /= (1 << (10 * $pow));
 
         return round($bytes, $precision) . ' ' . $units[$pow];
+    }
+
+    private function getServerUptime(): string
+    {
+        try {
+            if (PHP_OS_FAMILY === 'Windows') {
+                return 'N/A (Windows)';
+            }
+            $uptime = shell_exec('uptime -p 2>/dev/null');
+            return $uptime ? trim(str_replace('up ', '', $uptime)) : 'N/A';
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
     }
 
     public function archiveManager(Request $request)

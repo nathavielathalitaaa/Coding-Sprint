@@ -15,26 +15,26 @@ class CheckOnboarding
         }
 
         $user = auth()->user();
-        $profile = $user->profile;
-
         // ── Cek apakah user terdaftar sebagai approver
         // di surat type manapun (berdasarkan user_id)
         $isApprover = SuratTypeApprover::where('user_id', $user->id)
             ->exists();
 
+        // Bisa juga cek berdasarkan jabatan jika ada di SuratTypeApprover
+        $hasJabatanApprover = false;
+        $userJabatans = $user->organisasiMembers()->pluck('jabatan')->filter()->unique();
+        if ($userJabatans->isNotEmpty()) {
+            $hasJabatanApprover = SuratTypeApprover::whereIn('jabatan_label', $userJabatans)->exists();
+        }
+
         // Bukan approver → skip onboarding, langsung masuk
-        if (!$isApprover) {
+        if (!$isApprover && !$hasJabatanApprover) {
             return $next($request);
         }
 
         // Approver → wajib punya TTD dan PIN
-        if (!$profile) {
-            return redirect()->route('onboarding');
-        }
-
-        $hasTtd = !empty($profile->ttd_path) 
-               || !empty($profile->signature_path);
-        $hasPin = !empty($profile->pin);
+        $hasTtd = !empty($user->ttd_path);
+        $hasPin = !empty($user->pin);
 
         if (!$hasTtd || !$hasPin) {
             return redirect()->route('onboarding');

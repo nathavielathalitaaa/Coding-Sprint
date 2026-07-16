@@ -3,18 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Surat;
+use App\Models\Komisi;
+use App\Models\Organisasi;
+use App\Models\OrganisasiMember;
+use App\Models\SuratKegiatanDetail;
 use App\Services\ApprovalService;
 use App\Services\PinVerificationService;
 use App\Services\ApprovalCoverService;
 use App\Services\PdfStampService;
 use App\Services\NotificationService;
 use App\Services\SuratNumberService;
+use App\Services\DokumenValidationService;
 use App\Models\SuratType;
 use App\Models\ApprovalStep;
-use App\Models\EmployeeProfile;
 use App\Http\Requests\Surat\StoreSuratRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SuratController extends Controller
 {
@@ -25,6 +30,7 @@ class SuratController extends Controller
         private PdfStampService $stampService,
         private NotificationService $notifService,
         private SuratNumberService $numberService,
+        private DokumenValidationService $validationService,
     ) {
         $this->middleware('auth');
     }
@@ -36,34 +42,101 @@ class SuratController extends Controller
      *
      * @return \Illuminate\View\View
      */
-    public function index()
+    public function index(Request $request)
     {
-        $user = Auth::user()->load('profile');
-        $query = Surat::with(['user', 'approvals', 'suratType']);
+        $user  = Auth::user();
+        $query = Surat::with(['user', 'approvals', 'suratType', 'organisasi']);
 
-        // ── Pengecekan Otorisasi Data ───────────────────────────────────
-        if (!$user->hasAnyRole(['hr', 'admin', 'super-admin'])) {
-            $jabatan = $user->profile?->jabatan;
-            
-            $query->where(function($q) use ($jabatan, $user) {
+        // ── Filter visibilitas berdasarkan role ─────────────────────────
+        if ($user->hasAnyRole(['admin', 'super-admin'])) {
+            // Admin lihat semua surat
+        } elseif ($user->hasAnyRole(['pengawas_pusat', 'kepala_sekolah'])) {
+            // Role global: lihat surat yang memiliki step global waiting untuk mereka
+            $roleName = $user->hasRole('pengawas_pusat') ? 'pengawas_pusat' : 'kepala_sekolah';
+            $query->where(function($q) use ($user, $roleName) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('approvals', fn($sq) =>
+                      $sq->where('target_mode', 'global')->where('jabatan', $roleName)
+                  );
+            });
+        } else {
+            // Guru / Anggota: lihat surat milik sendiri + surat dari organisasi yang diikuti
+            $userOrganisasis = Organisasi::whereHas('members', function($q) use ($user) {
                 $q->where('user_id', $user->id);
+            })->get();
+            $organisasiIds = $userOrganisasis->pluck('id');
+            $isMpk = $userOrganisasis->where('tipe', 'mpk')->isNotEmpty();
+            $isOsis = $userOrganisasis->where('tipe', 'osis')->isNotEmpty();
 
-                $q->orWhereHas('approvals', function ($sq) use ($jabatan, $user) {
-                    $sq->where('document_type', 'LIKE', 'surat_%')
-                      ->where(function($ssq) use ($jabatan, $user) {
-                          $ssq->where('assigned_user_id', $user->id);
-                          if ($jabatan) {
-                              $ssq->orWhere(function($sssq) use ($jabatan) {
-                                  $sssq->whereNull('assigned_user_id')
-                                       ->where('jabatan', $jabatan);
-                              });
-                          }
-                      });
+            $query->where(function($q) use ($user, $organisasiIds, $isMpk, $isOsis) {
+                $q->where('user_id', $user->id);
+                
+                if ($organisasiIds->isNotEmpty()) {
+                    $q->orWhereIn('organisasi_id', $organisasiIds);
+                }
+                
+                // assigned_user_id spesifik atau sudah pernah approve
+                $q->orWhereHas('approvals', function($sq) use ($user, $isMpk, $isOsis) {
+                    $sq->where('assigned_user_id', $user->id)
+                       ->orWhere('approver_id', $user->id);
+                       
+                    if ($isMpk) {
+                        $sq->orWhere('target_mode', 'fixed_mpk');
+                    }
+                    if ($isOsis) {
+                        $sq->orWhere('target_mode', 'fixed_osis');
+                    }
                 });
             });
         }
 
-        $surats = $query->latest()->paginate(15);
+        // ── Filter tambahan: Persetujuan Saya (waiting) ──────────────────
+        $filter = $request->input('filter');
+        if ($filter === 'waiting') {
+            $query->where('status', 'submitted');
+            $query->whereHas('approvals', function($q) use ($user) {
+                $q->where('status', 'waiting')
+                  ->where(function($sq) use ($user) {
+                      $sq->where('assigned_user_id', $user->id);
+                      
+                      $userOrganisasis = Organisasi::whereHas('members', fn($mq) => $mq->where('user_id', $user->id))->get();
+                      $organisasiIds = $userOrganisasis->pluck('id');
+                      $isMpk = $userOrganisasis->where('tipe', 'mpk')->isNotEmpty();
+                      $isOsis = $userOrganisasis->where('tipe', 'osis')->isNotEmpty();
+                      
+                      $sq->orWhere(function($ssq) use ($user, $organisasiIds, $isMpk, $isOsis) {
+                          $ssq->whereNull('assigned_user_id');
+                          
+                          $jabatans = $user->organisasiMembers()->pluck('jabatan')->filter()->unique();
+                          if ($jabatans->isNotEmpty()) {
+                              $ssq->whereIn('jabatan', $jabatans);
+                          }
+                          
+                          $ssq->where(function($sssq) use ($user, $isMpk, $isOsis) {
+                              $sssq->where('target_mode', 'submitter');
+                              if ($isMpk) $sssq->orWhere('target_mode', 'fixed_mpk');
+                              if ($isOsis) $sssq->orWhere('target_mode', 'fixed_osis');
+                              if ($user->hasRole('pengawas_pusat')) $sssq->orWhere('target_mode', 'global')->where('jabatan', 'pengawas_pusat');
+                              if ($user->hasRole('kepala_sekolah')) $sssq->orWhere('target_mode', 'global')->where('jabatan', 'kepala_sekolah');
+                          });
+                      });
+                  });
+            });
+        }
+
+        // ── Filter tambahan: Pencarian kata kunci ────────────────────────
+        $search = $request->input('search');
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('perihal', 'like', '%' . $search . '%')
+                  ->orWhere('nomor_surat', 'like', '%' . $search . '%')
+                  ->orWhereHas('user', function($sq) use ($search) {
+                      $sq->where('name', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
+        $surats = $query->latest()->paginate(15)->withQueryString();
 
         return view('surat.index', compact('surats'));
     }
@@ -77,7 +150,12 @@ class SuratController extends Controller
     public function create()
     {
         $this->authorize('create', Surat::class);
-        return view('surat.create');
+
+        $suratTypes  = SuratType::where('is_active', true)->get();
+        $organisasis = Organisasi::where('is_active', true)->orderBy('tipe')->get();
+        $komisis     = Komisi::where('is_active', true)->with('organisasi')->get();
+
+        return view('surat.create', compact('suratTypes', 'organisasis', 'komisis'));
     }
 
 
@@ -94,9 +172,50 @@ class SuratController extends Controller
 
         $suratType = SuratType::findOrFail($request->surat_type_id);
 
+        // ── Validasi Organisasi Tipe ────────────────────────────────────
+        $organisasi = \App\Models\Organisasi::findOrFail($request->organisasi_id);
+        if ($suratType->organisasi_tipe && $suratType->organisasi_tipe !== $organisasi->tipe) {
+            return back()->withErrors(['surat_type_id' => 'Jenis surat ini tidak berlaku untuk organisasi yang dipilih.'])->withInput();
+        }
+
+        // ── Validasi tambahan: komisi wajib untuk surat MPK ────────────
+        if ($suratType->organisasi_tipe === 'mpk' && !$request->komisi_id) {
+            return back()->withErrors(['komisi_id' => 'Komisi wajib dipilih untuk surat MPK.'])->withInput();
+        }
+
+        // ── Validasi Duplikat & Konflik Jadwal (hanya untuk surat dengan detail kegiatan) ──
+        if ($suratType->requires_kegiatan_detail) {
+
+            // Node 1: Deteksi Duplikat — kegiatan serupa dari organisasi yang sama dalam ±7 hari
+            $duplikat = $this->validationService->cekDuplikat(
+                $request->nama_kegiatan,
+                $request->organisasi_id,
+                $request->tanggal_mulai
+            );
+
+            if ($duplikat) {
+                return back()->withErrors([
+                    'nama_kegiatan' => "Terdeteksi kegiatan serupa (kemiripan {$duplikat['percent']}%): \"{$duplikat['nama_kegiatan']}\" pada {$duplikat['tanggal_mulai']} (No. Surat: {$duplikat['nomor_surat']}). Jika ini kegiatan yang berbeda, ubah nama kegiatan agar lebih spesifik, atau periksa kembali pengajuan sebelumnya.",
+                ])->withInput();
+            }
+
+            // Node 2: Deteksi Konflik Jadwal — lokasi yang sama di rentang tanggal yang overlap (lintas organisasi)
+            $konflik = $this->validationService->cekKonflikJadwal(
+                $request->lokasi,
+                $request->tanggal_mulai,
+                $request->tanggal_selesai
+            );
+
+            if ($konflik) {
+                $tglSelesaiLabel = $konflik['tanggal_selesai'] ?? $konflik['tanggal_mulai'];
+                return back()->withErrors([
+                    'lokasi' => "Lokasi \"{$request->lokasi}\" sudah dipakai oleh kegiatan \"{$konflik['nama_kegiatan']}\" ({$konflik['organisasi_nama']}) pada tanggal yang sama/berdekatan ({$konflik['tanggal_mulai']} - {$tglSelesaiLabel}). Silakan pilih lokasi atau tanggal lain.",
+                ])->withInput();
+            }
+        }
+
         // ── Proses Upload File ──────────────────────────────────────────
         $fileName = null;
-        
         if ($request->hasFile('file_pdf')) {
             $fileName = $request->file('file_pdf')->store('surat', 'public');
         }
@@ -105,29 +224,32 @@ class SuratController extends Controller
         $surat = Surat::create([
             'user_id'         => Auth::id(),
             'surat_type_id'   => $suratType->id,
-            'nomor_surat'     => $this->numberService->generate($suratType),
+            'organisasi_id'   => $request->organisasi_id,
+            'komisi_id'       => $suratType->organisasi_tipe === 'mpk' ? $request->komisi_id : null,
+            'nomor_surat'     => null, // Diisi nanti oleh admin
             'jenis_surat'     => $suratType->kode,
             'perihal'         => $request->perihal,
             'file_pdf'        => $fileName,
             'ttd_coordinates' => $request->ttd_coordinates ? json_decode($request->ttd_coordinates, true) : null,
-            'status'          => 'submitted',
+            'status'          => 'pending_admin',
         ]);
 
-        $this->approval->initFromSuratType($surat);
+        // JANGAN panggil initFromSuratType di sini. Biarkan admin yang melakukan Disposisi Awal
+        // $this->approval->initFromSuratType($surat);
 
-        // ── Pengiriman Notifikasi ───────────────────────────────────────
-        $firstStep = $surat->approvals()->where('status', 'waiting')->first();
-        
-        if ($firstStep) {
-            $this->notifService->sendToJabatan(
-                $firstStep->jabatan,
-                'Permintaan Approval Surat Baru',
-                "Karyawan " . Auth::user()->name . " mengajukan surat baru ({$surat->nomor_surat}).",
-                route('surat.show', $surat->id)
-            );
+        // ── Simpan Detail Kegiatan (jika surat type memerlukannya) ──────
+        if ($suratType->requires_kegiatan_detail) {
+            SuratKegiatanDetail::create([
+                'surat_id'          => $surat->id,
+                'nama_kegiatan'     => $request->nama_kegiatan,
+                'tanggal_mulai'     => $request->tanggal_mulai,
+                'tanggal_selesai'   => $request->tanggal_selesai ?: null,
+                'lokasi'            => $request->lokasi,
+                'deskripsi_singkat' => $request->deskripsi_singkat ?: null,
+            ]);
         }
 
-        flash()->success('Surat berhasil dibuat dan dikirim untuk approval.');
+        flash()->success('Surat berhasil diajukan dan sedang menunggu verifikasi Admin Sekretariat.');
         return redirect()->route('surat.show', $surat->id);
     }
 
@@ -146,7 +268,7 @@ class SuratController extends Controller
         // ── Pengambilan Data Approval ───────────────────────────────────
         $documentType = 'surat_' . $surat->jenis_surat;
         $steps = $this->approval->getStatus($documentType, $surat->id);
-        $authUser = Auth::user()->load('profile');
+        $authUser = Auth::user()->load(['organisasiMembers', 'komisiMembers']);
         $canApprove = $this->approval->canApprove($documentType, $surat->id, $authUser);
         $waitingStep = $this->approval->getWaitingStep($documentType, $surat->id);
         
@@ -224,35 +346,41 @@ class SuratController extends Controller
      */
     public function approve(Request $request, Surat $surat)
     {
-        
-        // ── Validasi Request ────────────────────────────────────────────
-        $request->validate([
-            'catatan' => 'nullable|string|max:500',
-            'pin'     => 'required|string',
-        ], [
-            'pin.required' => 'PIN wajib diisi untuk menyetujui surat.',
-        ]);
-        
-        $user = Auth::user()->load('profile');
+        $user = Auth::user()->load(['organisasiMembers', 'komisiMembers']);
+        $documentType = 'surat_' . $surat->jenis_surat;
 
-        if (!$this->pinService->verify($user, $request->pin)) {
-            flash()->error('PIN salah. Silakan coba lagi.');
-            return redirect()->back();
+        // ── Cek apakah step saat ini memerlukan tanda tangan ────────────
+        $requiresSignature = $this->approval->currentStepRequiresSignature($documentType, $surat->id);
+
+        // ── Validasi Request (PIN hanya wajib jika is_signer = true) ────
+        $rules = [
+            'catatan' => 'nullable|string|max:500',
+        ];
+
+        if ($requiresSignature) {
+            $rules['pin'] = 'required|string';
         }
 
+        $request->validate($rules, [
+            'pin.required' => 'PIN wajib diisi untuk menyetujui surat.',
+        ]);
+
+        // ── Verifikasi PIN (hanya jika is_signer = true) ────────────────
+        if ($requiresSignature) {
+            if (!$this->pinService->verify($user, $request->pin)) {
+                flash()->error('PIN salah. Silakan coba lagi.');
+                return redirect()->back();
+            }
+        }
 
         // ── Pengecekan Otorisasi Approval ───────────────────────────────
-        $documentType = 'surat_' . $surat->jenis_surat;
-        
         if (!$this->approval->canApprove($documentType, $surat->id, $user)) {
             flash()->error('Bukan giliran Anda untuk approve surat ini.');
             return redirect()->back();
         }
-        
-        
 
         // ── Proses Approval ─────────────────────────────────────────────
-        $ttdSnapshot = $this->pinService->getTtdPath($user);
+        $ttdSnapshot = $requiresSignature ? $this->pinService->getTtdPath($user) : null;
 
         $approvalResult = $this->approval->approve(
             $documentType,
@@ -262,18 +390,21 @@ class SuratController extends Controller
             $ttdSnapshot
         );
 
-
         if (!$approvalResult['success']) {
             flash()->error($approvalResult['message']);
             return redirect()->back();
         }
 
-        
         // ── Penanganan Penyelesaian Approval ────────────────────────────
         if ($approvalResult['selesai']) {
             $surat->update(['status' => 'approved_owner']);
 
-            dd('6');
+            if ($surat->suratType && $surat->suratType->requires_kegiatan_detail) {
+                $surat->update([
+                    'pic_user_id' => $surat->user_id,
+                    'status_pelaksanaan' => 'belum_mulai',
+                ]);
+            }
 
             $this->notifService->send(
                 $surat->user_id,
@@ -282,21 +413,32 @@ class SuratController extends Controller
                 route('surat.show', $surat->id)
             );
 
-        dd('7');
+            // Broadcast ke semua approver lain
+            $approverIds = \App\Models\DocumentApproval::where('document_type', $documentType)
+                ->where('document_id', $surat->id)
+                ->whereNotNull('approver_id')
+                ->pluck('approver_id')
+                ->unique()
+                ->reject(fn($id) => $id == $surat->user_id);
+
+            foreach ($approverIds as $apprId) {
+                $this->notifService->send(
+                    $apprId,
+                    'Surat Disetujui Penuh',
+                    "Surat dengan nomor {$surat->nomor_surat} yang Anda setujui telah disetujui sepenuhnya oleh seluruh rantai approval.",
+                    route('surat.show', $surat->id)
+                );
+            }
 
             try {
                 $documentType = 'surat_' . $surat->jenis_surat;
                 
-                dd('8');
-
                 if ($surat->suratType) {
                     $ttdMode = 'stamp';
                 } else {
                     $step = ApprovalStep::where('document_type', $documentType)->first();
                     $ttdMode = $step?->ttd_mode ?? 'append';
                 }
-
-                dd('9');
 
                 if ($ttdMode === 'stamp') {
                     $finalPath = $this->stampService->stamp($surat);
@@ -354,7 +496,7 @@ class SuratController extends Controller
         ]);
 
         // ── Pengecekan Otorisasi Rejection ──────────────────────────────
-        $user = Auth::user()->load('profile');
+        $user = Auth::user()->load(['organisasiMembers', 'komisiMembers']);
         $documentType = 'surat_' . $surat->jenis_surat;
         
         if (!$this->approval->canApprove($documentType, $surat->id, $user)) {
@@ -568,6 +710,146 @@ class SuratController extends Controller
         return response()->file($path, [
             'Content-Type'  => mime_content_type($path),
             'Cache-Control' => 'private, max-age=300',
+        ]);
+    }
+
+    /**
+     * Tampilkan daftar surat yang berstatus pending_admin (Fase Review Admin).
+     */
+    public function inboxAdmin()
+    {
+        if (!Auth::user()->hasAnyRole(['admin', 'super-admin'])) {
+            abort(403, 'Hanya Admin yang dapat mengakses Inbox Admin.');
+        }
+
+        $surats = Surat::where('status', 'pending_admin')->latest()->paginate(15);
+        return view('surat.inbox-admin', compact('surats'));
+    }
+
+    /**
+     * Proses verifikasi Admin: Tolak (reject) atau Setujui (teruskan / Disposisi Awal).
+     */
+    public function verifikasiAdmin(Request $request, Surat $surat)
+    {
+        if (!Auth::user()->hasAnyRole(['admin', 'super-admin'])) {
+            abort(403, 'Hanya Admin yang dapat memverifikasi surat.');
+        }
+
+        if ($surat->status !== 'pending_admin') {
+            flash()->error('Surat ini tidak sedang menunggu verifikasi admin.');
+            return back();
+        }
+
+        if ($request->action === 'reject') {
+            $request->validate(['catatan_revisi' => 'required|string|max:500']);
+            $surat->update([
+                'status' => 'rejected_admin',
+                'catatan_revisi' => $request->catatan_revisi
+            ]);
+            flash()->warning('Surat ditolak dan dikembalikan ke pembuat.');
+        } else {
+            // ── Disposisi Awal ──────────────────────────────────────
+            // Nomor surat digenerate otomatis oleh SuratNumberService
+            // berdasarkan nomor_format + counter di SuratType.
+            // Seluruh operasi (generate + update surat + init approval)
+            // dibungkus dalam satu DB transaction agar counter tidak
+            // nyangkut jika salah satu langkah gagal.
+
+            if (!$surat->suratType) {
+                flash()->error('Jenis surat tidak ditemukan. Tidak dapat membuat nomor surat otomatis.');
+                return back();
+            }
+
+            DB::transaction(function () use ($surat) {
+                // Generate nomor (lockForUpdate ada di dalam generate())
+                $nomorSurat = $this->numberService->generate($surat->suratType);
+
+                $surat->update([
+                    'nomor_surat'    => $nomorSurat,
+                    'status'         => 'submitted',
+                    'catatan_revisi' => null,
+                ]);
+
+                // Inisialisasi Alur Approval
+                $this->approval->initFromSuratType($surat);
+
+                // Kirim Notifikasi ke Approver Pertama
+                $firstStep = $surat->approvals()->where('status', 'waiting')->first();
+                if ($firstStep) {
+                    $this->notifService->sendToJabatan(
+                        $firstStep->jabatan,
+                        'Permintaan Approval Surat Baru',
+                        "Surat ({$surat->nomor_surat}) telah diverifikasi admin dan menunggu persetujuan Anda.",
+                        route('surat.show', $surat->id)
+                    );
+                }
+            });
+
+            flash()->success('Surat diverifikasi, nomor surat diberikan otomatis, dan diteruskan ke alur persetujuan.');
+        }
+
+        return redirect()->route('surat.inbox_admin');
+    }
+
+
+    // ══════════════════════════════════════════════════════════════════
+    // ENDPOINT REAL-TIME VALIDATION (AJAX)
+    // Dipanggil dari create.blade.php via fetch() — hanya untuk UX preview.
+    // Validasi final (blocking) tetap di store() via DokumenValidationService.
+    // ══════════════════════════════════════════════════════════════════
+
+    /**
+     * GET /surat/cek-duplikat
+     * Params: nama_kegiatan, tanggal_mulai, organisasi_id
+     * Response: { duplikat: null | { surat_id, nomor_surat, nama_kegiatan, tanggal_mulai, percent } }
+     */
+    public function cekDuplikat(Request $request)
+    {
+        // Validasi minimal agar tidak error saat field belum terisi
+        $request->validate([
+            'nama_kegiatan' => 'required|string|max:255',
+            'tanggal_mulai' => 'required|date',
+            'organisasi_id' => 'required|integer',
+        ]);
+
+        $duplikat = $this->validationService->cekDuplikat(
+            $request->nama_kegiatan,
+            (int) $request->organisasi_id,
+            $request->tanggal_mulai
+        );
+
+        return response()->json([
+            'duplikat' => $duplikat,
+            'rekomendasi' => $duplikat
+                ? "Kegiatan \"{$duplikat['nama_kegiatan']}\" ({$duplikat['percent']}% mirip) sudah diajukan dengan nomor {$duplikat['nomor_surat']} pada {$duplikat['tanggal_mulai']}. Pertimbangkan untuk mengganti nama kegiatan agar lebih spesifik, atau pastikan ini bukan pengajuan ganda."
+                : null,
+        ]);
+    }
+
+    /**
+     * GET /surat/cek-konflik
+     * Params: lokasi, tanggal_mulai, tanggal_selesai (opsional)
+     * Response: { konflik: null | { surat_id, organisasi_nama, nomor_surat, nama_kegiatan, tanggal_mulai, tanggal_selesai } }
+     */
+    public function cekKonflik(Request $request)
+    {
+        $request->validate([
+            'lokasi'         => 'required|string|max:255',
+            'tanggal_mulai'  => 'required|date',
+            'tanggal_selesai'=> 'nullable|date',
+        ]);
+
+        $konflik = $this->validationService->cekKonflikJadwal(
+            $request->lokasi,
+            $request->tanggal_mulai,
+            $request->tanggal_selesai ?: null
+        );
+
+        return response()->json([
+            'konflik' => $konflik,
+            'rekomendasi' => $konflik
+                ? "Lokasi \"{$request->lokasi}\" sudah dipakai oleh {$konflik['organisasi_nama']} untuk kegiatan \"{$konflik['nama_kegiatan']}\" pada {$konflik['tanggal_mulai']}" . ($konflik['tanggal_selesai'] ? " s/d {$konflik['tanggal_selesai']}" : "") . ". Pilih lokasi lain atau ubah jadwal kegiatan Anda."
+                : null,
         ]);
     }
 }

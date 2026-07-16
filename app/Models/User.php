@@ -9,10 +9,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles {
-        HasRoles::hasRole as traitHasRole;
-        HasRoles::hasAnyRole as traitHasAnyRole;
-    }
+    use HasFactory, Notifiable, HasRoles;
 
     protected $fillable = [
         'user_id',
@@ -28,6 +25,8 @@ class User extends Authenticatable
         'position',    // kolom posisi singkat di users (opsional, bisa pakai profile)
         'department',
         'must_change_password',
+        'ttd_path',
+        'pin',
     ];
 
     protected $hidden = [
@@ -44,63 +43,23 @@ class User extends Authenticatable
 
     public function profile()
     {
-        return $this->hasOne(EmployeeProfile::class, 'user_id');
+        return $this->hasOne(UserProfile::class, 'user_id');
     }
 
-    /**
-     * ambil profile, buat baru kalau belum ada.
-     * pakai ini di controller/view supaya tidak null.
-     * contoh: auth()->user()->profileornew->nik
-     */
-    public function getProfileOrNewAttribute(): EmployeeProfile
+    public function organisasiMembers()
     {
-        return $this->profile ?? new EmployeeProfile(['user_id' => $this->id]);
+        return $this->hasMany(OrganisasiMember::class, 'user_id');
     }
 
-    // ── relasi ke absensi 
-    public function absensis()
+    public function komisiMembers()
     {
-        return $this->hasMany(Absensi::class, 'user_id');
+        return $this->hasMany(KomisiMember::class, 'user_id');
     }
 
-    // ── helper: jabatan dari profile
-    public function getJabatanAttribute(): ?string
-    {
-        return $this->profile?->jabatan;
-    }
-
-    public function hasRole($roles, $guardName = null): bool
-    {
-        // if no role requested, return false early (Spatie expects string|array/Role)
-        if (is_null($roles)) {
-            return false;
-        }
-
-        // top-level override: pembina (super-admin equivalent) should bypass checks
-        if (strtolower($this->role_name ?? '') === 'pembina') {
-            return true;
-        }
-
-        return $this->traitHasRole($roles, $guardName);
-    }
-
-    public function hasAnyRole($roles, $guardName = null): bool
-    {
-        if (is_null($roles)) {
-            return false;
-        }
-
-        if (strtolower($this->role_name ?? '') === 'pembina') {
-            return true;
-        }
-
-        return $this->traitHasAnyRole($roles, $guardName);
-    }
-
-    // ── helper: cek jabatan untuk sistem approval
+    // ── helper: cek jabatan untuk sistem approval (mengambil dari salah satu keanggotaan)
     public function hasJabatan(string $jabatan): bool
     {
-        return $this->profile?->jabatan === $jabatan;
+        return $this->organisasiMembers()->where('jabatan', $jabatan)->exists();
     }
 }
 

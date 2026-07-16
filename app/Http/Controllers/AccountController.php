@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request; 
 use App\Models\User; 
-use App\Models\EmployeeProfile; 
+use App\Models\UserProfile; 
 use Session; 
 use Illuminate\Support\Facades\Auth; 
 use Illuminate\Support\Facades\Storage; 
@@ -18,17 +18,15 @@ class AccountController extends Controller // class controller utk fitur manajem
     public function profileDetail($user_id)
     {
         $user    = User::where('user_id', $user_id)->first();
-        $profile = $user?->profile()->firstOrCreate(['user_id' => $user->id ?? 0]);
-        return view('pages.account-profile', compact('user', 'profile'));
+        return view('pages.account-profile', compact('user'));
     }
 
     // fungsi ini nampilin profil user yg lagi login aja, otomatis ambil data dr session auth
     public function showProfile()
     {
         $user = Auth::user();
-        $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
         
-        return view('pages.account-profile', compact('user', 'profile'));
+        return view('pages.account-profile', compact('user'));
     }
 
     // fungsi ini update info dasar profil (nama, no hp, lokasi), cuma bs diupdate oleh hr atau user itu sendiri
@@ -37,8 +35,8 @@ class AccountController extends Controller // class controller utk fitur manajem
         $id = $id ?? Auth::id();
         $user = User::findOrFail($id);
 
-        // cek security: klo yg login bukan user tsb & bukan hr, blokir akses
-        if (Auth::id() != $id && !Auth::user()->hasRole('hr')) {
+        // cek security: klo yg login bukan user tsb & bukan admin, blokir akses
+        if (Auth::id() != $id && !Auth::user()->hasAnyRole(['admin', 'super-admin'])) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -134,6 +132,7 @@ class AccountController extends Controller // class controller utk fitur manajem
         // store new ttd file
         Storage::disk('local')->putFileAs('private', $request->file('ttd'), $filename);
         $profile->update(['ttd_path' => $filename]);
+        $user->update(['ttd_path' => $filename]);
 
         flash()->success('Tanda tangan berhasil diunggah');
         return redirect()->route('profile.show');
@@ -145,8 +144,8 @@ class AccountController extends Controller // class controller utk fitur manajem
         $id = $id ?? Auth::id();
         $user = User::findOrFail($id);
 
-        // cek authorization: cuma user sendiri atau hr yg bs update signature
-        if (Auth::id() != $id && !Auth::user()->hasRole('hr')) {
+        // cek authorization: cuma user sendiri atau admin yg bs update signature
+        if (Auth::id() != $id && !Auth::user()->hasAnyRole(['admin', 'super-admin'])) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -160,20 +159,18 @@ class AccountController extends Controller // class controller utk fitur manajem
             'signature.max' => 'Ukuran maksimal file 2MB',
         ]);
 
-        $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
-
         // if ini proses upload: hapus signature lama klo ada, simpen yg baru ke folder 'private/signatures' di local disk
         if ($request->hasFile('signature')) {
             // delete old signature if exists
-            if ($profile->signature_path) {
-                Storage::disk('local')->delete('private/' . $profile->signature_path);
+            if ($user->ttd_path) {
+                Storage::disk('local')->delete('private/' . $user->ttd_path);
             }
 
             // save new signature to private storage
-            $filename = 'signatures/' . $user->id . '_' . time() . '.' . $request->file('signature')->getClientOriginalExtension();
+            $filename = 'ttd/' . $user->id . '_' . time() . '.' . $request->file('signature')->getClientOriginalExtension();
             Storage::disk('local')->putFileAs('private', $request->file('signature'), $filename);
             
-            $profile->update(['signature_path' => $filename]);
+            $user->update(['ttd_path' => $filename]);
         }
 
         flash()->success('Tanda tangan digital berhasil disimpan');
@@ -186,17 +183,18 @@ class AccountController extends Controller // class controller utk fitur manajem
         $id = $id ?? Auth::id();
         $user = User::findOrFail($id);
 
-        // cek authorization: blokir klo bukan user tsb & bukan hr
-        if (Auth::id() != $id && !Auth::user()->hasRole('hr')) {
+        // cek authorization: blokir klo bukan user tsb & bukan admin
+        if (Auth::id() != $id && !Auth::user()->hasAnyRole(['admin', 'super-admin'])) {
             abort(403, 'Unauthorized action.');
         }
 
-        $profile = $user->profile;
-
-        // if ini cek klo profile & signature_path ada, baru hapus file dr storage & update db jadi null
-        if ($profile && $profile->signature_path) {
-            Storage::disk('local')->delete('private/' . $profile->signature_path);
-            $profile->update(['signature_path' => null]);
+        // if ini cek klo ttd_path ada, baru hapus file dr storage & update db jadi null
+        if ($user->ttd_path) {
+            Storage::disk('local')->delete('private/' . $user->ttd_path);
+            $user->update(['ttd_path' => null]);
+            if ($user->profile) {
+                $user->profile->update(['ttd_path' => null]);
+            }
             flash()->success('Tanda tangan digital berhasil dihapus');
         } else {
             flash()->error('Tanda tangan tidak ditemukan');
@@ -209,13 +207,12 @@ class AccountController extends Controller // class controller utk fitur manajem
     public function setPin(Request $request)
     {
         $user = Auth::user();
-        $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
 
         // validasi: pin baru wajib 6 digit, konfirmasi wajib sama, current_pin wajib klo user udah punya pin sebelumnya
         $request->validate([
             'pin' => 'required|digits:6',
             'pin_confirmation' => 'required|same:pin',
-            'current_pin' => $profile->pin ? 'required' : 'nullable',
+            'current_pin' => $user->pin ? 'required' : 'nullable',
         ], [
             'pin.required' => 'PIN baru harus diisi',
             'pin.digits' => 'PIN harus terdiri dari 6 digit angka',
@@ -225,14 +222,14 @@ class AccountController extends Controller // class controller utk fitur manajem
         ]);
 
         // if ini verifikasi pin lama klo user udah pernah set pin sebelumnya, klo salah return error
-        if ($profile->pin) {
-            if (!$profile->checkPin($request->current_pin)) {
+        if ($user->pin) {
+            if (!Hash::check($request->current_pin, $user->pin)) {
                 return back()->withErrors(['current_pin' => 'PIN lama tidak sesuai']);
             }
         }
 
         // set new pin
-        $profile->setPin($request->pin);
+        $user->update(['pin' => Hash::make($request->pin)]);
 
         ActivityLog::log('update_pin', null, auth()->user()->name . " memperbarui PIN approval");
 
@@ -243,27 +240,16 @@ class AccountController extends Controller // class controller utk fitur manajem
     // fungsi ini serve file ttd user secara secure via storage facade, cuma bs diakses klo file beneran ada & user authorized
     public function showTtd()
     {
-        $profile = Auth::user()->profile;
-
-        if (!$profile) abort(404);
+        $user = Auth::user();
 
         $path = null;
-        if ($profile->signature_path) {
-            $path = storage_path('app/public/' . $profile->signature_path);
+        if ($user->ttd_path) {
+            $path = storage_path('app/private/' . $user->ttd_path);
             if (!file_exists($path)) {
-                $path = storage_path('app/private/' . $profile->signature_path);
+                $path = storage_path('app/private/private/' . $user->ttd_path);
             }
-        }
-
-        if (!$path || !file_exists($path)) {
-            if ($profile->ttd_path) {
-                $path = storage_path('app/private/' . $profile->ttd_path);
-                if (!file_exists($path)) {
-                    $path = storage_path('app/private/private/' . $profile->ttd_path);
-                }
-                if (!file_exists($path)) {
-                    $path = storage_path('app/public/' . $profile->ttd_path);
-                }
+            if (!file_exists($path)) {
+                $path = storage_path('app/public/' . $user->ttd_path);
             }
         }
 
@@ -336,14 +322,13 @@ class AccountController extends Controller // class controller utk fitur manajem
     public function showOnboarding()
     {
         $user    = Auth::user();
-        $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
         // logic ini nentuin step: klo blm ada ttd -> step 'ttd', klo udah ttd tp blm pin -> step 'pin', klo udah semua -> 'done'
-        $step    = !$profile->ttd_path ? 'ttd' : (!$profile->pin ? 'pin' : 'done');
+        $step    = !$user->ttd_path ? 'ttd' : (!$user->pin ? 'pin' : 'done');
 
         // if ini redirect ke home klo user udah selesai onboarding (step 'done')
         if ($step === 'done') return redirect()->route('home');
 
-        return view('pages.onboarding', compact('user', 'profile', 'step'));
+        return view('pages.onboarding', compact('user', 'step'));
     }
 
     // fungsi ini handle upload ttd khusus selama proses onboarding, validasi lebih simpel & langsung redirect ke step pin
@@ -359,19 +344,18 @@ class AccountController extends Controller // class controller utk fitur manajem
         ]);
 
         $user    = Auth::user();
-        $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
         $ext      = 'png';
         $filename = $user->id . '.' . $ext;
 
         Storage::makeDirectory('private/ttd');
 
         // if ini hapus ttd lama klo ada sebelum simpan yg baru
-        if ($profile->ttd_path) {
-            Storage::delete('private/' . $profile->ttd_path);
+        if ($user->ttd_path) {
+            Storage::delete('private/' . $user->ttd_path);
         }
 
         $request->file('ttd')->storeAs('private/ttd', $filename);
-        $profile->update(['ttd_path' => 'ttd/' . $filename]);
+        $user->update(['ttd_path' => 'ttd/' . $filename]);
 
         flash()->success('Tanda tangan berhasil disimpan. Sekarang buat PIN Anda.');
         return redirect()->route('onboarding');
@@ -392,10 +376,9 @@ class AccountController extends Controller // class controller utk fitur manajem
         ]);
 
         $user    = Auth::user();
-        $profile = $user->profile()->firstOrCreate(['user_id' => $user->id]);
-        $profile->setPin($request->pin);
+        $user->update(['pin' => Hash::make($request->pin)]);
 
-        flash()->success('PIN berhasil dibuat. Selamat datang di sistem HRIS Sinergi!');
+        flash()->success('PIN berhasil dibuat. Selamat datang di SIMORA!');
         return redirect()->route('home');
     }
 }

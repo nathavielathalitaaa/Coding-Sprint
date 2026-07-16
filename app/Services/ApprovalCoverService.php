@@ -34,10 +34,10 @@ class ApprovalCoverService
         }
 
         $settings = [
-            'company_name' => $overrides['company_name'] ?? DocumentSetting::get('company_name', 'HR Sinergi Hotel & Villa'),
-            'accent_color' => $overrides['accent_color'] ?? DocumentSetting::get('accent_color', '#04A54C'),
+            'company_name' => $overrides['company_name'] ?? DocumentSetting::get('company_name', 'SMK Telkom Sidoarjo'),
+            'accent_color' => $overrides['accent_color'] ?? DocumentSetting::get('accent_color', '#0052CC'),
             'font_family'  => $overrides['font_family']  ?? DocumentSetting::get('font_family', 'Arial'),
-            'footer_text'  => $overrides['footer_text']  ?? DocumentSetting::get('footer_text', 'Dokumen ini digenerate otomatis oleh sistem HR.'),
+            'footer_text'  => $overrides['footer_text']  ?? DocumentSetting::get('footer_text', 'Dokumen ini digenerate otomatis oleh SIMORA — Sistem Surat Organisasi SMK Telkom Sidoarjo.'),
             'logo_path'    => $overrides['logo_path']    ?? DocumentSetting::get('logo_path', ''),
         ];
 
@@ -52,6 +52,7 @@ class ApprovalCoverService
 
         $steps = DocumentApproval::where('document_type', $documentType)
             ->where('document_id', $surat->id)
+            ->where('is_signer', true)
             ->orderBy('step_order')
             ->with('approver')
             ->get();

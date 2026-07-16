@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use App\Models\User;
-use App\Models\EmployeeProfile;
+use App\Models\UserProfile;
 use App\Models\SuratType;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -31,7 +31,7 @@ class ProductionSeeder extends Seeder
         DB::table('position_types')->truncate();
         DB::table('user_types')->truncate();
         DB::table('model_has_roles')->truncate();
-        DB::table('employee_profiles')->truncate();
+        DB::table('user_profiles')->truncate();
         DB::table('users')->truncate();
 
         DB::statement('SET FOREIGN_KEY_CHECKS=1');
@@ -47,15 +47,15 @@ class ProductionSeeder extends Seeder
         $this->command->info('Creating admin HR account...');
         $admin = User::create([
             'name'      => 'Admin HR',
-            'email'     => 'admin@sinergihotel.com',
-            'password'  => bcrypt('Sinergi@2026'),
+            'email'     => 'admin@smktelkom-sdj.sch.id',
+            'password'  => bcrypt('Simora@2026'),
             'user_id'   => 'SIN-0001',
             'status'    => 'aktif',
             'role_name' => 'hr',
         ]);
         $admin->assignRole('hr');
 
-        EmployeeProfile::create([
+        UserProfile::create([
             'user_id'           => $admin->id,
             'jabatan'           => 'Human Resources',
             'status_pernikahan' => 'belum_menikah',
@@ -126,8 +126,8 @@ class ProductionSeeder extends Seeder
         // ── Summary ───────────────────────────────────────────────────
         $this->command->newLine();
         $this->command->info('=== Production Setup Complete! ===');
-        $this->command->info('Admin Email : admin@sinergihotel.com');
-        $this->command->info('Password    : Sinergi@2026');
+        $this->command->info('Admin Email : admin@smktelkom-sdj.sch.id');
+        $this->command->info('Password    : Simora@2026');
         $this->command->warn('IMPORTANT: Change the admin password after first login!');
     }
 }

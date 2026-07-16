@@ -11,14 +11,14 @@ class DocumentSettingController extends Controller
     public function index()
     {
         $settings = [
-            'company_name' => DocumentSetting::get('company_name', 'HR Sinergi Hotel & Villa'),
+            'company_name' => DocumentSetting::get('company_name', 'HR SIMORA SMK Telkom Sidoarjo'),
             'accent_color' => DocumentSetting::get('accent_color', '#04A54C'),
             'font_family' => DocumentSetting::get('font_family', 'Arial'),
             'footer_text' => DocumentSetting::get('footer_text', 'Dokumen ini sah dan ditandatangani secara digital.'),
             'logo_path' => DocumentSetting::get('logo_path', ''),
         ];
 
-        return view('hr.settings.document', compact('settings'));
+        return view('users.settings.document', compact('settings'));
     }
 
     // update semua pengaturan dokumen (nama perusahaan, warna, font, footer) setelah validasi input, 
@@ -40,7 +40,7 @@ class DocumentSettingController extends Controller
         DocumentSetting::set('footer_text', $request->footer_text);
 
         flash()->success('Pengaturan dokumen berhasil disimpan.');
-        return redirect()->route('hr.settings.document');
+        return redirect()->route('users.settings.document');
     }
 
     // handle upload logo dokumen dgn validasi image, simpan ke public storage, lalu update path-nya di database
@@ -58,6 +58,6 @@ class DocumentSettingController extends Controller
             flash()->success('Logo dokumen berhasil diunggah.');
         }
 
-        return redirect()->route('hr.settings.document');
+        return redirect()->route('users.settings.document');
     }
 }

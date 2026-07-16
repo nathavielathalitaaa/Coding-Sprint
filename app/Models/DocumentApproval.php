@@ -11,9 +11,13 @@ class DocumentApproval extends Model
         'document_id',
         'step_order',
         'jabatan',
+        'target_mode',
+        'surat_organisasi_id',
+        'surat_komisi_id',
         'assigned_user_id', // user spesifik yang harus approve step ini (nullable)
         'label',
         'metode_ttd',
+        'is_signer',
         'approver_id',
         'ttd_snapshot',
         'cover_pdf_path',
@@ -24,6 +28,7 @@ class DocumentApproval extends Model
     ];
 
     protected $casts = [
+        'is_signer'   => 'boolean',
         'actioned_at' => 'datetime',
     ];
 

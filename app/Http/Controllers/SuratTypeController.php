@@ -26,8 +26,8 @@ class SuratTypeController extends Controller
                 })
                 // Include: anyone (including staff) who has jabatan set
                 ->orWhereHas('profile', function($profileQuery) {
-                    $profileQuery->whereNotNull('jabatan')
-                                 ->where('jabatan', '!=', '');
+                    $profileQuery->whereNotNull('jabatan_struktural')
+                                 ->where('jabatan_struktural', '!=', '');
                 });
             })
             ->get()
@@ -49,10 +49,13 @@ class SuratTypeController extends Controller
             'nama' => 'required|string|max:255',
             'kode' => 'required|string|unique:surat_types,kode',
             'nomor_format' => 'required|array',
+            'organisasi_tipe' => 'nullable|in:osis,mpk,sub_organ',
             'approvers' => 'required|array|min:1',
             'approvers.*.jabatan_label' => 'required|string|max:100',
+            'approvers.*.target_mode' => 'required|in:submitter,fixed_osis,fixed_mpk,global',
             'approvers.*.user_id' => 'nullable|exists:users,id',
-            'approvers.*.metode_ttd' => 'required|in:stamp,append',
+            'approvers.*.is_signer' => 'nullable',
+            'approvers.*.metode_ttd' => 'nullable|in:stamp,append',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -60,6 +63,7 @@ class SuratTypeController extends Controller
                 'nama' => $request->nama,
                 'kode' => Str::slug($request->kode),
                 'deskripsi' => $request->deskripsi,
+                'organisasi_tipe' => $request->organisasi_tipe,
                 'nomor_format' => $request->nomor_format,
                 'nomor_reset' => $request->nomor_reset ?? 'yearly',
                 'is_active' => $request->boolean('is_active', true),
@@ -67,11 +71,14 @@ class SuratTypeController extends Controller
             ]);
 
             foreach ($request->approvers as $index => $approver) {
+                $isSigner = isset($approver['is_signer']);
                 $suratType->approvers()->create([
                     'urutan' => $index + 1,
                     'user_id' => $approver['user_id'] ?? null,
+                    'target_mode' => $approver['target_mode'] ?? 'submitter',
                     'jabatan_label' => $approver['jabatan_label'] ?? '-',
-                    'metode_ttd' => $approver['metode_ttd'] ?? 'stamp',
+                    'is_signer' => $isSigner,
+                    'metode_ttd' => $isSigner ? ($approver['metode_ttd'] ?? 'stamp') : null,
                     'is_required' => isset($approver['is_required']),
                 ]);
             }
@@ -91,8 +98,8 @@ class SuratTypeController extends Controller
                     $roleQuery->whereIn('name', ['hr', 'supervisor']);
                 })
                 ->orWhereHas('profile', function($profileQuery) {
-                    $profileQuery->whereNotNull('jabatan')
-                                 ->where('jabatan', '!=', '');
+                    $profileQuery->whereNotNull('jabatan_struktural')
+                                 ->where('jabatan_struktural', '!=', '');
                 });
             })
             ->get()
@@ -116,10 +123,13 @@ class SuratTypeController extends Controller
             'nama' => 'required|string|max:255',
             'kode' => 'required|string|unique:surat_types,kode,' . $id,
             'nomor_format' => 'required|array',
+            'organisasi_tipe' => 'nullable|in:osis,mpk,sub_organ',
             'approvers' => 'required|array|min:1',
             'approvers.*.jabatan_label' => 'required|string|max:100',
+            'approvers.*.target_mode' => 'required|in:submitter,fixed_osis,fixed_mpk,global',
             'approvers.*.user_id' => 'nullable|exists:users,id',
-            'approvers.*.metode_ttd' => 'required|in:stamp,append',
+            'approvers.*.is_signer' => 'nullable',
+            'approvers.*.metode_ttd' => 'nullable|in:stamp,append',
         ]);
 
         DB::transaction(function () use ($request, $suratType) {
@@ -127,6 +137,7 @@ class SuratTypeController extends Controller
                 'nama' => $request->nama,
                 'kode' => Str::slug($request->kode),
                 'deskripsi' => $request->deskripsi,
+                'organisasi_tipe' => $request->organisasi_tipe,
                 'nomor_format' => $request->nomor_format,
                 'nomor_reset' => $request->nomor_reset ?? 'yearly',
                 'is_active' => $request->boolean('is_active'),
@@ -134,11 +145,14 @@ class SuratTypeController extends Controller
 
             $suratType->approvers()->delete();
             foreach ($request->approvers as $index => $approver) {
+                $isSigner = isset($approver['is_signer']);
                 $suratType->approvers()->create([
                     'urutan' => $index + 1,
                     'user_id' => $approver['user_id'] ?? null,
+                    'target_mode' => $approver['target_mode'] ?? 'submitter',
                     'jabatan_label' => $approver['jabatan_label'] ?? '-',
-                    'metode_ttd' => $approver['metode_ttd'] ?? 'stamp',
+                    'is_signer' => $isSigner,
+                    'metode_ttd' => $isSigner ? ($approver['metode_ttd'] ?? 'stamp') : null,
                     'is_required' => isset($approver['is_required']),
                 ]);
             }

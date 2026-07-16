@@ -1,24 +1,19 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AbsensiController;
-use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SuratController;
+use App\Http\Controllers\SuratTurunanController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\SearchController;
-use App\Http\Controllers\HRController;
+use App\Http\Controllers\OrganisasiController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 
-// Simple view routes for UI pages (development, pixel-perfect views)
-Route::get('/', function() { return view('dashboard.index'); });
-Route::get('/dashboard', function() { return view('dashboard.index'); });
-Route::get('/surat', function() { return view('surat.index'); });
-Route::get('/surat/create', function() { return view('surat.create'); });
-Route::get('/persetujuan', function() { return view('approval.index'); });
-Route::get('/daftar-surat', function() { return view('daftar-surat.index'); });
+// ── root redirect ─────────────────────────────────────
+Route::get('/', fn() => redirect('/home'));
+Route::get('/dashboard', fn() => redirect('/home'))->middleware('auth');
 
 // ══════════════════════════════════════════════
 // auth
@@ -76,40 +71,50 @@ Route::middleware('auth')->group(function () {
         Route::get('profile/ttd/preview', [AccountController::class, 'showTtd'])->name('profile.ttd.preview');
 
         Route::get('/ttd-preview/{userId}', function($userId) {
-            $profile = \App\Models\EmployeeProfile::where('user_id', $userId)->firstOrFail();
-            
+            $userModel = \App\Models\User::findOrFail($userId);
+            $profile = $userModel->profile;
+
             $path = null;
-            if ($profile->signature_path) {
-                // Check in private storage first (new secure approach)
-                $path = storage_path('app/private/' . $profile->signature_path);
-                if (!file_exists($path)) {
-                    // Fallback to public storage for legacy files
-                    $path = storage_path('app/public/' . $profile->signature_path);
-                }
-            } 
-            
-            if (!$path || !file_exists($path)) {
-                if ($profile->ttd_path) {
-                    // Check in private storage (onboarding/manual)
-                    // Check both storage/app/private/ttd/... and storage/app/private/private/ttd/...
-                    $path = storage_path('app/private/' . $profile->ttd_path);
+            if ($profile) {
+                if ($profile->signature_path) {
+                    $path = storage_path('app/private/' . $profile->signature_path);
                     if (!file_exists($path)) {
-                        $path = storage_path('app/private/private/' . $profile->ttd_path);
+                        $path = storage_path('app/public/' . $profile->signature_path);
+                    }
+                }
+
+                if (!$path || !file_exists($path)) {
+                    if ($profile->ttd_path) {
+                        $path = storage_path('app/private/' . $profile->ttd_path);
+                        if (!file_exists($path)) {
+                            $path = storage_path('app/private/private/' . $profile->ttd_path);
+                        }
+                        if (!file_exists($path)) {
+                            $path = storage_path('app/public/' . $profile->ttd_path);
+                        }
+                    }
+                }
+            }
+
+            if (!$path || !file_exists($path)) {
+                if ($userModel->ttd_path) {
+                    $path = storage_path('app/private/' . $userModel->ttd_path);
+                    if (!file_exists($path)) {
+                        $path = storage_path('app/private/private/' . $userModel->ttd_path);
                     }
                     if (!file_exists($path)) {
-                        // Also check public storage just in case
-                        $path = storage_path('app/public/' . $profile->ttd_path);
+                        $path = storage_path('app/public/' . $userModel->ttd_path);
                     }
                 }
             }
 
             if (!$path || !file_exists($path)) abort(404);
-            
+
             $mime = str_ends_with($path, '.png') ? 'image/png' : 'image/jpeg';
             return response()->file($path, ['Content-Type' => $mime]);
         })->name('ttd.preview.user')->middleware('auth');
 
-        // ── digital signature (new public storage approach) ──
+        // ── digital signature ──────────────────────────────
         Route::post('profile/signature/{id?}', [AccountController::class, 'uploadSignature'])->name('profile.signature.upload');
         Route::delete('profile/signature/{id?}', [AccountController::class, 'deleteSignature'])->name('profile.signature.delete');
 
@@ -120,150 +125,198 @@ Route::middleware('auth')->group(function () {
         Route::get('search', [SearchController::class, 'cari'])->name('search');
 
         // ══════════════════════════════════════════════
-        // hr management (role: hr)
+        // Admin panel (role: admin)
         // ══════════════════════════════════════════════
-    Route::prefix('hr')->group(function () {
+        Route::prefix('admin')->middleware('role:admin|super-admin')->group(function () {
 
-        Route::controller(HRController::class)->group(function () {
-            // karyawan
-            Route::get('employee/list', 'employeeList')->name('hr/employee/list');
-            Route::post('employee/save', 'employeeSaveRecord')->name('hr/employee/save');
-            Route::post('employee/update', 'employeeUpdateRecord')->name('hr/employee/update');
-            Route::post('employee/delete', 'employeeDeleteRecord')->name('hr/employee/delete');
-            Route::get('employee/show/{id}', 'showEmployee')->name('hr/employee/show');
-            Route::get('employee/{id}/edit', 'editEmployee')->name('hr/employee/edit');
-            // import karyawan
-            Route::post('employee/import', 'importKaryawan')->name('hr/employee/import');
-            Route::get('employee/template', 'downloadTemplate')->name('hr/employee/template');
+            // system monitor
+            Route::get('system/monitor', [\App\Http\Controllers\SystemMonitorController::class, 'index'])->name('system/monitor');
+            Route::get('system/monitor/archive-manager', [\App\Http\Controllers\SystemMonitorController::class, 'archiveManager'])->name('system/monitor/archive-manager');
+            Route::post('system/monitor/archive', [\App\Http\Controllers\SystemMonitorController::class, 'archiveDocuments'])->name('system/monitor/archive');
 
+            // ── settings dokumen ───────────────────────────
+            Route::controller(\App\Http\Controllers\DocumentSettingController::class)
+                ->prefix('settings')
+                ->group(function () {
+                    Route::get('document', 'index')->name('users.settings.document');
+                    Route::post('document', 'update')->name('users.settings.document.update');
+                    Route::post('document/logo', 'uploadLogo')->name('users.settings.document.logo');
+                });
 
-
-        });
-        
-        // system monitor
-        Route::get('system/monitor', [\App\Http\Controllers\SystemMonitorController::class, 'index'])->name('hr/system/monitor');
-        Route::get('system/monitor/archive-manager', [\App\Http\Controllers\SystemMonitorController::class, 'archiveManager'])->name('hr/system/monitor/archive-manager');
-        Route::post('system/monitor/archive', [\App\Http\Controllers\SystemMonitorController::class, 'archiveDocuments'])->name('hr/system/monitor/archive');
-
-        // ── absensi (unified module) ──────────────────────
-        Route::controller(AbsensiController::class)->group(function () {
-            Route::get('absensi/page', 'index')->name('hr/absensi/page');
-            Route::get('absensi/export/excel', 'exportExcel')->name('hr/absensi/export/excel');
-            Route::get('absensi/export/pdf', 'exportPdf')->name('hr/absensi/export/pdf');
-            Route::delete('absensi/{id}', 'destroy')->name('hr/absensi/delete');
-            // Tab 2 – AI import (JSON endpoints)
-            Route::post('absensi/process-ai', 'processAI')->name('hr/absensi/process-ai');
-            Route::post('absensi/confirm-import', 'confirmImport')->name('hr/absensi/confirm-import');
-            Route::post('absensi/import/map', 'mapFingerprint')->name('hr/absensi/import/map');
-            // Tab 3 – rekap data (JSON)
-            Route::get('absensi/rekap-data', 'rekapData')->name('hr/absensi/rekap-data');
+            // ── Master Data ────────────────────────────────
+            Route::controller(\App\Http\Controllers\MasterDataController::class)
+                ->prefix('settings')
+                ->group(function () {
+                    Route::get('master', 'index')->name('users.settings.master');
+                    Route::post('position', 'storePosition')->name('users.settings.position.store');
+                    Route::put('position/{id}', 'updatePosition')->name('users.settings.position.update');
+                    Route::delete('position/{id}', 'destroyPosition')->name('users.settings.position.destroy');
+                    Route::post('user-type', 'storeUserType')->name('users.settings.usertype.store');
+                    Route::put('user-type/{id}', 'updateUserType')->name('users.settings.usertype.update');
+                    Route::delete('user-type/{id}', 'destroyUserType')->name('users.settings.usertype.destroy');
+                    Route::post('role-type', 'storeRoleType')->name('users.settings.roletype.store');
+                    Route::put('role-type/{id}', 'updateRoleType')->name('users.settings.roletype.update');
+                    Route::delete('role-type/{id}', 'destroyRoleType')->name('users.settings.roletype.destroy');
+                });
         });
 
+        // ══════════════════════════════════════════════
+        // Kelola Organisasi (role: admin)
+        // ══════════════════════════════════════════════
+        Route::middleware('role:admin|super-admin')->group(function () {
+            Route::resource('organisasi', OrganisasiController::class)->except(['edit', 'update', 'destroy']);
+            Route::post('organisasi/{organisasi}/members', [OrganisasiController::class, 'addMember'])->name('organisasi.members.add');
+            Route::delete('organisasi/{organisasi}/members/{member}', [OrganisasiController::class, 'removeMember'])->name('organisasi.members.remove');
+            Route::post('organisasi/{organisasi}/komisi', [OrganisasiController::class, 'createKomisi'])->name('organisasi.komisi.store');
+            Route::post('komisi/{komisi}/members', [OrganisasiController::class, 'addKomisiMember'])->name('komisi.members.add');
+            Route::delete('komisi/{komisi}/members/{member}', [OrganisasiController::class, 'removeKomisiMember'])->name('komisi.members.remove');
+        });
 
         // ══════════════════════════════════════════════
-        // settings dokumen
+        // surat
         // ══════════════════════════════════════════════
-        Route::controller(\App\Http\Controllers\DocumentSettingController::class)
-            ->prefix('settings')
-            ->middleware('role:hr|super-admin')
-            ->group(function () {
-                Route::get('document', 'index')->name('hr.settings.document');
-                Route::post('document', 'update')->name('hr.settings.document.update');
-                Route::post('document/logo', 'uploadLogo')->name('hr.settings.document.logo');
-            });
+        Route::controller(SuratController::class)
+        ->prefix('surat')
+        ->name('surat.')
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('inbox-admin', 'inboxAdmin')->name('inbox_admin');
+            Route::post('{surat}/verifikasi', 'verifikasiAdmin')->name('verifikasi_admin');
+            Route::get('create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
 
-        // Master Data Management
-        Route::controller(\App\Http\Controllers\MasterDataController::class)
-            ->prefix('settings')
-            ->middleware('role:hr')
-            ->group(function () {
-                Route::get('master', 'index')->name('hr.settings.master');
-                
-                // Position
-                Route::post('position', 'storePosition')->name('hr.settings.position.store');
-                Route::put('position/{id}', 'updatePosition')->name('hr.settings.position.update');
-                Route::delete('position/{id}', 'destroyPosition')->name('hr.settings.position.destroy');
-                
-                // User Type
-                Route::post('user-type', 'storeUserType')->name('hr.settings.usertype.store');
-                Route::put('user-type/{id}', 'updateUserType')->name('hr.settings.usertype.update');
-                Route::delete('user-type/{id}', 'destroyUserType')->name('hr.settings.usertype.destroy');
-                
-                // Role Type
-                Route::post('role-type', 'storeRoleType')->name('hr.settings.roletype.store');
-                Route::put('role-type/{id}', 'updateRoleType')->name('hr.settings.roletype.update');
-                Route::delete('role-type/{id}', 'destroyRoleType')->name('hr.settings.roletype.destroy');
-            });
+            Route::get('ttd-mode', 'getTtdMode')->name('ttd-mode');
+            Route::get('ttd-preview/{jabatan}', 'getTtdPreview')->name('ttd-preview');
 
-    }); // end prefix hr
+            // ── Endpoint validasi real-time (AJAX, non-blocking) ──
+            Route::get('cek-duplikat', 'cekDuplikat')->name('cek-duplikat');
+            Route::get('cek-konflik',  'cekKonflik')->name('cek-konflik');
 
-        // ══════════════════════════════════════════════
-        // surat (role: staff, supervisor, hr)
-        // ══════════════════════════════════════════════
-       Route::controller(SuratController::class)
-    ->prefix('surat')
-    ->name('surat.')
-    ->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('create', 'create')->name('create');
-        Route::post('/', 'store')->name('store');
+            Route::get('{surat}', 'show')->name('show');
+            Route::get('{surat}/edit', 'edit')->name('edit');
+            Route::put('{surat}', 'update')->name('update');
+            Route::get('{surat}/download', 'download')->name('download');
+            Route::delete('{surat}', 'destroy')->name('destroy');
 
-        Route::get('ttd-mode', 'getTtdMode')->name('ttd-mode');
-        Route::get('ttd-preview/{jabatan}', 'getTtdPreview')->name('ttd-preview');
+            // approve & reject
+            Route::post('{surat}/approve', 'approve')->name('approve');
+            Route::post('{surat}/reject', 'reject')->name('reject');
 
-        Route::get('{surat}', 'show')->name('show');
-        Route::get('{surat}/edit', 'edit')->name('edit');
-        Route::put('{surat}', 'update')->name('update');
-        Route::get('{surat}/download', 'download')->name('download');
-        Route::delete('{surat}', 'destroy')->name('destroy');
+            // regenerate cover pdf
+            Route::get('{id}/regenerate-final', function($id) {
+                $surat = \App\Models\Surat::findOrFail($id);
+                $coverService = app(\App\Services\ApprovalCoverService::class);
+                $stampService = app(\App\Services\PdfStampService::class);
+                try {
+                    $documentType = 'surat_' . $surat->jenis_surat;
+                    $step = \App\Models\ApprovalStep::where('document_type', $documentType)->first();
+                    $ttdMode = $step?->ttd_mode ?? 'append';
 
-        Route::post('{surat}/approve', 'approve')->name('approve');
-        Route::post('{surat}/reject', 'reject')->name('reject');
-
-        Route::get('{id}/regenerate-final', function ($id) {
-            $surat = \App\Models\Surat::findOrFail($id);
-            $coverService = app(\App\Services\ApprovalCoverService::class);
-            $stampService = app(\App\Services\PdfStampService::class);
-
-            try {
-                $documentType = 'surat_' . $surat->jenis_surat;
-                $step = \App\Models\ApprovalStep::where('document_type', $documentType)->first();
-                $ttdMode = $step?->ttd_mode ?? 'append';
-
-                if ($ttdMode === 'stamp') {
-                    $path = $stampService->stamp($surat);
-                    $surat->update(['final_pdf_path' => $path]);
-                } else {
-                    $path = $coverService->generateCover($surat);
-                    $surat->update(['cover_pdf_path' => $path]);
-
-                    $finalPath = $coverService->processMerge($surat);
-
-                    if ($finalPath) {
-                        $surat->update(['final_pdf_path' => $finalPath]);
-                        $path = $finalPath;
+                    if ($ttdMode === 'stamp') {
+                        $path = $stampService->stamp($surat);
+                        $surat->update(['final_pdf_path' => $path]);
+                    } else {
+                        $path = $coverService->generateCover($surat);
+                        $surat->update(['cover_pdf_path' => $path]);
+                        $finalPath = $coverService->processMerge($surat);
+                        if ($finalPath) {
+                            $surat->update(['final_pdf_path' => $finalPath]);
+                            $path = $finalPath;
+                        }
                     }
+                    return response()->json(['success' => true, 'path' => $path]);
+                } catch (\Exception $e) {
+                    return response()->json(['error' => $e->getMessage()], 500);
                 }
-
-                return response()->json([
-                    'success' => true,
-                    'path' => $path,
-                ]);
-            } catch (\Exception $e) {
-                return response()->json([
-                    'error' => $e->getMessage(),
-                ], 500);
-            }
-        })->name('regenerate-final');
-    });
+            })->name('regenerate-final');
+        });
 
         // ══════════════════════════════════════════════
-        // surat type management (role: hr)
+        // surat turunan (nested di bawah surat induk)
+        // Hanya bisa diakses kalau surat->status === 'approved_owner'
+        // (guard dijalankan di dalam controller)
         // ══════════════════════════════════════════════
-        // Ganti menjadi middleware permission
-        // Ganti baris 254-256 di web.php menjadi ini:
+        Route::prefix('surat/{surat}/turunan')
+            ->name('surat.turunan.')
+            ->controller(SuratTurunanController::class)
+            ->group(function () {
+                // Daftar semua turunan milik surat induk
+                Route::get('/',        'index')->name('index');
+
+                // Form pilih template + signer
+                Route::get('/create',  'create')->name('create');
+
+                // Proses generate (bisa multi-template sekaligus)
+                Route::post('/',       'store')->name('store');
+
+                // Tanda tangan oleh signer yang ditugaskan
+                Route::post('/{suratTurunan}/signer/{signer}/sign', 'sign')->name('sign');
+
+                // Download PDF final
+                Route::get('/{suratTurunan}/download', 'download')->name('download');
+            });
+
+        // ══════════════════════════════════════════════
+        // surat type management (role: admin)
+        // ══════════════════════════════════════════════
+        Route::middleware('role:admin|super-admin')->prefix('surat-type')->name('surat-type.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\SuratTypeController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\SuratTypeController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\SuratTypeController::class, 'store'])->name('store');
+            Route::get('/{id}/edit', [\App\Http\Controllers\SuratTypeController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [\App\Http\Controllers\SuratTypeController::class, 'update'])->name('update');
+            Route::delete('/{id}', [\App\Http\Controllers\SuratTypeController::class, 'destroy'])->name('destroy');
+            Route::patch('/{id}/toggle', [\App\Http\Controllers\SuratTypeController::class, 'toggle'])->name('toggle');
+        });
+
+        // ══════════════════════════════════════════════
+        // surat turunan template management (role: admin)
+        // ══════════════════════════════════════════════
+        Route::middleware('role:admin|super-admin')
+            ->prefix('admin/surat-turunan-template')
+            ->name('surat-turunan-template.')
+            ->controller(\App\Http\Controllers\SuratTurunanTemplateController::class)
+            ->group(function () {
+                Route::get('/',           'index')->name('index');
+                Route::get('/{suratTurunanTemplate}/edit',   'edit')->name('edit');
+                Route::put('/{suratTurunanTemplate}',        'update')->name('update');
+                Route::patch('/{suratTurunanTemplate}/toggle', 'toggle')->name('toggle');
+            });
+
+        // ── TAHAP 3: Disposisi Akhir (PIC assignment) ──
+        Route::controller(\App\Http\Controllers\DisposisiAkhirController::class)
+            ->group(function () {
+                Route::get('disposisi-akhir', 'index')->name('disposisi-akhir.index');
+                Route::post('disposisi-akhir/{surat}/assign', 'assign')->name('disposisi-akhir.assign');
+            });
+
+        // ── TAHAP 4: Monitoring Pelaksanaan (PIC area) ──
+        Route::controller(\App\Http\Controllers\PelaksanaanController::class)
+            ->group(function () {
+                Route::get('pelaksanaan-saya', 'index')->name('pelaksanaan.index');
+                Route::post('pelaksanaan/{surat}/progress', 'updateProgress')->name('pelaksanaan.progress');
+                Route::post('pelaksanaan/{surat}/selesai', 'selesai')->name('pelaksanaan.selesai');
+            });
+
+        // ── TAHAP 5 & 6: LPJ Management & Verification ──
+        Route::controller(\App\Http\Controllers\LpjController::class)
+            ->group(function () {
+                Route::get('surat/{surat}/lpj/create', 'create')->name('lpj.create');
+                Route::post('surat/{surat}/lpj', 'store')->name('lpj.store');
+                Route::get('surat/{surat}/lpj/edit', 'edit')->name('lpj.edit');
+                Route::put('surat/{surat}/lpj', 'update')->name('lpj.update');
+                Route::get('surat/{surat}/lpj', 'show')->name('lpj.show');
+
+                Route::get('lpj-verifikasi', 'indexVerifikasi')->name('lpj.verifikasi.index');
+                Route::post('surat/{surat}/lpj/verify', 'verify')->name('lpj.verify');
+            });
+
+        // ── TAHAP 7: Database Arsip ──
+        Route::controller(\App\Http\Controllers\ArsipController::class)
+            ->group(function () {
+                Route::get('database-arsip', 'index')->name('arsip.index');
+            });
 
     }); // end middleware('onboarding')
 
 }); // end middleware('auth')
-

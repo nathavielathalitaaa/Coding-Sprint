@@ -4,23 +4,28 @@ namespace App\Services;
 
 use App\Models\ApprovalStep;
 use App\Models\DocumentApproval;
+use App\Models\Organisasi;
+use App\Models\OrganisasiMember;
+use App\Models\KomisiMember;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
  * ApprovalService
- * 
- * Manages multi-step document approval logic.
+ *
+ * Manages multi-step document approval logic for SIMORA.
+ * Approval authorization is based on target_mode (not profile->jabatan).
+ *
+ * target_mode values:
+ *   submitter  — user harus OrganisasiMember dari organisasi pengaju surat, jabatan sesuai step
+ *   fixed_osis — user harus OrganisasiMember dari Organisasi tipe='osis', jabatan sesuai step
+ *   fixed_mpk  — user harus OrganisasiMember dari Organisasi tipe='mpk', jabatan sesuai step
+ *   global     — user harus punya Spatie role 'pengawas_pusat' atau 'kepala_sekolah'
  */
 class ApprovalService
 {
     /**
-     * Initialize all approval steps when a document is submitted.
-     * Called once when a staff member submits a document.
-     *
-     * @param string $documentType Type of document (e.g., 'surat', 'purchase_requisition')
-     * @param int $documentId ID of the document
-     * @return bool True if steps are successfully created, false otherwise
+     * Initialize all approval steps when a document is submitted (legacy method).
      */
     public function initApproval(string $documentType, int $documentId): bool
     {
@@ -39,6 +44,7 @@ class ApprovalService
                     'jabatan'          => $step->jabatan,
                     'assigned_user_id' => $step->user_id,
                     'label'            => $step->label,
+                    'is_signer'        => $step->is_signer ?? true,
                     'approver_id'      => null,
                     'status'           => $index === 0 ? 'waiting' : 'pending',
                 ]);
@@ -50,20 +56,22 @@ class ApprovalService
 
     /**
      * Initialize approval steps from a SuratType definition.
-     * 
+     * Copies target_mode, surat_organisasi_id, surat_komisi_id to each DocumentApproval
+     * so that isUserAllowedForStep() can work without joining back to Surat.
+     *
      * @param \App\Models\Surat $surat The surat instance
      * @return bool True if steps are successfully created, false otherwise
      */
     public function initFromSuratType(\App\Models\Surat $surat): bool
     {
         $suratType = $surat->suratType;
-        
+
         if (!$suratType) {
             return false;
         }
 
         $approvers = $suratType->approvers;
-        
+
         if ($approvers->isEmpty()) {
             return false;
         }
@@ -71,15 +79,19 @@ class ApprovalService
         DB::transaction(function () use ($approvers, $surat) {
             foreach ($approvers as $index => $approver) {
                 DocumentApproval::create([
-                    'document_type'    => 'surat_' . $surat->suratType->kode,
-                    'document_id'      => $surat->id,
-                    'step_order'       => $approver->urutan,
-                    'jabatan'          => $approver->jabatan_label,
-                    'assigned_user_id' => $approver->user_id,
-                    'label'            => $approver->label,
-                    'metode_ttd'       => $approver->metode_ttd,
-                    'approver_id'      => null,
-                    'status'           => $index === 0 ? 'waiting' : 'pending',
+                    'document_type'      => 'surat_' . $surat->suratType->kode,
+                    'document_id'        => $surat->id,
+                    'step_order'         => $approver->urutan,
+                    'jabatan'            => $approver->jabatan_label,
+                    'target_mode'        => $approver->target_mode ?? 'submitter',
+                    'surat_organisasi_id'=> $surat->organisasi_id,
+                    'surat_komisi_id'    => $surat->komisi_id,
+                    'assigned_user_id'   => $approver->user_id,
+                    'label'              => $approver->label,
+                    'metode_ttd'         => $approver->metode_ttd,
+                    'is_signer'          => $approver->is_signer ?? true,
+                    'approver_id'        => null,
+                    'status'             => $index === 0 ? 'waiting' : 'pending',
                 ]);
             }
         });
@@ -89,13 +101,6 @@ class ApprovalService
 
     /**
      * Approve the currently waiting step and activate the next step if available.
-     *
-     * @param string $documentType Type of the document
-     * @param int $documentId ID of the document
-     * @param User $approver User performing the approval
-     * @param string $catatan Optional approval note
-     * @param string|null $ttdSnapshot Optional path to the signature snapshot
-     * @return array Array containing success status, message, and completion status
      */
     public function approve(string $documentType, int $documentId, User $approver, string $catatan = '', ?string $ttdSnapshot = null): array
     {
@@ -106,8 +111,8 @@ class ApprovalService
 
         if (!$currentStep) {
             return [
-                'success' => false, 
-                'message' => 'Tidak ada step yang menunggu approval.', 
+                'success' => false,
+                'message' => 'Tidak ada step yang menunggu approval.',
                 'selesai' => false
             ];
         }
@@ -123,23 +128,23 @@ class ApprovalService
 
         // ── Proses Approval & Update Step ───────────────────────────────
         try {
-
-DB::transaction(function () use ($currentStep, $approver, $catatan, $documentType, $documentId, $ttdSnapshot) {
+            DB::transaction(function () use ($currentStep, $approver, $catatan, $documentType, $documentId, $ttdSnapshot) {
+                $currentStep->update([
+                    'status'       => 'approved',
+                    'approver_id'  => $approver->id,
+                    'catatan'      => $catatan,
+                    'actioned_at'  => now(),
+                    'ttd_snapshot' => $ttdSnapshot,
+                ]);
 
                 $nextStep = DocumentApproval::forDocument($documentType, $documentId)
                     ->where('step_order', $currentStep->step_order + 1)
                     ->where('status', 'pending')
                     ->first();
 
-                $nextStep = DocumentApproval::forDocument($documentType, $documentId)
-                    ->where('step_order', $currentStep->step_order + 1)
-                    ->where('status', 'pending')
-                    ->first();
-                    
                 if ($nextStep) {
                     $nextStep->update(['status' => 'waiting']);
                 }
-
             });
 
             // ── Pengecekan Status Selesai ───────────────────────────────
@@ -148,6 +153,29 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
                 ->count();
 
             $selesai = $sisaPending === 0;
+
+            if ($selesai && str_starts_with($documentType, 'surat_')) {
+                $surat = \App\Models\Surat::find($documentId);
+                if ($surat && $surat->suratType && $surat->suratType->requires_kegiatan_detail) {
+                    $surat->update([
+                        'pic_user_id' => $surat->user_id,
+                        'status_pelaksanaan' => 'belum_mulai',
+                    ]);
+
+                    $kegiatanNama = $surat->kegiatanDetail->nama_kegiatan ?? $surat->perihal;
+                    try {
+                        $notif = app(\App\Services\NotificationService::class);
+                        $notif->send(
+                            $surat->user_id,
+                            'Penugasan PIC Kegiatan',
+                            "Anda ditugaskan sebagai PIC untuk pelaksanaan kegiatan: {$kegiatanNama}.",
+                            route('pelaksanaan.index')
+                        );
+                    } catch (\Exception $ex) {
+                        \Log::error("Failed to send PIC assignment notification: " . $ex->getMessage());
+                    }
+                }
+            }
 
             return [
                 'success' => true,
@@ -158,7 +186,7 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
             ];
         } catch (\Exception $e) {
             \Log::error("Approval error: " . $e->getMessage());
-            
+
             return [
                 'success' => false,
                 'message' => 'Terjadi kesalahan sistem saat memproses approval.',
@@ -169,13 +197,6 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
 
     /**
      * Reject the active step, returning the document to staff for revision.
-     * All subsequent steps remain pending.
-     *
-     * @param string $documentType Type of the document
-     * @param int $documentId ID of the document
-     * @param User $approver User performing the rejection
-     * @param string $catatan Rejection reason (required)
-     * @return array Array containing success status, message, and completion status
      */
     public function reject(string $documentType, int $documentId, User $approver, string $catatan): array
     {
@@ -186,8 +207,8 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
 
         if (!$currentStep) {
             return [
-                'success' => false, 
-                'message' => 'Tidak ada step yang aktif.', 
+                'success' => false,
+                'message' => 'Tidak ada step yang aktif.',
                 'selesai' => false
             ];
         }
@@ -214,12 +235,12 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
 
             return [
                 'success' => true,
-                'message' => "Dokumen ditolak oleh {$currentStep->label}. Kembali ke staff untuk revisi.",
+                'message' => "Dokumen ditolak oleh {$currentStep->label}. Kembali ke pengaju untuk revisi.",
                 'selesai' => false,
             ];
         } catch (\Exception $e) {
             \Log::error("Rejection error: " . $e->getMessage());
-            
+
             return [
                 'success' => false,
                 'message' => 'Terjadi kesalahan sistem saat memproses penolakan.',
@@ -231,10 +252,7 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
     /**
      * Resubmit a document after revision.
      * Deletes old approval logs and re-initializes from step 1.
-     * 
-     * @param string $documentType Type of the document
-     * @param int $documentId ID of the document
-     * @return bool True if successfully resubmitted
+     * Logic tidak diubah sesuai spesifikasi.
      */
     public function resubmit(string $documentType, int $documentId): bool
     {
@@ -244,7 +262,7 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
 
                 if (str_starts_with($documentType, 'surat_')) {
                     $surat = \App\Models\Surat::find($documentId);
-                    
+
                     if ($surat) {
                         $this->initFromSuratType($surat);
                     }
@@ -262,10 +280,6 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
 
     /**
      * Get the complete approval status sequentially for a document.
-     * 
-     * @param string $documentType Type of the document
-     * @param int $documentId ID of the document
-     * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getStatus(string $documentType, int $documentId)
     {
@@ -274,11 +288,6 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
 
     /**
      * Check if the given user is allowed to approve the currently waiting step.
-     * 
-     * @param string $documentType Type of the document
-     * @param int $documentId ID of the document
-     * @param User $user User to check
-     * @return bool True if allowed, false otherwise
      */
     public function canApprove(string $documentType, int $documentId, User $user): bool
     {
@@ -295,45 +304,115 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
 
     /**
      * Check if a specific user has authorization to action a specific step.
-     * 
+     * Logika baru berbasis target_mode (tidak lagi memakai profile->jabatan).
+     *
      * @param DocumentApproval $step The step to action
      * @param User $user The user attempting the action
      * @return bool True if authorized
      */
-    private function isUserAllowedForStep(DocumentApproval $step, User $user): bool
+    public function isUserAllowedForStep(DocumentApproval $step, User $user): bool
     {
-        // ── Pengecekan User Spesifik ────────────────────────────────────
+        // ── Super-admin bypass semua pengecekan ─────────────────────────
+        if ($user->hasRole('super-admin')) {
+            return true;
+        }
+
+        // ── Pengecekan User Spesifik (assigned_user_id) ─────────────────
         if ($step->assigned_user_id) {
             return (int) $step->assigned_user_id === (int) $user->id;
         }
 
-        $userRole = strtolower($user->role_name ?? '');
-        
-        if ($userRole === 'super-admin') {
-            return true;
-        }
-
-        // ── Pengecekan Jabatan ──────────────────────────────────────────
-        $jabatanUser = strtolower($user->profile?->jabatan ?? '');
         $jabatanStep = strtolower($step->jabatan ?? '');
+        $targetMode  = $step->target_mode ?? 'submitter';
 
-        if ($jabatanUser === $jabatanStep) {
-            return true;
+        switch ($targetMode) {
+            case 'submitter':
+                // User harus OrganisasiMember dari organisasi pengaju surat
+                return $this->checkSubmitterMember($user, $step->surat_organisasi_id, $jabatanStep, $step->surat_komisi_id);
+
+            case 'fixed_osis':
+                // User harus OrganisasiMember dari Organisasi tipe='osis'
+                return $this->checkFixedOrganisasi($user, 'osis', $jabatanStep);
+
+            case 'fixed_mpk':
+                // User harus OrganisasiMember dari Organisasi tipe='mpk'
+                return $this->checkFixedOrganisasi($user, 'mpk', $jabatanStep);
+
+            case 'global':
+                // User harus punya role Spatie sesuai jabatan step
+                return $this->checkGlobalRole($user, $jabatanStep);
+
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Cek apakah user adalah anggota dari organisasi pengaju surat dengan jabatan yang sesuai.
+     * Jika jabatan='komisi', juga cek KomisiMember untuk komisi_id yang sesuai.
+     */
+    private function checkSubmitterMember(User $user, ?int $organisasiId, string $jabatan, ?int $komisiId): bool
+    {
+        if (!$organisasiId) {
+            return false;
         }
 
-        if ($jabatanStep === 'hr' && in_array($userRole, ['hr', 'supervisor'])) {
-            return true;
+        // Jika jabatan komisi, cek KomisiMember dulu
+        if ($jabatan === 'komisi') {
+            if (!$komisiId) {
+                return false;
+            }
+            return KomisiMember::where('user_id', $user->id)
+                ->where('komisi_id', $komisiId)
+                ->exists();
         }
 
-        return false;
+        // Cek OrganisasiMember
+        return OrganisasiMember::where('user_id', $user->id)
+            ->where('organisasi_id', $organisasiId)
+            ->where('jabatan', $jabatan)
+            ->exists();
+    }
+
+    /**
+     * Cek apakah user adalah anggota dari Organisasi dengan tipe tertentu (osis/mpk).
+     */
+    private function checkFixedOrganisasi(User $user, string $tipe, string $jabatan): bool
+    {
+        $organisasi = Organisasi::where('tipe', $tipe)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$organisasi) {
+            return false;
+        }
+
+        return OrganisasiMember::where('user_id', $user->id)
+            ->where('organisasi_id', $organisasi->id)
+            ->where('jabatan', $jabatan)
+            ->exists();
+    }
+
+    /**
+     * Cek apakah user punya role global Spatie sesuai jabatan step.
+     * Jabatan 'pengawas_pusat' → role 'pengawas_pusat'
+     * Jabatan 'kepala_sekolah' → role 'kepala_sekolah'
+     */
+    private function checkGlobalRole(User $user, string $jabatan): bool
+    {
+        // Normalisasi jabatan ke nama role Spatie
+        $roleMap = [
+            'pengawas_pusat' => 'pengawas_pusat',
+            'kepala_sekolah' => 'kepala_sekolah',
+        ];
+
+        $role = $roleMap[$jabatan] ?? $jabatan;
+
+        return $user->hasRole($role);
     }
 
     /**
      * Get the step currently waiting for approval.
-     * 
-     * @param string $documentType Type of the document
-     * @param int $documentId ID of the document
-     * @return DocumentApproval|null The waiting step or null
      */
     public function getWaitingStep(string $documentType, int $documentId): ?DocumentApproval
     {
@@ -344,11 +423,6 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
 
     /**
      * Mark the currently waiting step as read by the authorized user.
-     * 
-     * @param string $documentType Type of the document
-     * @param int $documentId ID of the document
-     * @param User $user The user reading the document
-     * @return void
      */
     public function markAsRead(string $documentType, int $documentId, User $user): void
     {
@@ -357,5 +431,23 @@ DB::transaction(function () use ($currentStep, $approver, $catatan, $documentTyp
         if ($waitingStep && $this->isUserAllowedForStep($waitingStep, $user)) {
             $waitingStep->update(['is_read' => true]);
         }
+    }
+
+    /**
+     * Check if the currently waiting step requires a digital signature (is_signer = true).
+     *
+     * @param string $documentType The document type identifier
+     * @param int $documentId The document ID
+     * @return bool True if the current step requires a signature, false otherwise
+     */
+    public function currentStepRequiresSignature(string $documentType, int $documentId): bool
+    {
+        $waitingStep = $this->getWaitingStep($documentType, $documentId);
+
+        if (!$waitingStep) {
+            return false;
+        }
+
+        return (bool) $waitingStep->is_signer;
     }
 }

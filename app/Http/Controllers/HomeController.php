@@ -2,153 +2,202 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Absensi;
 use App\Models\DocumentApproval;
+use App\Models\Organisasi;
+use App\Models\OrganisasiMember;
 use App\Models\Surat;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
-    // pastikan semua method di controller ini cuma bs diakses user yg udah login
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    // method utama dashboard: nampilin data berbeda berdasarkan role user (hr/supervisor/hod/staff), termasuk statistik absensi, surat, & chart
-    public function index()
+    /**
+     * Dashboard utama SIMORA.
+     * Menampilkan data berbeda berdasarkan role user.
+     */
+    public function index(Request $request)
     {
         $user = auth()->user();
 
-        // data dasar yg dikirim ke semua role: nama role yg diformat & pesan selamat datang
+        // ── Filter visibilitas berdasarkan role (sama seperti SuratController) ──
+        $query = Surat::with(['user', 'approvals', 'suratType', 'organisasi']);
+        if ($user->hasAnyRole(['admin', 'super-admin'])) {
+            // Admin lihat semua
+        } elseif ($user->hasAnyRole(['pengawas_pusat', 'kepala_sekolah'])) {
+            $roleName = $user->hasRole('pengawas_pusat') ? 'pengawas_pusat' : 'kepala_sekolah';
+            $query->where(function($q) use ($user, $roleName) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('approvals', fn($sq) =>
+                      $sq->where('target_mode', 'global')->where('jabatan', $roleName)
+                  );
+            });
+        } else {
+            $userOrganisasis = Organisasi::whereHas('members', fn($q) => $q->where('user_id', $user->id))->get();
+            $organisasiIds = $userOrganisasis->pluck('id');
+            $isMpk = $userOrganisasis->where('tipe', 'mpk')->isNotEmpty();
+            $isOsis = $userOrganisasis->where('tipe', 'osis')->isNotEmpty();
+
+            $query->where(function($q) use ($user, $organisasiIds, $isMpk, $isOsis) {
+                $q->where('user_id', $user->id);
+                if ($organisasiIds->isNotEmpty()) {
+                    $q->orWhereIn('organisasi_id', $organisasiIds);
+                }
+                $q->orWhereHas('approvals', function($sq) use ($user, $isMpk, $isOsis) {
+                    $sq->where('assigned_user_id', $user->id)
+                       ->orWhere('approver_id', $user->id);
+                    if ($isMpk) {
+                        $sq->orWhere('target_mode', 'fixed_mpk');
+                    }
+                    if ($isOsis) {
+                        $sq->orWhere('target_mode', 'fixed_osis');
+                    }
+                });
+            });
+        }
+
+        // hitung stats berdasarkan query filtered tersebut
+        $telahDiajukanCount = (clone $query)->count();
+        $sedangDiprosesCount = (clone $query)->whereIn('status', ['submitted', 'pending_admin', 'revised'])->count();
+        $telahDisetujuiCount = (clone $query)->where('status', 'approved_owner')->count();
+
+        // apply search
+        $search = $request->input('search');
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('perihal', 'like', '%' . $search . '%')
+                  ->orWhere('nomor_surat', 'like', '%' . $search . '%')
+                  ->orWhereHas('user', function($sq) use ($search) {
+                      $sq->where('name', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
+        $surats = $query->latest()->paginate(10);
+
+        $kegiatanBerjalanCount = Surat::where('status_pelaksanaan', 'berjalan')->count();
+        $lpjPendingCount = \App\Models\LaporanPertanggungjawaban::where('status', 'submitted')->count();
+        $lpjRevisiCount = \App\Models\LaporanPertanggungjawaban::where('status', 'revisi')->count();
+
         $data = [
             'userRoleName'    => match(true) {
-                $user->hasRole('hr')                 => 'HR',
-                $user->hasRole('supervisor')          => 'Supervisor',
-                $user->hasRole('staff')               => 'Staff',
-                $user->hasRole('head_of_department') => 'Head of Department',
-                default                               => 'Karyawan'
+                $user->hasRole('admin')          => 'Admin',
+                $user->hasRole('super-admin')    => 'Super Admin',
+                $user->hasRole('kepala_sekolah') => 'Kepala Sekolah',
+                $user->hasRole('pengawas_pusat') => 'Pengawas Pusat',
+                $user->hasRole('guru')           => 'Guru',
+                $user->hasRole('anggota')        => 'Pengurus',
+                default                          => 'Pengguna',
             },
             'userDisplayName' => 'Selamat datang kembali',
+            'kegiatanBerjalanCount' => $kegiatanBerjalanCount,
+            'lpjPendingCount'       => $lpjPendingCount,
+            'lpjRevisiCount'        => $lpjRevisiCount,
+            'telahDiajukanCount'    => $telahDiajukanCount,
+            'sedangDiprosesCount'   => $sedangDiprosesCount,
+            'telahDisetujuiCount'   => $telahDisetujuiCount,
+            'surats'                => $surats,
         ];
 
-        // ── hr: statistik penuh ───────────────────────────────
-        // klo user hr, tambahin data statistik lengkap: total karyawan, hadir bulan ini, total lembur, chart absensi, & count surat menunggu/selesai
-        if ($user->hasRole('hr')) {
+        // ── Admin / Super Admin: statistik sistem ───────────────────────
+        if ($user->hasAnyRole(['admin', 'super-admin'])) {
             $data = array_merge($data, [
-                'totalKaryawan'       => User::where('status', 'aktif')->count(),
-                'hadirBulanIni'       => Absensi::where('tanggal', now()->format('Y-m-01'))->where('status', 'hadir')->count(),
-                'totalJamLembur'      => $this->getTotalJamLembur(),
-                'chartAbsensi'        => $this->getChartAbsensi(),
-                'suratMenungguCount'  => DocumentApproval::where('status', 'waiting')->where('document_type', 'LIKE', 'surat_%')->count(),
-                'suratSelesaiHariIni' => Surat::where('status', 'approved_owner')->whereDate('updated_at', now()->format('Y-m-d'))->count(),
-                'recentActivities'    => \App\Models\ActivityLog::with('user')->orderBy('created_at', 'desc')->take(5)->get(),
-            ]);
-        }
-
-        // ── supervisor: monitoring + approval ────────────────
-        // klo user supervisor, tambahin data monitoring tim & list surat yg butuh approval berdasarkan jabatan atau assigned user
-        elseif ($user->hasRole('supervisor')) {
-            $jabatan = $user->profile?->jabatan;
-            $data = array_merge($data, [
-                'totalKaryawan'      => User::where('status', 'aktif')->count(),
-                'hadirBulanIni'      => Absensi::where('tanggal', now()->format('Y-m-01'))->where('status', 'hadir')->count(),
-                'suratMenungguCount' => DocumentApproval::where('status', 'waiting')
-                                            ->where(function($q) use ($jabatan, $user) {
-                                                $q->where('jabatan', $jabatan)
-                                                  ->orWhere('assigned_user_id', $user->id);
-                                            })
+                'totalPengurus'       => User::where('status', 'aktif')->count(),
+                'totalOrganisasi'     => Organisasi::where('is_active', true)->count(),
+                'suratMenungguCount'  => DocumentApproval::where('status', 'waiting')
                                             ->where('document_type', 'LIKE', 'surat_%')
                                             ->count(),
-                'suratMenungguList'  => Surat::whereHas('approvals', function($q) use ($jabatan, $user) {
-                                                $q->where(function($q2) use ($jabatan, $user) {
-                                                    $q2->where('jabatan', $jabatan)
-                                                       ->orWhere('assigned_user_id', $user->id);
-                                                })->where('status', 'waiting');
-                                            })
-                                            ->with('user')
+                'suratSelesaiHariIni' => Surat::where('status', 'approved_owner')
+                                            ->whereDate('updated_at', now()->format('Y-m-d'))
+                                            ->count(),
+                'recentActivities'    => \App\Models\ActivityLog::with('user')
                                             ->orderBy('created_at', 'desc')
                                             ->take(5)
                                             ->get(),
             ]);
         }
 
-        // ── head_of_department: monitoring + approval ─────────
-        // klo user hod, logic mirip supervisor: monitoring tim & approval surat berdasarkan jabatan atau assigned user
-        elseif ($user->hasRole('head_of_department')) {
-            $jabatan = $user->profile?->jabatan ?? 'hod';
+        // ── Pengawas Pusat / Kepala Sekolah: surat yang menunggu approval global ──
+        elseif ($user->hasAnyRole(['pengawas_pusat', 'kepala_sekolah'])) {
+            $roleName = $user->hasRole('pengawas_pusat') ? 'pengawas_pusat' : 'kepala_sekolah';
             $data = array_merge($data, [
-                'totalKaryawan'      => User::where('status', 'aktif')->count(),
-                'hadirBulanIni'      => Absensi::where('tanggal', now()->format('Y-m-01'))->where('status', 'hadir')->count(),
                 'suratMenungguCount' => DocumentApproval::where('status', 'waiting')
-                                            ->where(function($q) use ($jabatan, $user) {
-                                                $q->where('jabatan', $jabatan)
-                                                  ->orWhere('assigned_user_id', $user->id);
-                                            })
-                                            ->where('document_type', 'LIKE', 'surat_%')
+                                            ->where('target_mode', 'global')
+                                            ->where('jabatan', $roleName)
                                             ->count(),
-                'suratMenungguList'  => Surat::whereHas('approvals', function($q) use ($jabatan, $user) {
-                                                $q->where(function($q2) use ($jabatan, $user) {
-                                                    $q2->where('jabatan', $jabatan)
-                                                       ->orWhere('assigned_user_id', $user->id);
-                                                })->where('status', 'waiting');
+                'suratMenungguList'  => Surat::whereHas('approvals', function($q) use ($roleName) {
+                                                $q->where('target_mode', 'global')
+                                                  ->where('jabatan', $roleName)
+                                                  ->where('status', 'waiting');
                                             })
-                                            ->with('user')
+                                            ->with(['user', 'organisasi'])
                                             ->orderBy('created_at', 'desc')
                                             ->take(5)
                                             ->get(),
             ]);
         }
 
-        // ── staff / default: surat milik sendiri ────────────────────────
-        // klo user staff atau role lain yg gk terdaftar, cuma tampilin data surat milik sendiri
+        // ── Guru / Anggota: monitoring berdasarkan OrganisasiMember ──────
         else {
+            $organisasiIds = OrganisasiMember::where('user_id', $user->id)
+                ->pluck('organisasi_id')
+                ->toArray();
+
+            // Surat yang user bisa approve (step waiting yang sesuai)
+            $suratMenunggu = collect();
+            if (!empty($organisasiIds)) {
+                $suratMenunggu = Surat::whereIn('organisasi_id', $organisasiIds)
+                    ->whereHas('approvals', fn($q) => $q->where('status', 'waiting'))
+                    ->with(['user', 'organisasi', 'suratType'])
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get();
+            }
+
             $suratStaff = Surat::where('user_id', $user->id)->orderBy('created_at', 'desc')->get();
+
             $data = array_merge($data, [
+                'suratMenungguList'      => $suratMenunggu,
+                'suratMenungguCount'     => $suratMenunggu->count(),
                 'suratStaff'             => $suratStaff->take(10),
                 'suratStaffDiajukan'     => $suratStaff->where('status', 'submitted')->count(),
-                'suratStaffProses'       => $suratStaff->whereIn('status', ['submitted'])->filter(function($s) {
-                                                return $s->approvals()->where('status', 'approved')->count() > 0;
-                                            })->count(),
                 'suratStaffSelesai'      => $suratStaff->where('status', 'approved_owner')->count(),
                 'suratStaffRevisiCount'  => $suratStaff->where('status', 'revised')->count(),
+                'myOrganisasi'           => OrganisasiMember::where('user_id', $user->id)->with('organisasi')->get(),
             ]);
         }
 
         return view('dashboard.home', $data);
     }
 
-    // method untuk halaman full activity log dengan filter & paginasi
+    /**
+     * Halaman full activity log dengan filter & paginasi.
+     * Hanya Admin yang bisa mengakses.
+     */
     public function activityLog(Request $request)
     {
-        // Hanya HR yang bisa mengakses halaman ini
-        if (!auth()->user()->hasRole('hr')) {
+        if (!auth()->user()->hasAnyRole(['admin', 'super-admin'])) {
             abort(403);
         }
 
         $query = \App\Models\ActivityLog::with('user')->orderBy('created_at', 'desc');
 
-        // Filter by user
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
         }
-
-        // Filter by action type
         if ($request->filled('action')) {
             $query->where('action', 'like', '%' . $request->action . '%');
         }
-
-        // Filter by date range
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->date_to);
         }
-
-        // Search in description
         if ($request->filled('search')) {
             $query->where('description', 'like', '%' . $request->search . '%');
         }
@@ -159,53 +208,5 @@ class HomeController extends Controller
         $totalLogs = \App\Models\ActivityLog::count();
 
         return view('dashboard.activity-log', compact('logs', 'users', 'actions', 'totalLogs'));
-    }
-
-    // helper private: hitung total jam lembur karyawan dalam 30 hari terakhir, dgn asumsi kerja 8 jam/hari, kelebihan dihitung sbg lembur
-    private function getTotalJamLembur(): float
-    {
-        $tanggalAwal  = now()->subDays(30)->format('Y-m-d');
-        $totalLembur  = 0;
-
-        // loop tiap record absensi 30 hari terakhir yg punya jam_masuk & jam_keluar, hitung selisih jam, klo >8 jam tambahin ke total lembur
-        Absensi::whereBetween('tanggal', [$tanggalAwal, now()->format('Y-m-d')])
-            ->whereNotNull('jam_keluar')
-            ->whereNotNull('jam_masuk')
-            ->get()
-            ->each(function ($a) use (&$totalLembur) {
-                $selisih = (strtotime($a->jam_keluar) - strtotime($a->jam_masuk)) / 3600;
-                if ($selisih > 8) $totalLembur += $selisih - 8;
-            });
-
-        return $totalLembur;
-    }
-
-    // helper private: generate data chart absensi 7 hari terakhir, return labels & 4 dataset (hadir/izin/sakit/alpha) dgn warna masing2
-    private function getChartAbsensi(): array
-    {
-        $labels = [];
-        $hadir = $izin = $sakit = $alpha = [];
-
-        // loop 7 hari terakhir, ambil tgl & format label, lalu hitung count absensi per status buat tiap hari
-        for ($i = 6; $i >= 0; $i--) {
-            $tgl      = now()->subDays($i)->format('Y-m-d');
-            $labels[] = now()->subDays($i)->format('D, d M');
-
-            $hadir[]  = Absensi::where('tanggal', $tgl)->where('status', 'hadir')->count();
-            $izin[]   = Absensi::where('tanggal', $tgl)->where('status', 'izin')->count();
-            $sakit[]  = Absensi::where('tanggal', $tgl)->where('status', 'sakit')->count();
-            $alpha[]  = Absensi::where('tanggal', $tgl)->where('status', 'alpha')->count();
-        }
-
-        // return array dgn labels & 4 dataset yg udah disiapin dgn warna border & background masing2 utk chartjs
-        return [
-            'labels'   => $labels,
-            'datasets' => [
-                ['label' => 'hadir',  'data' => $hadir,  'borderColor' => '#10b981', 'backgroundColor' => 'rgba(16,185,129,.1)'],
-                ['label' => 'izin',   'data' => $izin,   'borderColor' => '#f59e0b', 'backgroundColor' => 'rgba(245,158,11,.1)'],
-                ['label' => 'sakit',  'data' => $sakit,  'borderColor' => '#3b82f6', 'backgroundColor' => 'rgba(59,130,246,.1)'],
-                ['label' => 'alpha',  'data' => $alpha,  'borderColor' => '#ef4444', 'backgroundColor' => 'rgba(239,68,68,.1)'],
-            ],
-        ];
     }
 }
