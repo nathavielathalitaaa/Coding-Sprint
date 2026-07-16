@@ -15,24 +15,35 @@ class CheckOnboarding
         }
 
         $user = auth()->user();
-        // ── Cek apakah user terdaftar sebagai approver
-        // di surat type manapun (berdasarkan user_id)
-        $isApprover = SuratTypeApprover::where('user_id', $user->id)
-            ->exists();
 
-        // Bisa juga cek berdasarkan jabatan jika ada di SuratTypeApprover
-        $hasJabatanApprover = false;
-        $userJabatans = $user->organisasiMembers()->pluck('jabatan')->filter()->unique();
-        if ($userJabatans->isNotEmpty()) {
-            $hasJabatanApprover = SuratTypeApprover::whereIn('jabatan_label', $userJabatans)->exists();
-        }
-
-        // Bukan approver → skip onboarding, langsung masuk
-        if (!$isApprover && !$hasJabatanApprover) {
+        // Admin/super-admin tidak seharusnya menjadi signer ttd & bebas onboarding
+        if ($user->hasRole('admin') || $user->hasRole('super-admin')) {
             return $next($request);
         }
 
-        // Approver → wajib punya TTD dan PIN
+        // Cek apakah user terdaftar sebagai signer
+        $isSigner = SuratTypeApprover::where('user_id', $user->id)
+            ->where('is_signer', true)
+            ->exists();
+
+        $hasJabatanSigner = false;
+        $userJabatans = $user->organisasiMembers()->pluck('jabatan')->filter()->unique()->toArray();
+        if (in_array('bph', $userJabatans)) {
+            $userJabatans[] = 'bph_osis';
+            $userJabatans[] = 'bph_mpk';
+        }
+        if (!empty($userJabatans)) {
+            $hasJabatanSigner = SuratTypeApprover::whereIn('jabatan_label', $userJabatans)
+                ->where('is_signer', true)
+                ->exists();
+        }
+
+        // Bukan signer → skip onboarding, langsung masuk
+        if (!$isSigner && !$hasJabatanSigner) {
+            return $next($request);
+        }
+
+        // Signer → wajib punya TTD dan PIN
         $hasTtd = !empty($user->ttd_path);
         $hasPin = !empty($user->pin);
 

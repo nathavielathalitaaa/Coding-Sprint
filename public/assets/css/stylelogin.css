@@ -8,6 +8,11 @@
   --card-radius:38px;
   --card-width:420px;
   --font-family: 'Poppins', sans-serif;
+  --orbit-size:480px;
+  --orbit-radius:190px;
+  --orbit-logo-size:78px;
+  --orbit-center-size:130px;
+  --orbit-speed:30s;
 }
 
 /* ==========================
@@ -16,99 +21,147 @@
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
-  margin:0;
-  min-height:100%;
+  margin:0;min-height:100%;
   font-family:var(--font-family);
   background:var(--right-bg);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }
-.page-wrapper{
-  display:flex;
-  min-height:100vh;
-  overflow:auto;
-}
+.page-wrapper{display:flex;min-height:100vh;overflow:auto}
 
 /* ==========================
-   Panels (Left / Right)
+   Panels
    ========================== */
 .panel{flex:1;position:relative;display:flex;flex-direction:column;min-height:100vh}
 .left-panel{background:var(--primary);color:#fff;padding:48px;align-items:flex-start;overflow:hidden}
 .right-panel{background:var(--right-bg);align-items:center;justify-content:center;position:relative;min-height:100vh}
 
-/* --------------------------
-   Left header (logo SIMORA)
-   -------------------------- */
+/* Left header */
 .left-header{width:100%;z-index:2}
 .logo-simora{height:42px;display:block}
 
-/* --------------------------
-   Left main content
-   -------------------------- */
-.left-content{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding-left:0;z-index:2;position:relative}
-.welcome{font-weight:800;margin:0 0 24px 0;color:#fff;line-height:0.82;font-size:96px;letter-spacing:-1.5px;text-align:center}
-
-/* --------------------------
-   Organization logos
-   -------------------------- */
-.logo-circle img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* atau 'cover' agar lingkaran terisi penuh */
-  border-radius: 50%;   /* mengikuti bentuk lingkaran pembungkusnya */
+/* Left content — pushed higher */
+.left-content{
+  flex:1;display:flex;flex-direction:column;
+  justify-content:flex-start;
+  padding-top:60px;
+  align-items:flex-start;
+  z-index:2;position:relative;
 }
-.org-logos{margin-top:50px;display:flex;flex-direction:column;align-items:center;gap:24px;z-index:2;position:relative;width:100%}
-.logo-circle{width:110px;height:110px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 48px rgba(0,0,0,0.2);overflow:hidden;position:relative}
-.logo-circle img{width:66%;height:66%;object-fit:contain}
-.logo-row{display:flex;gap:28px;align-items:center;justify-content:center;width:100%;position:relative}
-.logo-mpk{width:156px;height:156px;margin-bottom:12px}
+.welcome{font-weight:800;margin:0;color:#fff;line-height:0.85;font-size:68px;letter-spacing:-1.5px;text-align:left}
 
-/* Decorative dots around logos */
-.logo-row::before{content:'';position:absolute;width:24px;height:24px;background:#fff;border-radius:50%;left:-30px;top:30px;box-shadow:0 12px 32px rgba(0,0,0,0.16)}
-.logo-row::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;right:-10px;bottom:20px;box-shadow:0 10px 28px rgba(0,0,0,0.12);opacity:0.95}
-
-/* --------------------------
-   Left decorations
-   -------------------------- */
+/* Left decorations */
 .left-panel::before{
-  content:'';
-  position:absolute;
-  left:-280px;
-  bottom:-280px;
-  width:560px;
-  height:560px;
-  border-radius:50%;
-  background:rgba(255,255,255,0.08);
-  z-index:0;
+  content:'';position:absolute;
+  left:-280px;bottom:-280px;
+  width:560px;height:560px;border-radius:50%;
+  background:rgba(255,255,255,0.06);z-index:0;
 }
 .left-decor{position:absolute;width:100%;height:100%;pointer-events:none;z-index:1}
-.left-decor .small-dot{position:absolute;left:50%;top:42%;width:16px;height:16px;border-radius:50%;background:#fff;opacity:0.85;box-shadow:0 8px 20px rgba(0,0,0,0.14);transform:translateX(-50%);z-index:2}
-.left-decor .big-cut{position:absolute;left:-260px;bottom:-260px;width:540px;height:540px;border-radius:50%;background:#fff;opacity:0.96;z-index:0}
+.left-decor .small-dot{position:absolute;left:50%;top:36%;width:16px;height:16px;border-radius:50%;background:#fff;opacity:0.85;box-shadow:0 8px 20px rgba(0,0,0,0.14);transform:translateX(-50%);z-index:2}
 
 /* ==========================
-   Right decorations
+   Orbiting Logo Circle
+   ========================== */
+.orbit-container{
+  position:absolute;
+  bottom:-180px;left:-180px;
+  width:var(--orbit-size);height:var(--orbit-size);
+  z-index:3;
+}
+
+/* Dashed track */
+.orbit-container::before{
+  content:'';position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:calc(var(--orbit-radius)*2);
+  height:calc(var(--orbit-radius)*2);
+  border-radius:50%;
+  border:1.5px dashed rgba(255,255,255,0.16);
+  pointer-events:none;z-index:1;
+}
+
+/* Center — plain white circle, no logo */
+.orbit-center{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:var(--orbit-center-size);height:var(--orbit-center-size);
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 10px 40px rgba(0,0,0,0.22), 0 0 0 5px rgba(255,255,255,0.35);
+  z-index:5;
+}
+
+/* Ring — spins the whole set of logos */
+.orbit-ring{
+  position:absolute;top:0;left:0;
+  width:100%;height:100%;
+  animation:orbitSpin var(--orbit-speed) linear infinite;
+  z-index:4;
+}
+@keyframes orbitSpin{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+
+/* Each slot — placed on the circle edge, kept upright via counter-rotate */
+.orbit-item{
+  position:absolute;
+  top:calc(50% - var(--orbit-logo-size)/2);
+  left:calc(50% - var(--orbit-logo-size)/2);
+  width:var(--orbit-logo-size);height:var(--orbit-logo-size);
+  transform:
+    rotate(calc(360deg / var(--total) * var(--i)))
+    translateY(calc(var(--orbit-radius) * -1))
+    rotate(calc(-360deg / var(--total) * var(--i)));
+}
+
+/* Logo bubble — counter-spins to stay perfectly upright */
+.orbit-logo{
+  width:100%;height:100%;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 4px 18px rgba(0,0,0,0.18);
+  border:3px solid rgba(255,255,255,0.9);
+  overflow:hidden;
+  padding:10px;
+  animation:counterSpin var(--orbit-speed) linear infinite;
+}
+@keyframes counterSpin{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(-360deg)}
+}
+
+.orbit-logo img{
+  width:100%;height:100%;
+  object-fit:contain;display:block;
+}
+
+/* ==========================
+   Right panel
    ========================== */
 .right-decor{position:absolute;right:-160px;top:-100px;width:400px;height:400px;border-radius:50%;border:40px solid var(--primary);background:transparent;opacity:0.92;box-shadow:inset 0 0 60px rgba(245,45,48,0.1)}
 
-/* ==========================
-   Login Card
-   ========================== */
 .card-wrapper{width:100%;display:flex;align-items:center;justify-content:center;padding:40px;position:relative;z-index:1}
 .login-card{width:var(--card-width);max-width:95%;background:#fff;border-radius:var(--card-radius);box-shadow:0 28px 68px rgba(0,0,0,0.14);padding:48px;backdrop-filter:blur(1px)}
 .card-title{font-size:40px;font-weight:800;margin:0 0 32px 0;text-align:center;color:#0a0a0a;letter-spacing:-0.5px}
 
-/* ==========================
-   Form
-   ========================== */
+/* Form */
 .login-form{display:flex;flex-direction:column;gap:18px}
 .form-label{font-size:14px;color:#191919;margin:0 0 6px 0;font-weight:500;display:block}
 .form-input{height:54px;background:var(--input-bg);border:none;border-radius:28px;padding:0 24px;font-size:16px;color:#1f1f1f;transition:box-shadow 0.2s,background 0.2s}
 .form-input::placeholder{color:#9f9f9f}
 .form-input:focus{outline:none;box-shadow:0 0 0 3px rgba(245,45,48,0.14);background:#f0f0f0}
 
-/* ==========================
-   Button
-   ========================== */
+/* Password toggle */
+.password-wrapper{position:relative;display:flex;align-items:center}
+.password-wrapper .form-input{width:100%;padding-right:52px}
+.toggle-password{position:absolute;right:18px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9f9f9f;display:flex;align-items:center;justify-content:center;padding:4px;border-radius:50%;transition:color 0.2s,background 0.2s}
+.toggle-password:hover{color:var(--primary);background:rgba(245,45,48,0.07)}
+.toggle-password:focus{outline:none}
+
+/* Button */
 .btn-submit{margin-top:12px;background:var(--primary);color:#fff;border:none;height:54px;border-radius:28px;font-size:16px;font-weight:700;cursor:pointer;transition:transform 0.2s,background 0.3s;letter-spacing:0.02em;box-shadow:0 8px 20px rgba(245,45,48,0.25)}
 .btn-submit:hover{background:#d5282a;transform:translateY(-2px);box-shadow:0 10px 28px rgba(245,45,48,0.32)}
 .btn-submit:active{transform:translateY(0)}
@@ -118,46 +171,36 @@ body{
    ========================== */
 @media (max-width:980px){
   .welcome{font-size:72px}
-  .logo-circle{width:96px;height:96px}
-  .logo-mpk{width:128px;height:128px}
+  .orbit-container{
+    --orbit-size:380px;--orbit-radius:150px;
+    --orbit-logo-size:62px;--orbit-center-size:100px;
+    width:var(--orbit-size);height:var(--orbit-size);
+    bottom:-140px;left:-140px;
+  }
   .card-title{font-size:36px}
 }
 
 @media (max-width:720px){
-  .page-wrapper{flex-direction:column}
-  .left-panel,.right-panel{width:100%;min-height:50vh}
-  .left-content{padding:20px;text-align:center}
-  .welcome{font-size:54px;line-height:0.9}
-  .left-header{display:flex;justify-content:center}
-  .logo-simora{height:34px}
-  .org-logos{margin-top:32px;gap:20px}
-  .logo-mpk{width:120px;height:120px}
-  .logo-circle{width:90px;height:90px;box-shadow:0 12px 32px rgba(0,0,0,0.15)}
-  .logo-row{gap:20px}
-  .left-panel::before{left:-160px;bottom:-140px;width:360px;height:360px}
-  .left-decor .big-cut{left:-200px;bottom:-180px;width:420px;height:420px}
-  .right-decor{right:-120px;top:-120px;width:300px;height:300px;border-width:28px}
-  .card-wrapper{padding:20px}
-  .login-card{padding:36px;width:100%}
-  .form-label{font-size:13px}
-  .form-input{height:50px;padding:0 18px;font-size:15px}
-  .btn-submit{height:48px;font-size:15px;margin-top:10px}
-  .card-title{font-size:34px;margin:0 0 24px 0}
+  .page-wrapper{flex-direction:column;height:100vh!important;min-height:100vh!important;overflow:hidden!important}
+  .left-panel{display:none!important}
+  .right-panel{
+    width:100%!important;height:100vh!important;min-height:100vh!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    padding:24px!important;background:var(--right-bg)!important;overflow:hidden!important;
+  }
+  .right-decor{display:none!important}
+  .card-wrapper{padding:0!important;width:100%!important;max-width:400px!important;display:flex!important;justify-content:center!important;align-items:center!important}
+  .login-card{padding:32px 24px!important;border-radius:28px!important;width:100%!important;box-shadow:0 8px 32px rgba(0,0,0,0.08)!important;background:#fff!important}
+  .card-title{font-size:28px!important;margin:0 0 24px 0!important}
+  .login-form{gap:14px!important}
+  .form-label{font-size:13px!important;margin-bottom:4px!important}
+  .form-input{height:48px!important;padding:0 20px!important;font-size:15px!important;border-radius:24px!important}
+  .btn-submit{height:48px!important;font-size:15px!important;margin-top:8px!important;border-radius:24px!important}
 }
 
 @media (max-width:520px){
-  .welcome{font-size:44px;margin:0 0 16px 0}
-  .logo-mpk{width:108px;height:108px}
-  .logo-circle{width:80px;height:80px;font-size:12px}
-  .logo-row{gap:16px}
-  .org-logos{gap:18px;margin-top:24px}
-  .form-input{height:48px;padding:0 16px;font-size:14px}
-  .btn-submit{height:46px;font-size:14px;margin-top:8px}
-  .card-title{font-size:32px;margin:0 0 20px 0}
-  .login-card{padding:28px}
+  .login-card{padding:28px 20px!important;border-radius:24px!important}
+  .card-title{font-size:24px!important;margin:0 0 20px 0!important}
 }
 
-/* ==========================
-   Utility: remove blue outline on mobile
-   ========================== */
 button:focus,input:focus{outline:none}

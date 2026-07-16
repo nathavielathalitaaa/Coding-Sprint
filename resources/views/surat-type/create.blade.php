@@ -337,14 +337,18 @@
                 <div class="hv-form-group">
                     <label class="hv-label">Deskripsi (Opsional)</label>
                     <textarea name="deskripsi" id="input_deskripsi" class="hv-input hv-textarea" placeholder="Jelaskan tujuan dokumen ini...">{{ $suratType->deskripsi ?? '' }}</textarea>
+                </div>
+                
                 <div class="hv-form-row">
                     <div class="hv-form-group">
                         <label class="hv-label">Berlaku untuk Organisasi</label>
-                        <select name="organisasi_tipe" class="hv-input">
-                            <option value="" {{ (!isset($suratType) || is_null($suratType->organisasi_tipe)) ? 'selected' : '' }}>Semua Organisasi (Generic)</option>
-                            <option value="osis" {{ (isset($suratType) && $suratType->organisasi_tipe == 'osis') ? 'selected' : '' }}>OSIS</option>
-                            <option value="mpk" {{ (isset($suratType) && $suratType->organisasi_tipe == 'mpk') ? 'selected' : '' }}>MPK</option>
-                            <option value="sub_organ" {{ (isset($suratType) && $suratType->organisasi_tipe == 'sub_organ') ? 'selected' : '' }}>Sub Organ</option>
+                        <select name="organisasi_id" class="hv-input">
+                            <option value="" {{ (!isset($suratType) || is_null($suratType->organisasi_id)) ? 'selected' : '' }}>Semua Organisasi (Generic)</option>
+                            @foreach($organisasis as $org)
+                                <option value="{{ $org->id }}" {{ (isset($suratType) && $suratType->organisasi_id == $org->id) ? 'selected' : '' }}>
+                                    {{ $org->nama }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="hv-form-group">
@@ -374,44 +378,9 @@
                 </div>
             </div>
 
-            {{-- Format Nomor Surat --}}
-            <div class="hv-section-card">
-                <h2 class="hv-section-title">
-                    <i data-lucide="hash" style="width: 20px; height: 20px;"></i>
-                    Format Nomor Dokumen
-                </h2>
-                
-                <p class="hv-label" style="color: #9CA3AF; margin-bottom: 16px;">Klik komponen di bawah ini untuk menambahkannya ke format:</p>
-                
-                <div class="hv-component-pool">
-                    <div class="hv-pill hv-pill-tool" onclick="addFormatItem('NOMOR_URUT')">
-                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> [NOMOR_URUT]
-                    </div>
-                    <div class="hv-pill hv-pill-tool" onclick="addFormatItem('KODE_SURAT')">
-                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> [KODE_SURAT]
-                    </div>
-                    <div class="hv-pill hv-pill-tool" onclick="addFormatItem('LEMBAGA')">
-                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> [LEMBAGA]
-                    </div>
-                    <div class="hv-pill hv-pill-tool" onclick="addFormatItem('BULAN_ROMAWI')">
-                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> [BULAN_ROMAWI]
-                    </div>
-                    <div class="hv-pill hv-pill-tool" onclick="addFormatItem('TAHUN')">
-                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> [TAHUN]
-                    </div>
-                    <div class="hv-pill hv-pill-tool" onclick="addFormatItem('CUSTOM')">
-                        <i data-lucide="plus" style="width: 12px; height: 12px;"></i> [CUSTOM]
-                    </div>
-                </div>
-
-                <div class="hv-active-format" id="format_container">
-                    {{-- items will be injected here --}}
-                </div>
-                
-                <div id="format_inputs_container" style="margin-top: 16px;">
-                    {{-- extra inputs for LEMBAGA/CUSTOM will appear here --}}
-                </div>
-            </div>
+            <input type="hidden" name="nomor_format[0][type]" value="NOMOR_URUT">
+            <input type="hidden" name="nomor_format[1][type]" value="KODE_SURAT">
+            <input type="hidden" name="nomor_format[2][type]" value="TAHUN">
 
             {{-- Alur Approval --}}
             <div class="hv-section-card">
@@ -450,9 +419,6 @@
                         <div class="hv-p-chain" id="p_chain">
                             {{-- preview steps --}}
                         </div>
-                        
-                        <div class="hv-p-label">Contoh Nomor</div>
-                        <div class="hv-p-nomor" id="p_nomor">001/KODE/V/2026</div>
                     </div>
                 </div>
             </div>
@@ -482,13 +448,15 @@
     }
 
     // Sortable for Format
-    new Sortable(formatContainer, {
-        animation: 150,
-        onEnd: function() {
-            rebuildFormatItemsFromUI();
-            updatePreview();
-        }
-    });
+    if (formatContainer) {
+        new Sortable(formatContainer, {
+            animation: 150,
+            onEnd: function() {
+                rebuildFormatItemsFromUI();
+                updatePreview();
+            }
+        });
+    }
 
     // Sortable for Approvers
     new Sortable(approverContainer, {
@@ -501,21 +469,25 @@
     });
 
     function addFormatItem(type) {
+        if (!formatContainer) return;
         formatItems.push({ type: type, value: type === 'LEMBAGA' ? 'HRD' : '' });
         renderFormat();
         updatePreview();
     }
 
     function removeFormatItem(index) {
+        if (!formatContainer) return;
         formatItems.splice(index, 1);
         renderFormat();
         updatePreview();
     }
 
     function renderFormat() {
+        if (!formatContainer) return;
         formatContainer.innerHTML = '';
-        // formatInputsContainer is no longer used for inputs, just a clear indicator
-        formatInputsContainer.innerHTML = '';
+        if (formatInputsContainer) {
+            formatInputsContainer.innerHTML = '';
+        }
 
         formatItems.forEach((item, index) => {
             const el = document.createElement('div');
@@ -612,7 +584,15 @@
 
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label class="hv-label" style="margin:0; font-size:9px;">PDF Label (Job Title)</label>
-                    <input type="text" name="approvers[${index}][jabatan_label]" class="hv-input" style="padding: 8px; font-size: 12px;" placeholder="Example: Manager" value="${step.jabatan_label || ''}" oninput="updateApproverData(${index}, 'jabatan_label', this.value)">
+                    <select name="approvers[${index}][jabatan_label]" class="hv-input" style="padding: 8px; font-size: 12px;" onchange="updateApproverData(${index}, 'jabatan_label', this.value)">
+                        <option value="bph_osis" ${step.jabatan_label === 'bph_osis' || step.jabatan_label === 'bph' ? 'selected' : ''}>BPH OSIS</option>
+                        <option value="bph_mpk" ${step.jabatan_label === 'bph_mpk' ? 'selected' : ''}>BPH MPK</option>
+                        <option value="pembina" ${step.jabatan_label === 'pembina' ? 'selected' : ''}>Pembina</option>
+                        <option value="pengawas" ${step.jabatan_label === 'pengawas' ? 'selected' : ''}>Pengawas Sub Organ</option>
+                        <option value="divisi" ${step.jabatan_label === 'divisi' ? 'selected' : ''}>Komisi MPK</option>
+                        <option value="pengawas_pusat" ${step.jabatan_label === 'pengawas_pusat' ? 'selected' : ''}>Pengawas Pusat</option>
+                        <option value="kepala_sekolah" ${step.jabatan_label === 'kepala_sekolah' ? 'selected' : ''}>Kepala Sekolah</option>
+                    </select>
                 </div>
 
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
@@ -662,7 +642,7 @@
             newSteps.push({
                 user_id: item.querySelector('select[name*="[user_id]"]').value,
                 target_mode: item.querySelector('select[name*="[target_mode]"]').value,
-                jabatan_label: item.querySelector('input[name*="[jabatan_label]"]').value,
+                jabatan_label: item.querySelector('select[name*="[jabatan_label]"]').value,
                 metode_ttd: item.querySelector('select[name*="[metode_ttd]"]') ? item.querySelector('select[name*="[metode_ttd]"]').value : null,
                 is_required: item.querySelector('input[name*="[is_required]"]').checked,
                 is_signer: item.querySelector('input[name*="[is_signer]"]').checked
@@ -673,6 +653,7 @@
     }
 
     function rebuildFormatItemsFromUI() {
+        if (!formatContainer) return;
         const updatedItems = [];
         const formatElements = formatContainer.querySelectorAll('.hv-format-item');
         
@@ -689,59 +670,67 @@
     }
 
     function updatePreview() {
-        document.getElementById('p_nama').innerText = document.getElementById('input_nama').value || 'Document Name';
-        document.getElementById('p_kode').innerText = (document.getElementById('input_kode').value || 'CODE').toUpperCase();
-        document.getElementById('p_desc').innerText = document.getElementById('input_deskripsi').value || 'Document description will appear here...';
+        const pNama = document.getElementById('p_nama');
+        const pKode = document.getElementById('p_kode');
+        const pDesc = document.getElementById('p_desc');
+        if (pNama) pNama.innerText = document.getElementById('input_nama').value || 'Nama Dokumen';
+        if (pKode) pKode.innerText = (document.getElementById('input_kode').value || 'KODE').toUpperCase();
+        if (pDesc) pDesc.innerText = document.getElementById('input_deskripsi').value || 'Deskripsi dokumen akan muncul di sini saat Anda mengetik...';
 
         // Chain preview
         const pChain = document.getElementById('p_chain');
-        pChain.innerHTML = '';
-        approverSteps.forEach((step, idx) => {
-            if (step.jabatan_label || step.user_id) {
-                const s = document.createElement('span');
-                s.className = 'hv-p-pill';
-                
-                let displayText = step.jabatan_label;
-                if (!displayText && step.user_id) {
-                    const user = users.find(u => u.id == step.user_id);
-                    displayText = user ? user.name : 'Unknown';
+        if (pChain) {
+            pChain.innerHTML = '';
+            approverSteps.forEach((step, idx) => {
+                if (step.jabatan_label || step.user_id) {
+                    const s = document.createElement('span');
+                    s.className = 'hv-p-pill';
+                    
+                    let displayText = step.jabatan_label;
+                    if (!displayText && step.user_id) {
+                        const user = users.find(u => u.id == step.user_id);
+                        displayText = user ? user.name : 'Unknown';
+                    }
+                    
+                    s.innerHTML = `
+                        <div style="display:flex; flex-direction:column; align-items:center;">
+                            <span>${displayText || 'Penyetuju'}</span>
+                            <span style="font-size:8px; font-weight:normal; background: ${step.is_signer !== false ? '#E0F2FE' : '#F3F4F6'}; color: ${step.is_signer !== false ? '#0284C7' : '#6B7280'}; padding: 1px 4px; border-radius: 4px; margin-top: 2px;">
+                                ${step.is_signer !== false ? 'Setujui + TTD' : 'Hanya Setujui'}
+                            </span>
+                        </div>
+                    `;
+                    pChain.appendChild(s);
+                    if (idx < approverSteps.length - 1) {
+                        const arrow = document.createElement('i');
+                        arrow.setAttribute('data-lucide', 'chevron-right');
+                        arrow.style.width = '10px';
+                        arrow.style.height = '10px';
+                        arrow.style.color = '#D1D5DB';
+                        pChain.appendChild(arrow);
+                    }
                 }
-                
-                s.innerHTML = `
-                    <div style="display:flex; flex-direction:column; align-items:center;">
-                        <span>${displayText || 'Penyetuju'}</span>
-                        <span style="font-size:8px; font-weight:normal; background: ${step.is_signer !== false ? '#E0F2FE' : '#F3F4F6'}; color: ${step.is_signer !== false ? '#0284C7' : '#6B7280'}; padding: 1px 4px; border-radius: 4px; margin-top: 2px;">
-                            ${step.is_signer !== false ? 'Setujui + TTD' : 'Hanya Setujui'}
-                        </span>
-                    </div>
-                `;
-                pChain.appendChild(s);
-                if (idx < approverSteps.length - 1) {
-                    const arrow = document.createElement('i');
-                    arrow.setAttribute('data-lucide', 'chevron-right');
-                    arrow.style.width = '10px';
-                    arrow.style.height = '10px';
-                    arrow.style.color = '#D1D5DB';
-                    pChain.appendChild(arrow);
-                }
-            }
-        });
+            });
+        }
 
         // Nomor preview
-        const now = new Date();
-        const romawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
-        const previewParts = formatItems.map(item => {
-            switch(item.type) {
-                case 'NOMOR_URUT': return '001';
-                case 'KODE_SURAT': return (document.getElementById('input_kode').value || 'KODE').toUpperCase();
-                case 'LEMBAGA': return item.value || 'HRD';
-                case 'BULAN_ROMAWI': return romawi;
-                case 'TAHUN': return now.getFullYear();
-                case 'CUSTOM': return item.value || '';
-                default: return '';
-            }
-        }).filter(p => p !== '');
-        document.getElementById('p_nomor').innerText = previewParts.join('/');
+        const pNomor = document.getElementById('p_nomor');
+        if (pNomor) {
+            const now = new Date();
+            const romawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][now.getMonth()];
+            const previewParts = formatItems.map(item => {
+                switch(item.type) {
+                    case 'NOMOR_URUT': return '001';
+                    case 'KODE_SURAT': return (document.getElementById('input_kode').value || 'KODE').toUpperCase();
+                    case 'LEMBAGA': return item.value || 'HRD';
+                    case 'BULAN_ROMAWI': return romawi;
+                    case 'TAHUN': return now.getFullYear();
+                    case 'CUSTOM': return item.value || '';
+                    default: return '';
+                }
+            }).filter(p => p !== '');
+            pNomor.innerText = previewParts.join('/');
+        }
         lucide.createIcons();
     }
 

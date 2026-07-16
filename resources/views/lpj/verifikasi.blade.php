@@ -255,6 +255,9 @@
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
 
         setTimeout(() => document.getElementById('verifyPinInput').focus(), 150);
     }
@@ -276,6 +279,9 @@
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
 
         setTimeout(() => document.getElementById('catatanRevisiInput').focus(), 150);
     }

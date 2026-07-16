@@ -12,7 +12,6 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- app favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ URL::to('assets/images/logo-tab.svg') }}">
-    <link rel="shortcut icon" href="{{ URL::to('assets/images/favicon.ico') }}">
     <!-- layout config js -->
     <script src="{{ URL::to('assets/js/layout.js') }}"></script>
     <!-- SIMORA SMK Telkom Sidoarjo css -->
@@ -101,26 +100,28 @@
     background-color: transparent !important;
     border-bottom: none !important;
     box-shadow: none !important;
-    height: 56px !important;
+    height: 64px !important;
     padding: 0 !important;
-    left: 0 !important;
+    left: 240px !important;
     right: 0 !important;
     z-index: 1001 !important;
-    top: 0 !important;
+    top: 16px !important;
     position: fixed !important;
-    width: 100% !important;
+    width: auto !important;
+    margin: 0 !important;
   }
   
   #page-topbar .layout-width {
     width: 100% !important;
-    padding-left: 20px !important;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
   }
 
   #page-topbar .layout-width > div {
     background-color: transparent !important;
     border-bottom: none !important;
     box-shadow: none !important;
-    height: 56px !important;
+    height: 64px !important;
     padding: 0 !important;
   }
 
@@ -128,9 +129,9 @@
      PAGE CONTAINER (CLEAN LAYOUT)
   ============================================= */
   .hivi-page-wrapper {
-    margin-left: 240px !important;
-    padding: 24px;
-    padding-top: 64px;
+    margin-left: 240px;
+    padding: 24px 32px;
+    padding-top: 82px;
     min-height: 100vh;
     display: block;
   }
@@ -143,19 +144,31 @@
 
   /* Responsive: Tablet */
   @media (max-width: 1024px) {
+    #page-topbar {
+      left: 0 !important;
+      top: 12px !important;
+      width: calc(100% - 24px) !important;
+      margin: 0 12px !important;
+    }
     .hivi-page-wrapper {
       margin-left: 100px;
-      padding: 24px;
-      padding-top: 80px;
+      padding: 24px 24px;
+      padding-top: 82px;
     }
   }
 
   /* Responsive: Mobile */
   @media (max-width: 768px) {
+    #page-topbar {
+      left: 0 !important;
+      top: 12px !important;
+      width: calc(100% - 24px) !important;
+      margin: 0 12px !important;
+    }
     .hivi-page-wrapper {
       margin-left: 0;
       padding: 20px;
-      padding-top: 76px;
+      padding-top: 82px;
     }
   }
 
@@ -432,10 +445,10 @@
         left: 0;
         transform: translateY(0) translateX(-100%);
         height: 100vh;
-        width: 80px;
+        width: 240px;
         border-radius: 0;
-        padding: 80px 0 20px 0;
-        background: #ffffff;
+        padding: 24px 0;
+        background: #E62129;
         box-shadow: 4px 0 24px rgba(0,0,0,0.1);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -453,7 +466,7 @@
         padding-bottom: 32px;
     }
     .hivi-page-wrapper {
-      padding-top: 76px;
+      padding-top: 82px;
       padding-left: 16px;
       padding-right: 16px;
     }
@@ -506,6 +519,105 @@
     display: none !important;
     content: none !important;
 }
+
+/* =============================================
+   FLOATING PROFILE PILL CARD
+============================================= */
+.profile-pill-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 9999px;
+  padding: 6px 8px 6px 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s, border-color 0.2s;
+  max-width: 240px;
+}
+.profile-pill-card:hover {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+  border-color: rgba(0,0,0,0.10);
+}
+.profile-pill-card.active {
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.profile-pill-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+}
+.profile-pill-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  line-height: 1.2;
+}
+.profile-pill-role {
+  font-family: 'Poppins', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: #6B7280;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  line-height: 1.2;
+}
+
+.profile-pill-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #FFF1F2 0%, #FECACA 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid rgba(0,0,0,0.06);
+}
+.profile-pill-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9999px;
+}
+.profile-pill-initials {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #E62129;
+  letter-spacing: 0.03em;
+}
+
+/* Hide pill on profile page — redundant when you're already there */
+body.page-profile #profile-pill {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .profile-pill-info {
+    display: none;
+  }
+  .profile-pill-card {
+    padding: 5px;
+  }
+}
 </style>
 
 <style>
@@ -546,7 +658,7 @@
 </style>
 
 </head>
-<body class="text-base bg-body-bg text-body font-poppins dark:text-zink-100 dark:bg-zink-800 group-data-[skin=bordered]:bg-body-bordered group-data-[skin=bordered]:dark:bg-zink-700">
+<body class="text-base bg-body-bg text-body font-poppins dark:text-zink-100 dark:bg-zink-800 group-data-[skin=bordered]:bg-body-bordered group-data-[skin=bordered]:dark:bg-zink-700{{ request()->routeIs('profile.show') ? ' page-profile' : '' }}">
 
   <!-- floating sidebar (outside all containers) -->
   @include('sidebar.sidebar')
@@ -575,8 +687,30 @@
 
 
 
-            <!-- right side: icons + notifications + profile -->
+            <!-- right side: profile pill -->
             <div class="flex gap-3 ms-auto">
+              @auth
+              <a href="{{ route('profile.show') }}" id="profile-pill" class="profile-pill-card {{ request()->routeIs('profile.show') ? 'active' : '' }}">
+                <div class="profile-pill-info">
+                  <span class="profile-pill-name">{{ auth()->user()->name }}</span>
+                  <span class="profile-pill-role">{{ auth()->user()->role_name ?? 'User' }}</span>
+                </div>
+                <div class="profile-pill-avatar">
+                  @if(auth()->user()->avatar)
+                    <img src="{{ URL::to('assets/images/user/'.auth()->user()->avatar) }}?v={{ filemtime(public_path('assets/images/user/'.auth()->user()->avatar)) }}" alt="{{ auth()->user()->name }}">
+                  @else
+                    @php
+                      $n = auth()->user()->name ?? 'U';
+                      $parts = explode(' ', trim($n));
+                      $ini = '';
+                      foreach ($parts as $p) { if (!empty($p)) $ini .= strtoupper(substr($p,0,1)); }
+                      if (strlen($ini) > 2) $ini = substr($ini, 0, 2);
+                    @endphp
+                    <span class="profile-pill-initials">{{ $ini }}</span>
+                  @endif
+                </div>
+              </a>
+              @endauth
             </div>
 
             </div>
@@ -586,47 +720,6 @@
 
     <!-- page content -->
     <div class="max-w-7xl px-6">
-        @auth
-        @unless(auth()->user()->hasRole('staff'))
-            @php
-                $user = auth()->user();
-                $activeSuratIds = \App\Models\Surat::where('status', 'submitted')->pluck('id');
-                $myWaitingGlobal = \App\Models\DocumentApproval::where('status', 'waiting')
-                    ->where('document_type', 'LIKE', 'surat_%')
-                    ->whereIn('document_id', $activeSuratIds)
-                    ->where(function($q) use ($user) {
-                        $q->where('assigned_user_id', $user->id)
-                          ->orWhere(function($sq) use ($user) {
-                              $jabatans = $user->organisasiMembers()->pluck('jabatan')->filter()->unique();
-                              $sq->whereNull('assigned_user_id');
-                              if ($jabatans->isNotEmpty()) {
-                                  $sq->whereIn('jabatan', $jabatans);
-                              } else {
-                                  $sq->where('jabatan', '___NONE___');
-                              }
-                          });
-                    })
-                    ->count();
-            @endphp
-            @if($myWaitingGlobal > 0)
-            <div class="mb-4 flex items-center justify-between gap-3 px-4 py-3 rounded-2xl shadow-sm border border-red-200"
-                 style="background:rgba(254,242,242,0.9); backdrop-filter: blur(4px);">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="bell-ring" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
-                    <p class="text-sm text-red-800 font-medium">
-                        Anda memiliki <strong>{{ $myWaitingGlobal }} surat</strong> yang menunggu persetujuan Anda.
-                    </p>
-                </div>
-                @unless(request()->routeIs('surat.index'))
-                <a href="{{ route('surat.index') }}" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition flex-shrink-0">
-                    Tinjau Sekarang
-                </a>
-                @endunless
-            </div>
-            @endif
-        @endunless
-        @endauth
-
         @yield('content')
       </div>
     </div>
@@ -645,7 +738,29 @@
   <!-- initialize icons & scripts -->
   <script>
     lucide.createIcons();
+
+    function dismissWaitingBadge() {
+        const badge = document.getElementById('waiting-badge');
+        if (badge) badge.style.display = 'none';
+        localStorage.setItem('waiting_badge_dismissed_{{ auth()->id() }}', '{{ now()->timestamp }}');
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+      // Badge: sembunyikan jika sudah diklik hari ini, tampilkan lagi besok
+      const badge = document.getElementById('waiting-badge');
+      if (badge) {
+          const key = 'waiting_badge_dismissed_{{ auth()->id() }}';
+          const dismissed = localStorage.getItem(key);
+          if (dismissed) {
+              const dismissedDate = new Date(parseInt(dismissed) * 1000).toDateString();
+              const today = new Date().toDateString();
+              if (dismissedDate === today) {
+                  badge.style.display = 'none';
+              } else {
+                  localStorage.removeItem(key);
+              }
+          }
+      }
       // Completely prevent tooltips on sidebar by disabling tippy.js for these elements
       const sidebarLinks = document.querySelectorAll('.hv-sidebar a');
       sidebarLinks.forEach(link => {

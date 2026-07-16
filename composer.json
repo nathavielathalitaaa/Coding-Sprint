@@ -18,8 +18,10 @@
         "php-flasher/flasher-laravel": "^2.1",
         "php-flasher/flasher-toastr": "^2.1",
         "phpoffice/phpspreadsheet": "^5.7",
+        "phpoffice/phpword": "^1.4",
         "setasign/fpdf": "^1.8",
         "setasign/fpdi": "^2.6",
+        "smalot/pdfparser": "^2.12",
         "spatie/laravel-permission": "^6.25",
         "yoeunes/toastr": "^3.1"
     },

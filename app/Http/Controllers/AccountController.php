@@ -68,8 +68,14 @@ class AccountController extends Controller // class controller utk fitur manajem
             $image = $request->file('photo');
             $filename = time() . '.' . $image->getClientOriginalExtension();
             
+            // pastikan folder ada, buat jika belum
+            $uploadPath = public_path('assets/images/user');
+            if (!file_exists($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
             // simpan ke public itulah
-            $image->move(public_path('assets/images/user'), $filename);
+            $image->move($uploadPath, $filename);
             
             // hapus foto lama jika ada
             if ($user->avatar && file_exists(public_path('assets/images/user/' . $user->avatar))) {
@@ -322,6 +328,33 @@ class AccountController extends Controller // class controller utk fitur manajem
     public function showOnboarding()
     {
         $user    = Auth::user();
+
+        // Admin/super-admin tidak seharusnya menjadi signer ttd & bebas onboarding
+        if ($user->hasRole('admin') || $user->hasRole('super-admin')) {
+            return redirect()->route('home');
+        }
+        
+        // Cek apakah user terdaftar sebagai signer
+        $isSigner = \App\Models\SuratTypeApprover::where('user_id', $user->id)
+            ->where('is_signer', true)
+            ->exists();
+
+        $hasJabatanSigner = false;
+        $userJabatans = $user->organisasiMembers()->pluck('jabatan')->filter()->unique()->toArray();
+        if (in_array('bph', $userJabatans)) {
+            $userJabatans[] = 'bph_osis';
+            $userJabatans[] = 'bph_mpk';
+        }
+        if (!empty($userJabatans)) {
+            $hasJabatanSigner = \App\Models\SuratTypeApprover::whereIn('jabatan_label', $userJabatans)
+                ->where('is_signer', true)
+                ->exists();
+        }
+
+        if (!$isSigner && !$hasJabatanSigner) {
+            return redirect()->route('home');
+        }
+
         // logic ini nentuin step: klo blm ada ttd -> step 'ttd', klo udah ttd tp blm pin -> step 'pin', klo udah semua -> 'done'
         $step    = !$user->ttd_path ? 'ttd' : (!$user->pin ? 'pin' : 'done');
 

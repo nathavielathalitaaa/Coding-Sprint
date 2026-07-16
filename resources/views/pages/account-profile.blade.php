@@ -39,7 +39,7 @@
 
   .bento-card-placeholder {
     background: rgba(255,255,255,0.4);
-    border: 2px dashed rgba(128,187,155,0.35);
+    border: 2px dashed rgba(230,33,41,0.25);
     border-radius: 20px;
     min-height: 120px;
     display: flex;
@@ -88,9 +88,9 @@
     font-weight: 600;
     padding: 4px 14px;
     border-radius: 999px;
-    background: #F0FAF4;
-    color: #4F8A6A;
-    border: 1px solid #C1E4D0;
+    background: var(--color-bg-light);
+    color: var(--color-primary);
+    border: 1px solid rgba(230,33,41,0.2);
     cursor: pointer;
     transition: all 0.2s;
   }
@@ -123,10 +123,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--color-bg-light) 0%, #c8e6d4 100%);
+    background: linear-gradient(135deg, var(--color-bg-light) 0%, #FECACA 100%);
     font-family: 'Poppins', sans-serif;
     font-size: 5rem;
-    color: #4F8A6A;
+    color: var(--color-primary);
     font-weight: 700;
   }
 
@@ -226,8 +226,8 @@
 
   {{-- page header --}}
   <div class="flex items-center justify-between mb-6">
-    <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#1a1a1a;">
-      Account Profile {{ $user->id === auth()->id() ? 'Mine' : $user->name }}
+    <h2 style="font-family:'Poppins',sans-serif;font-size:1.5rem;font-weight:700;color:#111111;">
+      Profil Akun {{ $user->id === auth()->id() ? 'Saya' : $user->name }}
     </h2>
     @if(auth()->user()->hasRole('hr') && isset($user) && $user->id !== auth()->id())
     <a href="{{ route('hr/employee/edit', $user->id) }}" class="hivi-btn-primary">
@@ -419,7 +419,7 @@
         @endphp
 
         @if($user->avatar)
-          <img id="avatar-preview" src="{{ URL::to('assets/images/user/'.$user->avatar) }}" alt="{{ $user->name }}">
+          <img id="avatar-preview" src="{{ URL::to('assets/images/user/'.$user->avatar) }}" alt="{{ $user->name }}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;top:0;left:0;">
         @else
           <div id="avatar-initials" class="profile-hero-initials">{{ $initials }}</div>
           <img id="avatar-preview" src="" alt="{{ $user->name }}" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">
@@ -438,7 +438,7 @@
 
         {{-- overlay --}}
         <div class="profile-hero-overlay">
-          <p style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#fff;line-height:1.2;margin-bottom:4px;">
+          <p style="font-family:'Poppins',sans-serif;font-size:1.5rem;font-weight:700;color:#fff;line-height:1.2;margin-bottom:4px;">
             {{ $user->name }}
           </p>
           @if($user->role_name)
@@ -619,7 +619,7 @@
             @foreach($user->organisasiMembers as $member)
               <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
                 <div>
-                  <p class="font-bold text-[#1A2B24]">{{ $member->organisasi->nama ?? 'Unknown' }}</p>
+                  <p class="font-bold text-gray-800">{{ $member->organisasi->nama ?? 'Unknown' }}</p>
                   <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">{{ str_replace('_', ' ', $member->jabatan) }}</p>
                 </div>
                 <div class="w-10 h-10 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center">

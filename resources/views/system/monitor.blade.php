@@ -5,7 +5,7 @@
 {{-- Header --}}
 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
     <div>
-        <h1 class="text-3xl font-playfair font-bold text-[#1A2B24]">Monitor Sistem</h1>
+        <h1 class="text-3xl font-sans font-bold text-[#111111]">Monitor Sistem</h1>
         <p class="text-[13px] font-light text-[#6B7280] mt-1">
             Pantau kesehatan server, penyimpanan, log aktivitas, dan statistik dokumen secara real-time.
         </p>
@@ -30,7 +30,7 @@
             </div>
             <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Surat</span>
         </div>
-        <p class="text-3xl font-playfair font-bold text-[#1A2B24]">{{ number_format($totalSurat) }}</p>
+        <p class="text-3xl font-sans font-bold text-[#111111]">{{ number_format($totalSurat) }}</p>
         <p class="text-xs text-gray-400 mt-1">+{{ $suratBulanIni }} bulan ini</p>
     </div>
 
@@ -42,7 +42,7 @@
             </div>
             <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Disetujui</span>
         </div>
-        <p class="text-3xl font-playfair font-bold text-[#1A2B24]">{{ number_format($suratApproved) }}</p>
+        <p class="text-3xl font-sans font-bold text-[#111111]">{{ number_format($suratApproved) }}</p>
         @if($totalSurat > 0)
         <p class="text-xs text-gray-400 mt-1">{{ round(($suratApproved/$totalSurat)*100, 1) }}% dari total</p>
         @else
@@ -58,7 +58,7 @@
             </div>
             <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Menunggu</span>
         </div>
-        <p class="text-3xl font-playfair font-bold text-[#1A2B24]">{{ number_format($suratPending) }}</p>
+        <p class="text-3xl font-sans font-bold text-[#111111]">{{ number_format($suratPending) }}</p>
         <p class="text-xs text-gray-400 mt-1">Pending + Submitted</p>
     </div>
 
@@ -70,7 +70,7 @@
             </div>
             <span class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Log Hari Ini</span>
         </div>
-        <p class="text-3xl font-playfair font-bold text-[#1A2B24]">{{ number_format($logsToday) }}</p>
+        <p class="text-3xl font-sans font-bold text-[#111111]">{{ number_format($logsToday) }}</p>
         <p class="text-xs text-gray-400 mt-1">+{{ $logsThisMonth }} bulan ini</p>
     </div>
 
@@ -83,7 +83,7 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div class="flex items-center gap-2 mb-4">
             <i data-lucide="hard-drive" class="w-4 h-4 text-[#4F6560]"></i>
-            <h2 class="text-sm font-bold text-[#1A2B24]">Penyimpanan Dokumen</h2>
+            <h2 class="text-sm font-bold text-[#111111]">Penyimpanan Dokumen</h2>
         </div>
 
         <div class="space-y-3">
@@ -94,7 +94,7 @@
                     <span class="text-xs text-gray-600">/surat</span>
                 </div>
                 <div class="text-right">
-                    <p class="text-sm font-bold text-[#1A2B24]">{{ $storageSize }}</p>
+                    <p class="text-sm font-bold text-[#111111]">{{ $storageSize }}</p>
                     <p class="text-[10px] text-gray-400">{{ $totalFiles }} file</p>
                 </div>
             </div>
@@ -105,7 +105,7 @@
                     <span class="text-xs text-gray-600">/surat-turunan</span>
                 </div>
                 <div class="text-right">
-                    <p class="text-sm font-bold text-[#1A2B24]">{{ $storageTurunanSize }}</p>
+                    <p class="text-sm font-bold text-[#111111]">{{ $storageTurunanSize }}</p>
                     <p class="text-[10px] text-gray-400">{{ $totalTurunanFiles }} file</p>
                 </div>
             </div>
@@ -116,7 +116,7 @@
                     <span class="text-xs text-gray-600">/archives</span>
                 </div>
                 <div class="text-right">
-                    <p class="text-sm font-bold text-[#1A2B24]">{{ $archiveSize }}</p>
+                    <p class="text-sm font-bold text-[#111111]">{{ $archiveSize }}</p>
                     <p class="text-[10px] text-gray-400">{{ $totalArchives }} file</p>
                 </div>
             </div>
@@ -135,12 +135,12 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div class="flex items-center gap-2 mb-4">
             <i data-lucide="database" class="w-4 h-4 text-[#4F6560]"></i>
-            <h2 class="text-sm font-bold text-[#1A2B24]">Database</h2>
+            <h2 class="text-sm font-bold text-[#111111]">Database</h2>
         </div>
 
         <div class="mb-4">
             <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1">Ukuran Database</p>
-            <p class="text-3xl font-playfair font-bold text-[#1A2B24]">{{ $dbSize }}</p>
+            <p class="text-3xl font-sans font-bold text-[#111111]">{{ $dbSize }}</p>
         </div>
 
         <div class="space-y-2">
@@ -175,7 +175,7 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div class="flex items-center gap-2 mb-4">
             <i data-lucide="bar-chart-2" class="w-4 h-4 text-[#4F6560]"></i>
-            <h2 class="text-sm font-bold text-[#1A2B24]">Aksi Terbanyak</h2>
+            <h2 class="text-sm font-bold text-[#111111]">Aksi Terbanyak</h2>
         </div>
 
         <div class="space-y-2">
@@ -184,10 +184,10 @@
             <div>
                 <div class="flex items-center justify-between text-xs mb-1">
                     <span class="text-gray-600 font-medium capitalize">{{ str_replace('_', ' ', $action->action) }}</span>
-                    <span class="font-bold text-[#1A2B24]">{{ number_format($action->total) }}</span>
+                    <span class="font-bold text-[#111111]">{{ number_format($action->total) }}</span>
                 </div>
                 <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div class="h-full bg-[#80BB9B] rounded-full"
+                    <div class="h-full bg-[rgba(230,33,41,0.2)] rounded-full"
                          style="width: {{ round(($action->total / $maxLog) * 100) }}%"></div>
                 </div>
             </div>
@@ -198,7 +198,7 @@
 
         <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
             <span class="text-xs text-gray-400">Total semua aksi</span>
-            <span class="text-sm font-bold text-[#1A2B24]">{{ number_format($logCount) }}</span>
+            <span class="text-sm font-bold text-[#111111]">{{ number_format($logCount) }}</span>
         </div>
     </div>
 
@@ -211,7 +211,7 @@
     <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div class="flex items-center gap-2 mb-5">
             <i data-lucide="trending-up" class="w-4 h-4 text-[#4F6560]"></i>
-            <h2 class="text-sm font-bold text-[#1A2B24]">Pengajuan Surat per Bulan (6 Bulan Terakhir)</h2>
+            <h2 class="text-sm font-bold text-[#111111]">Pengajuan Surat per Bulan (6 Bulan Terakhir)</h2>
         </div>
 
         @php $maxSurat = $suratPerBulan->max('total') ?: 1; @endphp
@@ -221,7 +221,7 @@
             <div class="flex-1 flex flex-col items-center gap-1.5">
                 <span class="text-[10px] font-bold text-gray-500">{{ $item['total'] }}</span>
                 <div class="w-full bg-gray-100 rounded-t-lg overflow-hidden" style="height: 80px;">
-                    <div class="w-full bg-[#80BB9B] rounded-t-lg transition-all"
+                    <div class="w-full bg-[rgba(230,33,41,0.2)] rounded-t-lg transition-all"
                          style="height: {{ $pct }}%; margin-top: {{ 100 - $pct }}%;"></div>
                 </div>
                 <span class="text-[9px] text-gray-400 text-center leading-tight">{{ $item['bulan'] }}</span>
@@ -234,7 +234,7 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div class="flex items-center gap-2 mb-4">
             <i data-lucide="server" class="w-4 h-4 text-[#4F6560]"></i>
-            <h2 class="text-sm font-bold text-[#1A2B24]">Info Lingkungan</h2>
+            <h2 class="text-sm font-bold text-[#111111]">Info Lingkungan</h2>
         </div>
 
         <div class="space-y-3">
@@ -252,7 +252,7 @@
                 </div>
                 <div class="min-w-0">
                     <p class="text-[10px] text-gray-400 font-medium">{{ $info['label'] }}</p>
-                    <p class="text-xs font-semibold text-[#1A2B24] truncate">{{ $info['value'] ?: 'N/A' }}</p>
+                    <p class="text-xs font-semibold text-[#111111] truncate">{{ $info['value'] ?: 'N/A' }}</p>
                 </div>
             </div>
             @endforeach
@@ -266,7 +266,7 @@
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <div class="flex items-center gap-2">
             <i data-lucide="scroll-text" class="w-4 h-4 text-[#4F6560]"></i>
-            <h2 class="text-sm font-bold text-[#1A2B24]">Log Aktivitas Terbaru</h2>
+            <h2 class="text-sm font-bold text-[#111111]">Log Aktivitas Terbaru</h2>
         </div>
         <a href="{{ route('activity.log') }}"
            class="text-xs font-semibold text-[#4F6560] hover:underline flex items-center gap-1">
@@ -278,14 +278,14 @@
         @forelse($recentLogs as $log)
         <div class="flex items-center gap-4 px-6 py-3 hover:bg-gray-50/50 transition">
             {{-- Avatar --}}
-            <div class="w-8 h-8 rounded-full bg-[#E8F5EE] flex items-center justify-center shrink-0 text-[#2E7D5E] text-xs font-bold">
+            <div class="w-8 h-8 rounded-full bg-[var(--color-bg-light)] flex items-center justify-center shrink-0 text-[#E62129] text-xs font-bold">
                 {{ strtoupper(substr($log->user?->name ?? '?', 0, 1)) }}
             </div>
 
             {{-- Detail --}}
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-sm font-semibold text-[#1A2B24]">{{ $log->user?->name ?? 'System' }}</span>
+                    <span class="text-sm font-semibold text-[#111111]">{{ $log->user?->name ?? 'System' }}</span>
                     <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-500 uppercase tracking-wide">
                         {{ str_replace('_', ' ', $log->action) }}
                     </span>

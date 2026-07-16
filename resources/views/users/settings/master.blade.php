@@ -3,7 +3,7 @@
 @section('content')
 <div class="container-fluid px-0">
     <div class="mb-8">
-        <h1 class="serif text-[32px] text-[#1A2B24] font-semibold">Pengaturan Master Data</h1>
+        <h1 class="serif text-[32px] text-[#111111] font-semibold">Pengaturan Master Data</h1>
         <p class="font-poppins font-light text-[13px] text-[#6B7280]">Kelola data referensi yang digunakan di seluruh sistem</p>
     </div>
 
@@ -11,7 +11,7 @@
         {{-- Card 1: Jabatan --}}
         <div class="hivi-card">
             <div class="mb-4">
-                <h2 class="serif text-[18px] font-bold text-[#1A2B24]">Jabatan</h2>
+                <h2 class="serif text-[18px] font-bold text-[#111111]">Jabatan</h2>
                 <p class="font-poppins font-light text-[12px] text-[#6B7280]">Digunakan dalam formulir anggota/staf</p>
             </div>
 
@@ -40,7 +40,7 @@
                         {{-- Edit Mode --}}
                         <div class="edit-mode hidden w-full flex items-center gap-2">
                             <input type="text" id="pos-input-{{ $item->id }}" value="{{ $item->position }}" class="hivi-input flex-1 text-[13px] py-1">
-                            <button onclick="saveEdit('pos', {{ $item->id }}, '{{ route('users.settings.position.update', $item->id) }}')" class="p-1 text-[#2E7D5E]">
+                            <button onclick="saveEdit('pos', {{ $item->id }}, '{{ route('users.settings.position.update', $item->id) }}')" class="p-1 text-[#E62129]">
                                 <i data-lucide="check" class="size-4"></i>
                             </button>
                             <button onclick="toggleEdit('pos', {{ $item->id }}, false)" class="p-1 text-[#6B7280]">
@@ -72,7 +72,7 @@
         {{-- Card 2: Status Karyawan --}}
         <div class="hivi-card">
             <div class="mb-4">
-                <h2 class="serif text-[18px] font-bold text-[#1A2B24]">Status Anggota/Staf</h2>
+                <h2 class="serif text-[18px] font-bold text-[#111111]">Status Anggota/Staf</h2>
                 <p class="font-poppins font-light text-[12px] text-[#6B7280]">Status keaktifan akun anggota/staf</p>
             </div>
 
@@ -101,7 +101,7 @@
                         {{-- Edit Mode --}}
                         <div class="edit-mode hidden w-full flex items-center gap-2">
                             <input type="text" id="ut-input-{{ $item->id }}" value="{{ $item->type_name }}" class="hivi-input flex-1 text-[13px] py-1">
-                            <button onclick="saveEdit('ut', {{ $item->id }}, '{{ route('users.settings.usertype.update', $item->id) }}')" class="p-1 text-[#2E7D5E]">
+                            <button onclick="saveEdit('ut', {{ $item->id }}, '{{ route('users.settings.usertype.update', $item->id) }}')" class="p-1 text-[#E62129]">
                                 <i data-lucide="check" class="size-4"></i>
                             </button>
                             <button onclick="toggleEdit('ut', {{ $item->id }}, false)" class="p-1 text-[#6B7280]">
@@ -133,7 +133,7 @@
         {{-- Card 3: Role Sistem --}}
         <div class="hivi-card">
             <div class="mb-5">
-                <h2 class="serif text-[18px] font-bold text-[#1A2B24]">Peran Sistem</h2>
+                <h2 class="serif text-[18px] font-bold text-[#111111]">Peran Sistem</h2>
                 <p class="font-poppins font-light text-[12px] text-[#6B7280]">Informasi hak akses fitur berdasarkan peran sistem yang tersedia</p>
             </div>
 
@@ -145,8 +145,8 @@
                         $isSup = str_contains($roleKey, 'supervisor') || str_contains($roleKey, 'head');
                         $isStaff = str_contains($roleKey, 'staff');
 
-                        $bgColor = $isHR ? 'bg-[#F0FAF4]' : ($isSup ? 'bg-[#EFF6FF]' : 'bg-[#F5F5F7]');
-                        $borderColor = $isHR ? 'border-[#C1E4D0]' : ($isSup ? 'border-[#DBEAFE]' : 'border-[#F3F4F6]');
+                        $bgColor = $isHR ? 'bg-[var(--color-bg-light)]' : ($isSup ? 'bg-[#EFF6FF]' : 'bg-[#F5F5F7]');
+                        $borderColor = $isHR ? 'border-[rgba(230,33,41,0.2)]' : ($isSup ? 'border-[#DBEAFE]' : 'border-[#F3F4F6]');
                         $badgeColor = $isHR ? 'hivi-badge-green' : ($isSup ? 'hivi-badge-blue' : 'hivi-badge-gray');
                         $textColor = $isHR ? 'text-[var(--color-text)]' : ($isSup ? 'text-[#1E40AF]' : 'text-[#4B5563]');
                     @endphp

@@ -4,9 +4,6 @@
 
 @section('content')
 <div class="mb-6">
-    <a href="{{ route('organisasi.index') }}" class="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors mb-2">
-        <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> Kelola Organisasi
-    </a>
     <h1 class="text-3xl font-sans font-bold text-[#111111] mt-2">Tambah Sub Organ Baru</h1>
     <p class="text-[13px] font-light text-[#6B7280] mt-1">Sub Organ adalah ekskul, UKM, atau organisasi non-inti yang bernaung di bawah OSIS/MPK.</p>
 </div>

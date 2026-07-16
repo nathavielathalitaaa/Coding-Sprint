@@ -401,7 +401,7 @@
                             <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
                         </div>
                         <div>
-                            <h5 style="font-family:'Playfair Display',serif;" class="text-[20px] font-bold text-[#111111]">Import Data Karyawan</h5>
+                            <h5 style="font-family:'Poppins',sans-serif;" class="text-[20px] font-bold text-[#111111]">Import Data Karyawan</h5>
                             <p class="text-[12px] font-[300] text-[#6B7280] mt-0.5">Upload file Excel sesuai template yang disediakan</p>
                         </div>
                     </div>

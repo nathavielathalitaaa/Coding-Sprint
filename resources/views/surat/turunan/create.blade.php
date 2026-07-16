@@ -13,7 +13,7 @@
     {{-- Header --}}
     <div class="flex items-center justify-between mb-8">
         <div>
-            <h1 class="text-3xl font-sans font-bold text-[#1A2B24]">Buat Surat Turunan</h1>
+            <h1 class="text-3xl font-sans font-bold text-[#111111]">Buat Surat Turunan</h1>
             <p class="text-[13px] font-light text-[#6B7280] mt-1">
                 Pilih jenis surat turunan dan tentukan pihak yang menandatanganinya.
             </p>
@@ -28,7 +28,7 @@
     <div class="bg-gray-50 rounded-[28px] p-6 border border-gray-100 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-[var(--color-bg-light)] rounded-2xl flex items-center justify-center shrink-0">
-                <i data-lucide="file-text" class="w-6 h-6 text-[#2E7D5E]"></i>
+                <i data-lucide="file-text" class="w-6 h-6 text-[#E62129]"></i>
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Surat Induk</p>
@@ -85,14 +85,14 @@
                             <div class="pt-1">
                                 <input type="checkbox" name="templates[]" value="{{ $tpl->kode }}"
                                        id="tpl-checkbox-{{ $tpl->kode }}"
-                                       class="w-5 h-5 text-[#2E7D5E] border-gray-300 rounded focus:ring-[#2E7D5E] transition cursor-pointer"
+                                       class="w-5 h-5 text-[#E62129] border-gray-300 rounded focus:ring-[#E62129] transition cursor-pointer"
                                        onchange="toggleSignersContainer('{{ $tpl->kode }}')">
                             </div>
                             <div class="flex-1 cursor-pointer select-none" onclick="toggleCheckbox('tpl-checkbox-{{ $tpl->kode }}')">
-                                <h3 class="text-lg font-sans font-bold text-[#1A2B24]">{{ $tpl->nama }}</h3>
+                                <h3 class="text-lg font-sans font-bold text-[#111111]">{{ $tpl->nama }}</h3>
                                 <p class="text-xs text-gray-500 mt-1">{{ $tpl->deskripsi ?? 'Buat surat turunan menggunakan template ini.' }}</p>
                                 <div class="mt-2">
-                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-[var(--color-bg-light)] text-[#2E7D5E]">
+                                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-[var(--color-bg-light)] text-[#E62129]">
                                         {{ $tpl->kode }}
                                     </span>
                                 </div>
@@ -108,7 +108,7 @@
                                          onclick="toggleSubCheckbox('signer-{{ $tpl->kode }}-{{ $slot }}')">
                                         <input type="checkbox" name="signers[{{ $tpl->kode }}][]" value="{{ $slot }}"
                                                id="signer-{{ $tpl->kode }}-{{ $slot }}"
-                                               class="w-4 h-4 text-[#2E7D5E] border-gray-300 rounded focus:ring-[#2E7D5E] transition cursor-pointer"
+                                               class="w-4 h-4 text-[#E62129] border-gray-300 rounded focus:ring-[#E62129] transition cursor-pointer"
                                                onclick="event.stopPropagation()">
                                         <div class="flex-1 leading-none">
                                             <p class="text-sm font-semibold text-gray-700">{{ $user->name }}</p>

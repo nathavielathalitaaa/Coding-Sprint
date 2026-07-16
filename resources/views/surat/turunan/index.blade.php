@@ -13,7 +13,7 @@
     {{-- Header --}}
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-            <h1 class="text-3xl font-sans font-bold text-[#1A2B24]">Surat Turunan</h1>
+            <h1 class="text-3xl font-sans font-bold text-[#111111]">Surat Turunan</h1>
             <p class="text-[13px] font-light text-[#6B7280] mt-1">
                 Kelola, tanda tangani, dan unduh dokumen turunan dari surat induk.
             </p>
@@ -34,7 +34,7 @@
     <div class="bg-gray-50 rounded-[28px] p-5 border border-gray-100 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-start gap-4">
             <div class="w-10 h-10 bg-[var(--color-bg-light)] rounded-2xl flex items-center justify-center shrink-0">
-                <i data-lucide="file-text" class="w-5 h-5 text-[#2E7D5E]"></i>
+                <i data-lucide="file-text" class="w-5 h-5 text-[#E62129]"></i>
             </div>
             <div>
                 <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Surat Induk</p>
@@ -69,7 +69,7 @@
                             <i data-lucide="file-check-2" class="w-5 h-5 text-gray-500"></i>
                         </div>
                         <div>
-                            <h3 class="text-base font-sans font-bold text-[#1A2B24]">{{ $st->template->nama ?? 'Surat Turunan' }}</h3>
+                            <h3 class="text-base font-sans font-bold text-[#111111]">{{ $st->template->nama ?? 'Surat Turunan' }}</h3>
                             <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-600">
                                 {{ $st->nomor_surat ?? '(Belum ada nomor)' }}
                             </span>
@@ -96,7 +96,7 @@
                 <div class="px-6 py-4 flex-1">
                     <div class="flex justify-between items-center mb-3">
                         <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Progress Persetujuan</span>
-                        <span class="text-xs font-bold text-[#2E7D5E] bg-[var(--color-bg-light)] px-2 py-0.5 rounded">
+                        <span class="text-xs font-bold text-[#E62129] bg-[var(--color-bg-light)] px-2 py-0.5 rounded">
                             {{ $signedCount }}/{{ $totalCount }} Signer
                         </span>
                     </div>
@@ -184,7 +184,7 @@
             <div class="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="pen-line" class="w-8 h-8 text-amber-500"></i>
             </div>
-            <h3 class="text-xl font-sans font-bold text-[#1A2B24] mb-1">Tanda Tangan Digital</h3>
+            <h3 class="text-xl font-sans font-bold text-[#111111] mb-1">Tanda Tangan Digital</h3>
             <p class="text-sm text-gray-500">
                 <span id="ttdModalTitle" class="font-semibold text-[var(--color-text)]"></span>
             </p>
@@ -233,6 +233,9 @@
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
 
         setTimeout(() => document.getElementById('ttdPinInput').focus(), 150);
     }

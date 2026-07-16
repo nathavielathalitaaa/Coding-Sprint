@@ -107,7 +107,7 @@
         @empty
             <div class="col-span-full bg-white rounded-[28px] border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-16 text-center">
                 <div class="w-16 h-16 bg-[var(--color-bg-light)] rounded-[28px] flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="check-circle" class="w-8 h-8 text-[#2E7D5E]"></i>
+                    <i data-lucide="check-circle" class="w-8 h-8 text-[#E62129]"></i>
                 </div>
                 <h3 class="text-lg font-bold text-gray-800 mb-1">Semua Terdisposisi</h3>
                 <p class="text-sm text-gray-500">Tidak ada surat kegiatan baru yang menunggu disposisi saat ini.</p>

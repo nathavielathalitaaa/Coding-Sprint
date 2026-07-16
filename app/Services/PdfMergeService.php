@@ -15,7 +15,7 @@ class PdfMergeService
         for ($pageNo = 1; $pageNo <= $pageCount1; $pageNo++) {
             $templateId = $pdf->importPage($pageNo);
             $size = $pdf->getTemplateSize($templateId);
-            $pdf->AddPage($size['orientation'], $size);
+            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
             $pdf->useTemplate($templateId);
         }
 
@@ -24,7 +24,7 @@ class PdfMergeService
         for ($pageNo = 1; $pageNo <= $pageCount2; $pageNo++) {
             $templateId = $pdf->importPage($pageNo);
             $size = $pdf->getTemplateSize($templateId);
-            $pdf->AddPage($size['orientation'], $size);
+            $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
             $pdf->useTemplate($templateId);
         }
 

@@ -69,6 +69,12 @@ class Surat extends Model
         return $this->hasOne(SuratKegiatanDetail::class);
     }
 
+    // ── relasi ke proposal format check (1-to-1) ──────
+    public function proposalFormatCheck()
+    {
+        return $this->hasOne(ProposalFormatCheck::class, 'surat_id');
+    }
+
     // ── relasi ke surat turunan (1-to-many) ───────────
     public function suratTurunans()
     {
@@ -114,8 +120,9 @@ class Surat extends Model
     // ── helper: cek apakah bisa diedit (oleh pembuat) ──
     public function canBeEdited(): bool
     {
-        // cuma bs diedit klo status 'revised' (abis ditolak/perlu revisi) atau 'rejected_admin' (ditolak admin) atau 'pending_admin'
-        return in_array($this->status, ['revised', 'rejected_admin', 'pending_admin']);
+        // hanya bisa diedit klo status 'revised' (perlu revisi) atau 'rejected_admin' (ditolak admin)
+        // 'pending_admin' tidak termasuk — surat sudah diajukan dan menunggu proses admin
+        return in_array($this->status, ['revised', 'rejected_admin']);
     }
 
     // ── helper: cek apakah bisa dihapus (oleh pembuat) ──

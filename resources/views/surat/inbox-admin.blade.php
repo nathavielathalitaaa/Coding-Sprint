@@ -186,18 +186,23 @@
             @csrf
             <input type="hidden" name="action" value="approve">
 
-            {{-- Preview nomor — read-only, tidak ada input --}}
-            <div class="mb-5 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
-                    Nomor yang akan diberikan
-                </p>
-                <p id="modalPreviewNomor"
-                   class="text-lg font-mono font-bold text-slate-800 tracking-wide break-all">
-                    —
-                </p>
+            {{-- Input nomor surat manual --}}
+            <div class="mb-5">
+                <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                    Nomor Surat
+                </label>
+                <input
+                    type="text"
+                    id="inputNomorSurat"
+                    name="nomor_surat"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="cth: 001/PROP/OSIS/VII/2026"
+                    class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition text-slate-800 tracking-wide"
+                    style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 700; font-size: 15px;"
+                >
                 <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
-                    Nomor ini digenerate otomatis berdasarkan format dan counter jenis surat.
-                    Tidak dapat diubah manual.
+                    Isi nomor surat sesuai format sekretariat. Kosongkan untuk generate otomatis berdasarkan format jenis surat.
                 </p>
             </div>
 
@@ -252,14 +257,21 @@
         const form = document.getElementById('formVerifikasi');
         form.action = url;
 
-        // Tampilkan preview nomor dan jenis surat di modal
-        const elNomor = document.getElementById('modalPreviewNomor');
         const elJenis = document.getElementById('modalJenisSurat');
-        if (elNomor) elNomor.textContent = previewNomor || '—';
-        if (elJenis) elJenis.textContent  = jenisSurat  || '';
+        if (elJenis) elJenis.textContent = jenisSurat || '';
+
+        // Kosongkan input setiap kali modal dibuka
+        const inputNomor = document.getElementById('inputNomorSurat');
+        if (inputNomor) inputNomor.value = '';
 
         document.getElementById('modalVerifikasi').classList.remove('hidden');
         document.getElementById('modalVerifikasi').classList.add('flex');
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+
+        // Fokus ke input nomor
+        setTimeout(() => { if (inputNomor) inputNomor.focus(); }, 150);
     }
 
     function quickRejectAdmin(url) {
@@ -267,6 +279,9 @@
         form.action = url;
         document.getElementById('modalReject').classList.remove('hidden');
         document.getElementById('modalReject').classList.add('flex');
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
     }
 
     function closeModals() {

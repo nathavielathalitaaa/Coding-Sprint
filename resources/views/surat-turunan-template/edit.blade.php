@@ -5,7 +5,7 @@
 {{-- Header --}}
 <div class="flex items-center justify-between mb-8">
     <div>
-        <h1 class="text-3xl font-sans font-bold text-[#1A2B24]">Ubah Template</h1>
+        <h1 class="text-3xl font-sans font-bold text-[#111111]">Ubah Template</h1>
         <p class="text-[13px] font-light text-[#6B7280] mt-1">
             <span class="font-medium text-[var(--color-text)]">{{ $template->nama }}</span>
             <span class="mx-1.5 text-gray-300">·</span>
@@ -41,7 +41,7 @@
 
                 {{-- Nama Template --}}
                 <div class="mb-5">
-                    <label for="nama" class="block text-sm font-bold text-[#1A2B24] mb-2">
+                    <label for="nama" class="block text-sm font-bold text-[#111111] mb-2">
                         Nama Template <span class="text-red-500">*</span>
                     </label>
                     <input type="text" id="nama" name="nama"
@@ -63,7 +63,7 @@
                         <input type="checkbox" name="is_active" value="1" id="is_active"
                                {{ old('is_active', $template->is_active) ? 'checked' : '' }}
                                class="w-4 h-4 rounded accent-[var(--color-text)] cursor-pointer">
-                        <span class="text-sm font-medium text-[#1A2B24]">Template aktif</span>
+                        <span class="text-sm font-medium text-[#111111]">Template aktif</span>
                         <span class="text-xs text-gray-400">(nonaktif = tidak muncul di form generate)</span>
                     </label>
                 </div>
@@ -71,7 +71,7 @@
                 {{-- Konten Template --}}
                 <div class="mb-5">
                     <div class="flex items-center justify-between mb-2">
-                        <label for="konten_template" class="block text-sm font-bold text-[#1A2B24]">
+                        <label for="konten_template" class="block text-sm font-bold text-[#111111]">
                             Konten Template <span class="text-red-500">*</span>
                         </label>
                         <div class="flex items-center gap-2">
@@ -138,7 +138,7 @@
         <div class="bg-white rounded-[20px] border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.05)] p-5">
             <div class="flex items-center gap-2 mb-4">
                 <i data-lucide="braces" class="w-4 h-4 text-[var(--color-text)]"></i>
-                <h3 class="text-sm font-bold text-[#1A2B24]">Placeholder Tersedia</h3>
+                <h3 class="text-sm font-bold text-[#111111]">Placeholder Tersedia</h3>
             </div>
             <p class="text-xs text-gray-400 mb-4 leading-relaxed">
                 Klik token untuk menyalinnya ke clipboard, lalu tempel di posisi yang diinginkan di editor.
@@ -149,7 +149,7 @@
                 <div class="group flex items-start gap-2 p-2.5 rounded-2xl hover:bg-gray-50 transition cursor-pointer"
                      onclick="copyToken('{{ $ph['token'] }}', this)"
                      title="Klik untuk salin">
-                    <code class="shrink-0 text-[11px] font-bold font-mono bg-[var(--color-bg-light)] text-[#2E7D5E] px-2 py-1 rounded-lg group-hover:bg-[#d1ede0] transition select-none">
+                    <code class="shrink-0 text-[11px] font-bold font-mono bg-[var(--color-bg-light)] text-[#E62129] px-2 py-1 rounded-lg group-hover:bg-[#d1ede0] transition select-none">
                         {{ $ph['token'] }}
                     </code>
                     <span class="text-[11px] text-gray-500 leading-relaxed pt-0.5">

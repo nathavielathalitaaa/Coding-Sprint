@@ -46,16 +46,35 @@
 
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4 custom-header-fix">
       <div class="mb-8">
-        <h1 class="text-3xl font-sans font-bold text-[#111111]">Approval Center</h1>
-        <p class="text-[13px] font-light text-[#6B7280] mt-1">Review and approve employee requests</p>
+        @if(request('filter') === 'waiting')
+          <h1 class="text-3xl font-sans font-bold text-[#111111]">Persetujuan Saya</h1>
+          <p class="text-[13px] font-light text-[#6B7280] mt-1">Surat yang menunggu tindakan persetujuan dari Anda</p>
+        @else
+          <h1 class="text-3xl font-sans font-bold text-[#111111]">Daftar Surat</h1>
+          <p class="text-[13px] font-light text-[#6B7280] mt-1">Semua surat yang dapat Anda akses</p>
+        @endif
       </div>
       @can('create', App\Models\Surat::class)
       <div class="w-full sm:w-auto shrink-0 custom-header-btn">
           <a href="{{ route('surat.create') }}" class="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] text-white rounded-2xl text-sm font-semibold hover:bg-[var(--color-primary-dark)] transition shadow-sm">
-              <i data-lucide="plus" class="w-4 h-4"></i> Create New Letter
+              <i data-lucide="plus" class="w-4 h-4"></i> Ajukan Surat Baru
           </a>
       </div>
       @endcan
+    </div>
+
+    {{-- Tab filter --}}
+    <div class="flex gap-2 mb-6">
+        <a href="{{ route('surat.index') }}"
+           class="px-4 py-2 rounded-2xl text-sm font-semibold transition
+                  {{ request('filter') !== 'waiting' ? 'bg-[#111111] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50' }}">
+            Semua Surat
+        </a>
+        <a href="{{ route('surat.index', ['filter' => 'waiting']) }}"
+           class="px-4 py-2 rounded-2xl text-sm font-semibold transition flex items-center gap-2
+                  {{ request('filter') === 'waiting' ? 'bg-[var(--color-primary)] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50' }}">
+            Menunggu Saya
+        </a>
     </div>
 
     @if ($message = Session::get('success'))
@@ -143,7 +162,7 @@
 
             <!-- right actions -->
             <div class="flex flex-col sm:items-end gap-3 sm:gap-2 border-t sm:border-0 pt-3 sm:pt-0 border-gray-100">
-                <div>
+                <div class="flex items-center gap-2">
                     @if($surat->status === 'submitted')
                         <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Diajukan</span>
                     @elseif($surat->status === 'approved_owner')
@@ -154,6 +173,16 @@
                         <span class="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Butuh Revisi</span>
                     @else
                         <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{{ ucfirst($surat->status) }}</span>
+                    @endif
+
+                    @if($surat->suratType && $surat->suratType->requires_kegiatan_detail && $surat->proposalFormatCheck)
+                        @php
+                            $pScore = $surat->proposalFormatCheck->skor_akhir;
+                            $pColor = $pScore >= 70 ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-red-100 text-red-700 border border-red-200';
+                        @endphp
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold {{ $pColor }}">
+                            Proposal: {{ $pScore }}
+                        </span>
                     @endif
                 </div>
 
@@ -167,7 +196,7 @@
  
                     @if($bisaApprove)
                     <button type="button"
-                        onclick="quickApprove('{{ route('surat.approve', $surat->id) }}', {{ $isSigner ? 'true' : 'false' }})"
+                        onclick="quickApprove('{{ route('surat.approve', $surat->id) }}', {{ $isSigner ? 'true' : 'false' }}, '{{ route('surat.show', $surat->id) }}')"
                         class="px-4 py-2 bg-[var(--color-primary)] text-white rounded-2xl text-sm font-medium hover:bg-[var(--color-primary-dark)] transition shadow-sm flex items-center justify-center">
                         <i data-lucide="check" class="w-4 h-4 mr-1"></i> Setujui
                     </button>
@@ -206,89 +235,114 @@
         </div>{{-- /real-content --}}
     </div>{{-- /w-full --}}
 
+
+@push('modals')
 {{-- modal approve --}}
-<div id="modalApprove" class="fixed inset-0 z-50 hidden items-center justify-center"
-     style="background:rgba(0,0,0,.4);">
-    <div class="bg-white rounded-[28px] shadow-xl w-full max-w-md mx-4 p-6 overflow-y-auto max-h-[90vh]">
-        <h6 class="text-base font-bold text-slate-900 mb-4">Setujui Surat</h6>
-        <form id="formApprove" method="POST">
-            @csrf
-            <div class="mb-3">
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan (opsional)</label>
-                <textarea name="catatan" rows="2"
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                    placeholder="Tambahkan catatan jika ada..."></textarea>
-            </div>
-            <div class="mb-4" id="pinGroup">
-                <label class="block text-xs font-semibold text-slate-600 mb-1">
-                    PIN Anda <span class="text-red-500">*</span>
-                </label>
-                <input type="password" name="pin" id="pinInput" maxlength="6"
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:border-custom-500 focus:ring-1 focus:ring-custom-100"
-                    placeholder="Masukkan 6 digit PIN" required>
-                <p class="text-xs text-slate-400 mt-1">PIN digunakan sebagai konfirmasi tanda tangan digital Anda</p>
-            </div>
-            <div class="flex gap-3 justify-end">
-                <button type="button" onclick="closeModals()"
-                    class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-semibold">
-                    Batal
+<div id="modalApprove" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-[28px] shadow-2xl w-full max-w-[400px] mx-4 overflow-hidden">
+        <div class="px-7 pt-7 pb-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:#FFF1F2;">
+                    <i data-lucide="shield-check" class="w-5 h-5" style="color:#E62129;"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-[#111111] leading-tight" id="approveModalTitle">Setujui Surat</h3>
+                    <p class="text-[11px] text-gray-400" id="approveModalSub">Konfirmasi persetujuan dokumen</p>
+                </div>
+                <button type="button" onclick="closeModals()" class="ml-auto text-gray-300 hover:text-gray-500 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
-                <button type="submit" id="btnApproveSubmit"
-                    class="px-4 py-2 bg-custom-500 text-white rounded-lg text-sm font-bold">
-                    <i data-lucide="shield-check" class="w-4 h-4 inline mr-1"></i>
-                    Setujui dengan Tanda Tangan
+            </div>
+        </div>
+        <div class="h-px bg-gray-100 mx-7"></div>
+        
+        {{-- Form untuk Approver Biasa (Tanpa PIN) --}}
+        <form id="formApprove" method="POST" class="px-7 pb-7 pt-5 space-y-4">
+            @csrf
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Catatan <span class="font-normal normal-case">(opsional)</span></label>
+                <textarea name="catatan" rows="2" class="w-full px-4 py-3 bg-gray-50 border border-gray-100 text-[#111111] rounded-2xl text-sm outline-none focus:ring-2 resize-none placeholder-gray-300" placeholder="Tambahkan catatan jika ada..."></textarea>
+            </div>
+            
+            <div class="flex gap-3 pt-1">
+                <button type="button" onclick="closeModals()" class="flex-1 py-3 border border-gray-200 text-gray-500 rounded-2xl text-sm font-semibold hover:bg-gray-50 transition">Batal</button>
+                <button type="submit" class="flex-1 py-2.5 px-5 text-white rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2" style="background:#E62129;">
+                    <i data-lucide="check" class="w-4 h-4 flex-shrink-0"></i>
+                    <span>Setujui</span>
                 </button>
             </div>
         </form>
+
+        {{-- Peringatan untuk Signer TTD --}}
+        <div id="signerWarning" class="px-7 pb-7 pt-5 space-y-4 hidden">
+            <p class="text-sm text-gray-600 leading-relaxed">
+                Dokumen ini memerlukan <strong>Tanda Tangan Digital</strong> Anda. Proses pembubuhan tanda tangan harus dilakukan melalui halaman rincian dokumen.
+            </p>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeModals()" class="flex-1 py-3 border border-gray-200 text-gray-500 rounded-2xl text-sm font-semibold hover:bg-gray-50 transition">Batal</button>
+                <a id="btnGoToDetail" href="#" class="flex-1 py-3 text-white rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2" style="background:#E62129;">
+                    <i data-lucide="external-link" class="w-4 h-4 flex-shrink-0"></i>
+                    Buka Detail
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
 {{-- modal reject --}}
-<div id="modalReject" class="fixed inset-0 z-50 hidden items-center justify-center"
-     style="background:rgba(0,0,0,.4);">
-    <div class="bg-white rounded-[28px] shadow-xl w-full max-w-md mx-4 p-6">
-        <h6 class="text-base font-bold text-slate-900 mb-4">Tolak Surat</h6>
-        <form id="formReject" method="POST">
-            @csrf
-            <div class="mb-4">
-                <label class="block text-xs font-semibold text-red-700 mb-1">
-                    Alasan Penolakan <span class="text-red-500">*</span>
-                </label>
-                <textarea name="catatan_revisi" rows="3" required
-                    class="w-full px-3 py-2 rounded-lg border border-red-200 text-sm"
-                    placeholder="Tulis alasan penolakan secara jelas..."></textarea>
+<div id="modalReject" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-[28px] shadow-2xl w-full max-w-[400px] mx-4 overflow-hidden">
+        <div class="px-7 pt-7 pb-5">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="x-circle" class="w-5 h-5 text-red-500"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-[#111111]">Tolak Surat</h3>
+                    <p class="text-[11px] text-gray-400">Berikan alasan penolakan</p>
+                </div>
+                <button type="button" onclick="closeModals()" class="ml-auto text-gray-300 hover:text-gray-500 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
-            <div class="flex gap-3 justify-end">
-                <button type="button" onclick="closeModals()"
-                    class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-sm font-semibold">
-                    Batal
-                </button>
-                <button type="submit"
-                    class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-bold">
-                    Tolak Surat
-                </button>
+        </div>
+        <div class="h-px bg-gray-100 mx-7"></div>
+        <form id="formReject" method="POST" class="px-7 pb-7 pt-5 space-y-4">
+            @csrf
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Alasan Penolakan <span style="color:#E62129;">*</span></label>
+                <textarea name="catatan_revisi" rows="3" required class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-sm outline-none focus:ring-2 resize-none placeholder-gray-300" placeholder="Tulis alasan penolakan secara jelas..."></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeModals()" class="flex-1 py-3 border border-gray-200 text-gray-500 rounded-2xl text-sm font-semibold hover:bg-gray-50 transition">Batal</button>
+                <button type="submit" class="flex-1 py-3 bg-red-500 text-white rounded-2xl text-sm font-bold hover:bg-red-600 transition">Tolak Surat</button>
             </div>
         </form>
     </div>
 </div>
+@endpush
 
 @push('scripts')
 <script>
-function quickApprove(url, isSigner) {
-    document.getElementById('formApprove').action = url;
-    
-    const pinGroup = document.getElementById('pinGroup');
-    const pinInput = document.getElementById('pinInput');
-    const btnApproveSubmit = document.getElementById('btnApproveSubmit');
+function quickApprove(url, isSigner, detailUrl) {
+    const formApprove = document.getElementById('formApprove');
+    const signerWarning = document.getElementById('signerWarning');
+    const btnGoToDetail = document.getElementById('btnGoToDetail');
+    const approveModalTitle = document.getElementById('approveModalTitle');
+    const approveModalSub = document.getElementById('approveModalSub');
     
     if (isSigner) {
-        pinGroup.style.display = 'block';
-        pinInput.setAttribute('required', 'required');
-        btnApproveSubmit.innerHTML = '<i data-lucide="shield-check" class="w-4 h-4 inline mr-1"></i> Setujui dengan Tanda Tangan';
+        formApprove.classList.add('hidden');
+        signerWarning.classList.remove('hidden');
+        btnGoToDetail.href = detailUrl;
+        approveModalTitle.textContent = 'Tanda Tangan Diperlukan';
+        approveModalSub.textContent = 'Harap buka detail dokumen';
     } else {
-        pinGroup.style.display = 'none';
-        pinInput.removeAttribute('required');
-        btnApproveSubmit.innerHTML = '<i data-lucide="check" class="w-4 h-4 inline mr-1"></i> Konfirmasi Persetujuan';
+        formApprove.action = url;
+        formApprove.classList.remove('hidden');
+        signerWarning.classList.add('hidden');
+        approveModalTitle.textContent = 'Setujui Surat';
+        approveModalSub.textContent = 'Konfirmasi persetujuan dokumen';
     }
     
     if (window.lucide) {
@@ -305,6 +359,9 @@ function quickReject(url) {
     const modal = document.getElementById('modalReject');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 }
 
 function closeModals() {
@@ -325,4 +382,3 @@ function closeModals() {
 @endpush
 
 @endsection
-

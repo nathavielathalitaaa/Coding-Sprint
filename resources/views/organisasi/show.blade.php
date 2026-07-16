@@ -5,11 +5,7 @@
 @section('content')
 <div class="content-header">
     <div class="content-header-left">
-        <a href="{{ route('organisasi.index') }}" class="breadcrumb-back">
-            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Kelola Organisasi
-        </a>
-        <h1 class="page-title" style="margin-top:.5rem;">
-            <span class="org-badge org-badge--{{ $organisasi->tipe }}">{{ $organisasi->tipe_label }}</span>
+        <h1 class="page-title">
             {{ $organisasi->nama }}
         </h1>
         @if($organisasi->deskripsi)
@@ -79,102 +75,195 @@
         <div class="show-card-header">
             <h2 class="show-card-title">
                 <i data-lucide="user-plus" style="width:18px;height:18px;"></i>
-                Tambah Anggota
+                Buat Akun & Anggota Baru
             </h2>
         </div>
         <div class="show-card-body">
-            <form method="POST" action="{{ route('organisasi.members.add', $organisasi->id) }}">
-                @csrf
-                <div class="form-group">
-                    <label class="form-label">Pilih User</label>
-                    <select name="user_id" class="form-select" required>
-                        <option value="">-- Pilih User --</option>
-                        @foreach($availableUsers as $u)
-                        <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->email }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Jabatan</label>
-                    <select name="jabatan" class="form-select" required>
-                        <option value="">-- Pilih Jabatan --</option>
-                        @foreach($jabatanOptions as $val => $label)
-                        <option value="{{ $val }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-primary btn-full">
-                    <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                    Tambah Anggota
-                </button>
-            </form>
-        </div>
+            <div class="form-group">
+                <label class="form-label">Metode Pembuatan</label>
+                <select id="action_selector" class="form-select" onchange="switchAction(this.value)">
+                    <option value="existing">Buat Akun Baru (Input Manual)</option>
+                    <option value="excel">Buat Akun Baru (Unggah Excel)</option>
+                    @if($organisasi->tipe === 'mpk' || $organisasi->tipe === 'osis')
+                    <option value="manage_komisi">Kelola {{ $organisasi->tipe === 'osis' ? 'Divisi' : 'Komisi' }}</option>
+                    @endif
+                </select>
+            </div>
 
-        {{-- ══════════════ Kelola Komisi (khusus MPK) ══════════════ --}}
-        @if($organisasi->tipe === 'mpk')
-        <div class="show-card-header" style="margin-top:1.5rem; border-top:1px solid rgba(255,255,255,.08); padding-top:1.25rem;">
-            <h2 class="show-card-title">
-                <i data-lucide="layers" style="width:18px;height:18px;"></i>
-                Kelola Komisi
-            </h2>
-        </div>
-        <div class="show-card-body">
-            {{-- List existing Komisi --}}
-            @foreach($organisasi->komisis as $komisi)
-            <div class="komisi-item">
-                <div class="komisi-header">
-                    <span class="komisi-name">{{ $komisi->nama }}</span>
-                    <span class="komisi-count">{{ $komisi->members->count() }} anggota</span>
+            <!-- FORM 1: Buat Akun Baru Manual -->
+            <div id="form_existing">
+                <form method="POST" action="{{ route('organisasi.members.add', $organisasi->id) }}">
+                    @csrf
+                    <div class="form-group">
+                        <label class="form-label">Nama</label>
+                        <input type="text" name="name" class="form-input" placeholder="Masukkan nama lengkap..." required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-input" placeholder="Masukkan email..." required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select name="role_name" class="form-select" required>
+                            <option value="anggota">Anggota (Siswa)</option>
+                            <option value="guru">Guru / Pembina</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Jabatan</label>
+                        <select name="jabatan" class="form-select" required>
+                            <option value="">-- Pilih Jabatan --</option>
+                            @foreach($jabatanOptions as $val => $label)
+                            <option value="{{ $val }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @if($organisasi->komisis->count() > 0)
+                    <div class="form-group">
+                        <label class="form-label">Pilih {{ $organisasi->tipe === 'osis' ? 'Divisi' : 'Komisi' }} (Opsional)</label>
+                        <select name="komisi_id" class="form-select">
+                            <option value="">-- Tanpa {{ $organisasi->tipe === 'osis' ? 'Divisi' : 'Komisi' }} --</option>
+                            @foreach($organisasi->komisis as $k)
+                            <option value="{{ $k->id }}">{{ $k->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    @endif
+                    <button type="submit" class="hivi-btn-primary btn-full w-full justify-center">
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                        Tambah Anggota
+                    </button>
+                </form>
+            </div>
+
+            <!-- FORM 2: Buat Akun Semarak (Upload Excel) -->
+            <div id="form_excel" style="display:none;">
+                <form method="POST" action="{{ route('organisasi.import-excel', $organisasi->id) }}" enctype="multipart/form-data">
+                    @csrf
+                    <div class="form-group">
+                        <label class="form-label">Unduh Format Excel</label>
+                        <a href="{{ route('organisasi.template-excel') }}" class="btn btn-outline btn-sm btn-full text-center" style="display: flex; gap: 8px; justify-content: center; align-items: center; border: 1px solid var(--color-border); border-radius: 9999px; text-decoration: none; color: var(--color-text); padding: 8px 12px; font-size: 13px;">
+                            <i data-lucide="download" style="width:14px;height:14px;"></i>
+                            Unduh Template Excel
+                        </a>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Unggah File Excel</label>
+                        <input type="file" name="file" class="form-input" accept=".xlsx,.xls,.csv" required>
+                        <small class="text-muted" style="font-size:10.5px; display:block; margin-top:4px;">Gunakan template di atas. Kolom ID & password tidak perlu diisi. Password default: password</small>
+                    </div>
+                    <button type="submit" class="hivi-btn-primary btn-full w-full justify-center" style="background:var(--color-primary); color:white;">
+                        <i data-lucide="upload" style="width:16px;height:16px;"></i>
+                        Proses Import Akun
+                    </button>
+                </form>
+            </div>
+
+            <!-- FORM 3: Kelola Komisi/Divisi (MPK / OSIS) -->
+            @if($organisasi->tipe === 'mpk' || $organisasi->tipe === 'osis')
+            @php
+                $term      = $organisasi->tipe === 'osis' ? 'Divisi' : 'Komisi';
+                $termDesc  = $organisasi->tipe === 'osis'
+                    ? 'Divisi adalah pengelompokan bidang kerja dalam OSIS, misalnya Divisi Humas, Divisi Seni, dll.'
+                    : 'Komisi adalah unit kerja dalam MPK yang menangani fungsi pengawasan tertentu.';
+                $termColor = $organisasi->tipe === 'osis' ? 'term--osis' : 'term--mpk';
+            @endphp
+            <div id="form_manage_komisi" style="display:none;">
+
+                {{-- Header --}}
+                <div class="term-section-header {{ $termColor }}">
+                    <div class="term-section-icon">
+                        <i data-lucide="layers" style="width:18px;height:18px;"></i>
+                    </div>
+                    <div>
+                        <p class="term-section-title">Kelola {{ $term }}</p>
+                        <p class="term-section-desc">{{ $termDesc }}</p>
+                    </div>
                 </div>
-                <div class="komisi-members">
-                    @foreach($komisi->members as $km)
-                    <div class="komisi-member-row">
-                        <span class="komisi-member-name">{{ $km->user->name ?? '-' }}</span>
-                        <form method="POST" action="{{ route('komisi.members.remove', [$komisi->id, $km->id]) }}"
-                              onsubmit="return confirm('Copot dari komisi?')" style="display:inline;">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="btn-link-danger">✕</button>
+
+                {{-- List existing --}}
+                @if($organisasi->komisis->count() > 0)
+                <div class="term-list">
+                    @foreach($organisasi->komisis as $komisi)
+                    <div class="term-item {{ $termColor }}">
+                        <div class="term-item-header">
+                            <div class="term-item-title-wrap">
+                                <span class="term-item-dot {{ $termColor }}"></span>
+                                <span class="term-item-name">{{ $komisi->nama }}</span>
+                            </div>
+                            <span class="term-item-count">{{ $komisi->members->count() }} anggota</span>
+                        </div>
+
+                        @if($komisi->deskripsi)
+                        <p class="term-item-desc">{{ $komisi->deskripsi }}</p>
+                        @endif
+
+                        {{-- Members list --}}
+                        @if($komisi->members->count() > 0)
+                        <div class="term-members">
+                            @foreach($komisi->members as $km)
+                            <div class="term-member-row">
+                                <div class="term-member-avatar">{{ strtoupper(substr($km->user->name ?? 'U', 0, 1)) }}</div>
+                                <span class="term-member-name">{{ $km->user->name ?? '-' }}</span>
+                                <form method="POST" action="{{ route('komisi.members.remove', [$komisi->id, $km->id]) }}"
+                                      onsubmit="return confirm('Copot dari {{ strtolower($term) }}?')" style="margin-left:auto;">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="term-remove-btn" title="Copot">✕</button>
+                                </form>
+                            </div>
+                            @endforeach
+                        </div>
+                        @else
+                        <p class="term-empty-members">Belum ada anggota di {{ strtolower($term) }} ini.</p>
+                        @endif
+
+                        {{-- Tambah anggota ke komisi/divisi --}}
+                        <form method="POST" action="{{ route('komisi.members.add', $komisi->id) }}" class="term-add-form">
+                            @csrf
+                            <select name="user_id" class="form-select form-select-sm" required style="flex:1;">
+                                <option value="">Tambah anggota ke {{ strtolower($term) }}...</option>
+                                @foreach($organisasi->members as $m)
+                                <option value="{{ $m->user_id }}">{{ $m->user->name }}</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="term-add-btn {{ $termColor }}">+</button>
                         </form>
                     </div>
                     @endforeach
                 </div>
-                {{-- Form tambah anggota komisi --}}
-                <form method="POST" action="{{ route('komisi.members.add', $komisi->id) }}" class="komisi-add-form">
-                    @csrf
-                    <select name="user_id" class="form-select form-select-sm" required>
-                        <option value="">Tambah anggota...</option>
-                        @foreach($availableUsers as $u)
-                        <option value="{{ $u->id }}">{{ $u->name }}</option>
-                        @endforeach
-                        @foreach($organisasi->members as $m)
-                        <option value="{{ $m->user_id }}">{{ $m->user->name }} (anggota)</option>
-                        @endforeach
-                    </select>
-                    <button type="submit" class="btn btn-outline btn-xs">+</button>
-                </form>
-            </div>
-            @endforeach
+                @else
+                <p class="term-none-yet">Belum ada {{ strtolower($term) }}. Buat yang pertama di bawah.</p>
+                @endif
 
-            {{-- Form buat komisi baru --}}
-            <div class="new-komisi-form">
-                <p class="form-label" style="margin-bottom:.75rem;">Buat Komisi Baru</p>
-                <form method="POST" action="{{ route('organisasi.komisi.store', $organisasi->id) }}">
-                    @csrf
-                    <div class="form-group">
-                        <input type="text" name="nama" class="form-input" placeholder="Nama komisi..." required>
-                    </div>
-                    <div class="form-group">
-                        <textarea name="deskripsi" class="form-input" placeholder="Deskripsi (opsional)" rows="2"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-outline btn-sm btn-full">
-                        <i data-lucide="plus" style="width:14px;height:14px;"></i>
-                        Buat Komisi
-                    </button>
-                </form>
+                {{-- Form buat baru --}}
+                <div class="term-new-form {{ $termColor }}">
+                    <p class="term-new-title">
+                        <i data-lucide="plus-circle" style="width:14px;height:14px;"></i>
+                        Buat {{ $term }} Baru
+                    </p>
+                    <p class="term-new-hint">Tambahkan {{ strtolower($term) }} baru untuk mengelompokkan anggota berdasarkan bidang atau fungsi.</p>
+                    <form method="POST" action="{{ route('organisasi.komisi.store', $organisasi->id) }}">
+                        @csrf
+                        <div class="form-group">
+                            <label class="form-label">Nama {{ $term }} <span style="color:#E62129">*</span></label>
+                            <input type="text" name="nama" class="form-input" placeholder="cth: {{ $organisasi->tipe === 'osis' ? 'Divisi Humas, Divisi Seni...' : 'Komisi A, Komisi Kedisiplinan...' }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Deskripsi <span style="color:#9CA3AF; font-weight:400;">(opsional)</span></label>
+                            <textarea name="deskripsi" class="form-input" placeholder="Deskripsi singkat tentang {{ strtolower($term) }} ini..." rows="2" style="border-radius:14px; resize:none;"></textarea>
+                        </div>
+                        <button type="submit" class="hivi-btn-primary w-full justify-center">
+                            <i data-lucide="plus" style="width:15px;height:15px;"></i>
+                            Buat {{ $term }}
+                        </button>
+                    </form>
+                </div>
+
             </div>
+            @endif
+
         </div>
-        @endif
-
     </div>
 
 </div>
@@ -355,6 +444,151 @@
 .btn-link-danger:hover { opacity: 1; }
 .komisi-add-form { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
 .new-komisi-form { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--color-border); }
+
+/* ══════════════════════════════════════
+   TERM SECTION (Divisi / Komisi)
+══════════════════════════════════════ */
+/* Header banner */
+.term-section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    margin: 16px 0 20px;
+    border-top: 1px dashed var(--color-border);
+    padding-top: 20px;
+}
+.term--osis .term-section-header,
+.term-section-header.term--osis { background: #FFF1F2; border: 1px solid rgba(230,33,41,0.12); }
+.term--mpk  .term-section-header,
+.term-section-header.term--mpk  { background: #EFF6FF; border: 1px solid rgba(3,105,161,0.14); }
+
+.term-section-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.term--osis .term-section-icon { background: rgba(230,33,41,0.1); color: #E62129; }
+.term--mpk  .term-section-icon { background: rgba(3,105,161,0.1); color: #0369A1; }
+
+.term-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 3px;
+}
+.term-section-desc {
+    font-size: 11.5px;
+    color: #9CA3AF;
+    font-style: italic;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* List */
+.term-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.term-item {
+    background: #FAFAFA;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    padding: 14px;
+}
+.term-item.term--osis { border-left: 3px solid rgba(230,33,41,0.3); }
+.term-item.term--mpk  { border-left: 3px solid rgba(3,105,161,0.3); }
+
+.term-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.term-item-title-wrap { display: flex; align-items: center; gap: 7px; }
+.term-item-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.term-item-dot.term--osis { background: #E62129; }
+.term-item-dot.term--mpk  { background: #0369A1; }
+.term-item-name { font-size: 13px; font-weight: 600; color: var(--color-text); }
+.term-item-count { font-size: 10.5px; color: var(--color-text-muted); background: #fff; border: 1px solid var(--color-border); padding: 2px 8px; border-radius: 999px; }
+.term-item-desc { font-size: 11.5px; color: #9CA3AF; font-style: italic; margin: 0 0 8px; line-height: 1.5; }
+
+/* Members inside term */
+.term-members { border-top: 1px solid var(--color-border); padding-top: 8px; margin-bottom: 10px; }
+.term-member-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #F3F4F6; }
+.term-member-row:last-child { border-bottom: none; }
+.term-member-avatar {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--color-bg-light);
+    color: var(--color-primary);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.term-member-name { font-size: 12px; color: var(--color-text); }
+.term-remove-btn { background: none; border: none; color: #9CA3AF; cursor: pointer; font-size: 12px; padding: 2px 5px; border-radius: 4px; transition: all .15s; line-height: 1; }
+.term-remove-btn:hover { background: #FEE2E2; color: #DC2626; }
+.term-empty-members { font-size: 11.5px; color: #9CA3AF; font-style: italic; margin: 4px 0 8px; }
+
+/* Add form inside term */
+.term-add-form { display: flex; gap: 6px; align-items: center; }
+.term-add-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: 400;
+    line-height: 1;
+    transition: all .15s;
+}
+.term-add-btn.term--osis { background: rgba(230,33,41,0.1); color: #E62129; }
+.term-add-btn.term--osis:hover { background: #E62129; color: #fff; }
+.term-add-btn.term--mpk  { background: rgba(3,105,161,0.1); color: #0369A1; }
+.term-add-btn.term--mpk:hover  { background: #0369A1; color: #fff; }
+
+/* None yet text */
+.term-none-yet { font-size: 12px; color: #9CA3AF; font-style: italic; text-align: center; padding: 12px 0; }
+
+/* New form box */
+.term-new-form {
+    margin-top: 4px;
+    padding: 16px;
+    border-radius: 14px;
+    border: 1px dashed;
+}
+.term-new-form.term--osis { border-color: rgba(230,33,41,0.2); background: #FFF8F8; }
+.term-new-form.term--mpk  { border-color: rgba(3,105,161,0.2); background: #F0F7FF; }
+.term-new-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 4px;
+}
+.term-new-hint { font-size: 11px; color: #9CA3AF; font-style: italic; margin: 0 0 14px; line-height: 1.5; }
 </style>
+<script>
+function switchAction(val) {
+    document.getElementById('form_existing').style.display = val === 'existing' ? 'block' : 'none';
+    document.getElementById('form_excel').style.display = val === 'excel' ? 'block' : 'none';
+    
+    var formKomisi = document.getElementById('form_manage_komisi');
+    if (formKomisi) {
+        formKomisi.style.display = val === 'manage_komisi' ? 'block' : 'none';
+    }
+}
+</script>
 @endsection
 
