@@ -15,7 +15,7 @@ class DataAwalSeeder extends Seeder
     public function run(): void
     {
         // buat role untuk spatie permission: staff, supervisor, hr, super-admin
-        foreach (['hr', 'supervisor', 'staff', 'super-admin'] as $role) {
+        foreach (['hr', 'supervisor', 'staff', 'super-admin', 'pembina', 'BPH', 'anggota'] as $role) {
             DB::table('roles')->updateOrInsert(
                 ['name' => $role],
                 [
@@ -40,7 +40,7 @@ class DataAwalSeeder extends Seeder
                 'name' => 'Admin Utama',
                 'password' => Hash::make('password'),
                 'status' => 'aktif',
-                'role_name' => 'hr',
+                'role_name' => 'pembina', // diubah dari 'hr' ke enum yang valid
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
@@ -60,7 +60,7 @@ class DataAwalSeeder extends Seeder
                 'name' => 'Supervisor HR',
                 'password' => Hash::make('password'),
                 'status' => 'aktif',
-                'role_name' => 'supervisor',
+                'role_name' => 'BPH', // diubah dari 'supervisor' ke enum yang valid
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
@@ -80,7 +80,7 @@ class DataAwalSeeder extends Seeder
                 'name' => 'Staff Karyawan',
                 'password' => Hash::make('password'),
                 'status' => 'aktif',
-                'role_name' => 'staff',
+                'role_name' => 'anggota', // diubah dari 'staff' ke enum yang valid
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
@@ -100,7 +100,7 @@ class DataAwalSeeder extends Seeder
                 'name' => 'Super Admin',
                 'password' => Hash::make('admin123'),
                 'status' => 'aktif',
-                'role_name' => 'super-admin',
+                'role_name' => 'pembina', // diubah dari 'super-admin' ke enum yang valid
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
@@ -112,7 +112,8 @@ class DataAwalSeeder extends Seeder
             'model_id' => $superAdminUser,
         ], []);
 
-        // buat data shift awal
+        // buat data shift awal (Dihapus karena tabel shifts sudah tidak ada)
+        /*
         DB::table('shifts')->insert([
             [
                 'nama_shift' => 'shift pagi',
@@ -139,6 +140,7 @@ class DataAwalSeeder extends Seeder
                 'updated_at' => now(),
             ],
         ]);
+        */
 
     }
 }
