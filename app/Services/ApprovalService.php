@@ -312,9 +312,9 @@ class ApprovalService
      */
     public function isUserAllowedForStep(DocumentApproval $step, User $user): bool
     {
-        // ── Super-admin bypass semua pengecekan ─────────────────────────
-        if ($user->hasRole('super-admin')) {
-            return true;
+        // ── Admin/Super-admin tidak boleh menjadi signer/approver ───────
+        if ($user->hasRole('admin') || $user->hasRole('super-admin')) {
+            return false;
         }
 
         // ── Pengecekan User Spesifik (assigned_user_id) ─────────────────
@@ -357,6 +357,10 @@ class ApprovalService
             return false;
         }
 
+        if ($jabatan === 'bph_osis' || $jabatan === 'bph_mpk') {
+            $jabatan = 'bph';
+        }
+
         // Jika jabatan komisi, cek KomisiMember dulu
         if ($jabatan === 'komisi') {
             if (!$komisiId) {
@@ -385,6 +389,10 @@ class ApprovalService
 
         if (!$organisasi) {
             return false;
+        }
+
+        if ($jabatan === 'bph_osis' || $jabatan === 'bph_mpk') {
+            $jabatan = 'bph';
         }
 
         return OrganisasiMember::where('user_id', $user->id)

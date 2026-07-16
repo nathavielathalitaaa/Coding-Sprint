@@ -1,28 +1,28 @@
 <!DOCTYPE html>
-<html lang="en" class="light scroll-smooth group" data-layout="vertical" data-sidebar="dark" data-sidebar-size="lg" data-mode="light" data-topbar="light" data-skin="default" data-navbar="sticky" data-content="fluid" dir="ltr">
+<html lang="id" class="light scroll-smooth group" data-layout="vertical" data-sidebar="dark" data-sidebar-size="lg" data-mode="light" data-topbar="light" data-skin="default" data-navbar="sticky" data-content="fluid" dir="ltr">
 <head>
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <meta charset="utf-8">
-    <title>HR | Sinergi Hotel & Vila - HR Management System</title>
+    <title>SIMORA | Sistem Surat OSIS - BPH OSIS SKOMDA</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta content="Minimal Admin & Dashboard Template" name="description">
-    <meta content="Sinergi Hotel & Vila" name="author">
+    <meta content="SIMORA - Sistem Persuratan OSIS" name="description">
+    <meta content="BPH OSIS SKOMDA" name="author">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- app favicon -->
-    <link rel="shortcut icon" href="{{ URL::to('assets/images/favicon.ico') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ URL::to('assets/images/logo-tab.svg') }}">
     <!-- layout config js -->
     <script src="{{ URL::to('assets/js/layout.js') }}"></script>
-    <!-- sinergi hotel & vila css -->
-    <link rel="stylesheet" href="{{ URL::to('assets/css/starcode2.css') }}">
+    <!-- SIMORA SMK Telkom Sidoarjo css -->
+    <link rel="stylesheet" href="{{ URL::to('assets/css/app.css') }}">
     <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
     theme: {
       extend: {
         fontFamily: {
-          playfair: ['"Playfair Display"', 'serif'],
+          sans: ['Poppins', 'sans-serif'],
           poppins: ['Poppins', 'sans-serif'],
         }
       }
@@ -32,12 +32,28 @@
     
     <!-- hivi design system fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     
 <!-- ============================================
      hivi design system styles
      ============================================ -->
 <style>
+  /* =============================================
+     CSS VARIABLES (Design Tokens)
+     ============================================= */
+  :root {
+    --color-primary: #E62129;
+    --color-primary-dark: #C91A20;
+    --color-text: #111111;
+    --color-text-muted: #6B7280;
+    --color-surface: #FFFFFF;
+    --color-border: #E5E7EB;
+    --color-bg-light: #FFF1F2;
+    --radius-card: 28px;
+    --radius-pill: 9999px;
+    --radius-input: 9999px;
+  }
+
   /* =============================================
      RESET & BASE
   ============================================= */
@@ -57,15 +73,14 @@
   ============================================= */
   body {
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #F6F6F6 0%, #E3EFE8 40%, #80BB9B 100%);
-    background-attachment: fixed;
+    background: #F5F5F7 !important;
     min-height: 100vh;
-    color: #1A2B24;
+    color: var(--color-text);
     overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6, .serif { 
-    font-family: 'Playfair Display', serif; 
+    font-family: 'Poppins', sans-serif; 
   }
 
   /* =============================================
@@ -85,65 +100,43 @@
     background-color: transparent !important;
     border-bottom: none !important;
     box-shadow: none !important;
-    height: 56px !important;
+    height: 64px !important;
     padding: 0 !important;
-    left: 0 !important;
+    left: 240px !important;
     right: 0 !important;
     z-index: 1001 !important;
-    top: 0 !important;
+    top: 16px !important;
     position: fixed !important;
-    width: 100% !important;
+    width: auto !important;
+    margin: 0 !important;
   }
   
   #page-topbar .layout-width {
     width: 100% !important;
-    padding-left: 20px !important;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
   }
 
   #page-topbar .layout-width > div {
     background-color: transparent !important;
     border-bottom: none !important;
     box-shadow: none !important;
-    height: 56px !important;
+    height: 64px !important;
     padding: 0 !important;
-  }
-
-  /* Search Bar - Pill Shape */
-  #topbar-search {
-    background: rgba(255, 255, 255, 0.4) !important;
-    backdrop-filter: blur(6px) !important;
-    border: 1px solid rgba(232, 237, 237, 0.4) !important;
-    border-radius: 999px !important;
-    padding: 8px 16px 8px 36px !important;
-    box-shadow: none !important;
-    transition: all 0.2s ease;
-    color: #1A2B24 !important;
-    font-family: 'Poppins', sans-serif;
-    font-size: 13px;
-    width: 280px;
-  }
-  #topbar-search:focus {
-    border-color: #80BB9B !important;
-    outline: none !important;
-    background: rgba(255, 255, 255, 0.6) !important;
-  }
-  #topbar-search::placeholder {
-    color: #6B7280 !important;
-    font-weight: 300;
   }
 
   /* =============================================
      PAGE CONTAINER (CLEAN LAYOUT)
   ============================================= */
-  .page {
-    margin-left: 110px;
-    padding: 20px;
-    padding-top: 64px;
+  .hivi-page-wrapper {
+    margin-left: 240px;
+    padding: 24px 32px;
+    padding-top: 82px;
     min-height: 100vh;
     display: block;
   }
 
-  .page > * {
+  .hivi-page-wrapper > * {
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
@@ -151,19 +144,31 @@
 
   /* Responsive: Tablet */
   @media (max-width: 1024px) {
-    .page {
+    #page-topbar {
+      left: 0 !important;
+      top: 12px !important;
+      width: calc(100% - 24px) !important;
+      margin: 0 12px !important;
+    }
+    .hivi-page-wrapper {
       margin-left: 100px;
-      padding: 24px;
-      padding-top: 80px;
+      padding: 24px 24px;
+      padding-top: 82px;
     }
   }
 
   /* Responsive: Mobile */
   @media (max-width: 768px) {
-    .page {
+    #page-topbar {
+      left: 0 !important;
+      top: 12px !important;
+      width: calc(100% - 24px) !important;
+      margin: 0 12px !important;
+    }
+    .hivi-page-wrapper {
       margin-left: 0;
       padding: 20px;
-      padding-top: 76px;
+      padding-top: 82px;
     }
   }
 
@@ -171,39 +176,40 @@
      HIVI DESIGN SYSTEM UTILITIES
   ============================================= */
   .hivi-card {
-      background: rgba(246, 246, 246, 0.7);
-      backdrop-filter: blur(6px);
-      border-radius: 28px;
-      padding: 28px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+      background: var(--color-surface);
+      border-radius: var(--radius-card);
+      padding: 32px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.06);
       border: none;
   }
 
   .hivi-btn-primary {
-      background: #4F6560;
+      background: var(--color-primary);
       color: white !important;
-      border-radius: 9999px;
-      padding: 10px 24px;
+      border-radius: var(--radius-pill);
+      padding: 14px 24px;
+      font-size: 15px;
       font-family: 'Poppins', sans-serif;
-      font-weight: 500;
+      font-weight: 600;
       border: none;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: background 0.2s, transform 0.1s;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
   }
-  .hivi-btn-primary:hover { background: #3d504c; }
+  .hivi-btn-primary:hover { background: var(--color-primary-dark); }
+  .hivi-btn-primary:active { transform: scale(0.99); }
   
   .hivi-btn-secondary {
       background: transparent;
-      color: #4F6560 !important;
-      border-radius: 9999px;
-      padding: 10px 24px;
-      border: 1px solid #4F6560;
+      color: var(--color-primary) !important;
+      border-radius: var(--radius-pill);
+      padding: 12px 28px;
+      border: 1px solid var(--color-primary);
       font-family: 'Poppins', sans-serif;
-      font-weight: 500;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
       display: inline-flex;
@@ -211,16 +217,16 @@
       justify-content: center;
       gap: 8px;
   }
-  .hivi-btn-secondary:hover { background: #F6F6F6; }
+  .hivi-btn-secondary:hover { background: var(--color-bg-light); }
   
   .hivi-btn-outline {
       background: transparent;
-      color: #6B7280 !important;
-      border-radius: 9999px;
+      color: var(--color-text-muted) !important;
+      border-radius: var(--radius-pill);
       padding: 8px 16px;
-      border: 1px solid #E5E7EB;
+      border: 1px solid var(--color-border);
       font-family: 'Poppins', sans-serif;
-      font-weight: 400;
+      font-weight: 500;
       font-size: 13px;
       cursor: pointer;
       transition: all 0.2s;
@@ -229,42 +235,40 @@
       justify-content: center;
       gap: 6px;
   }
-  .hivi-btn-outline:hover { background: #F6F6F6; }
+  .hivi-btn-outline:hover { background: var(--color-bg-light); }
 
   .hivi-badge {
-      border-radius: 9999px;
+      border-radius: var(--radius-pill);
       padding: 4px 12px;
       font-size: 12px;
       font-weight: 500;
       display: inline-flex;
       align-items: center;
   }
-  .hivi-badge-green  { background: #E8F5EE; color: #2E7D5E; }
+  .hivi-badge-green  { background: var(--color-bg-light); color: #E62129; }
   .hivi-badge-amber  { background: #fef3c7; color: #92400e; }
   .hivi-badge-red    { background: #fee2e2; color: #991b1b; }
   .hivi-badge-blue   { background: #dbeafe; color: #1e40af; }
   .hivi-badge-gray   { background: #f3f4f6; color: #374151; }
   
   .hivi-input {
-      background: rgba(255, 255, 255, 0.6);
-      backdrop-filter: blur(6px);
-      border-radius: 9999px;
-      padding: 10px 20px;
+      background: #E5E7EB;
+      border-radius: var(--radius-input);
+      padding: 14px 20px;
       font-family: 'Poppins', sans-serif;
       font-size: 14px;
-      font-weight: 300;
+      font-weight: 400;
       width: 100%;
       outline: none;
-      border: 1px solid rgba(229, 231, 235, 0.5);
-      transition: border-color 0.2s;
-      color: #1A2B24;
+      border: none;
+      transition: box-shadow 0.2s;
+      color: var(--color-text);
   }
   .hivi-input:focus { 
-      border-color: #80BB9B; 
+      box-shadow: 0 0 0 2px var(--color-primary);
       outline: none;
-      background: rgba(255, 255, 255, 0.7);
   }
-  .hivi-input::placeholder { color: #6B7280; }
+  .hivi-input::placeholder { color: var(--color-text-muted); }
   
   .hivi-table { width: 100%; border-collapse: separate; border-spacing: 0; }
   .hivi-table thead th {
@@ -274,7 +278,7 @@
       color: #6B7280;
       padding: 10px 16px;
       background: transparent;
-      border-bottom: 1px solid #E8EDED;
+      border-bottom: 1px solid #F5F5F7;
       text-align: left;
   }
   .hivi-table tbody tr {
@@ -282,12 +286,12 @@
       height: 52px;
   }
   .hivi-table tbody tr:hover { 
-      background: rgba(240, 247, 243, 0.6); 
+      background: rgba(255, 241, 242, 0.6); 
   }
   .hivi-table tbody td {
       padding: 0 16px;
       font-size: 14px;
-      color: #1A2B24;
+      color: #111111;
       font-family: 'Poppins', sans-serif;
       font-weight: 400;
       border-bottom: 1px solid #F3F4F6;
@@ -297,10 +301,10 @@
   }
 
   .hivi-section-title {
-      font-family: 'Playfair Display', serif;
+      font-family: 'Poppins', sans-serif;
       font-size: 20px;
       font-weight: 600;
-      color: #1A2B24;
+      color: #111111;
       margin-bottom: 16px;
   }
 
@@ -330,151 +334,107 @@
   }
 
 /* =============================================
-     FLOATING PILL SIDEBAR
+     FULL HEIGHT SIDEBAR
   ============================================= */
 .hv-sidebar {
     position: fixed;
-    top: 50%;
-    left: 24px;
-    transform: translateY(-50%);
-    width: 72px;
-    background: rgba(255, 255, 255, 0.70);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 999px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08),
-                0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    background: #E62129;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 0;
+    padding: 24px 0;
     z-index: 999999;
-    overflow: visible;
 }
 
-/* Nav icon group (scrollable if many items) */
+/* Nav icon group */
 .hv-sidebar-nav {
+    position: relative;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 0 12px;
+    gap: 8px;
+    padding: 0 20px 0 0; /* Flush to the left */
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: calc(100vh - 200px);
+    flex: 1;
     scrollbar-width: none;
     -ms-overflow-style: none;
+}
+
+/* Sliding Background Pill */
+.hv-sidebar-slider {
+    position: absolute;
+    left: 0;
+    right: 20px;
+    height: 44px; /* default */
+    background: #FFFFFF;
+    border-radius: 0 9999px 9999px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0; /* hidden until js sets it */
 }
 .hv-sidebar-nav::-webkit-scrollbar { display: none; }
 
 /* Bottom section (logout) */
 .hv-sidebar-bottom {
-    padding: 0 12px;
-    margin-top: 12px;
-    position: relative;
-}
-.hv-sidebar-bottom::before {
-    content: '';
-    display: block;
-    width: 32px;
-    height: 1px;
-    background: rgba(0, 0, 0, 0.08);
-    margin: 0 auto 12px;
+    padding: 0 20px 0 0;
+    margin-top: auto;
 }
 
-/* ── Icon buttons ── */
+/* ── Menu Items ── */
 .hv-sidebar a {
     position: relative;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
+    z-index: 1;
+    width: 100%;
+    border-radius: 0 30px 30px 0;
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: #4F6560;
-    background: transparent;
+    padding: 12px 20px 12px 30px;
+    color: rgba(255,255,255,0.9);
+    background: transparent !important;
     text-decoration: none;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    flex-shrink: 0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    gap: 12px;
 }
 .hv-sidebar a i,
 .hv-sidebar a svg {
     width: 20px;
     height: 20px;
-    stroke-width: 1.6;
+    stroke-width: 2;
     transition: inherit;
+    flex-shrink: 0;
 }
 
-/* Hover */
-.hv-sidebar a:hover {
-    background: rgba(79, 101, 96, 0.10);
-    color: #3d504c;
-    transform: scale(1.08);
-}
-
-/* Active */
+/* Hover & Active text colors */
+.hv-sidebar a:hover,
 .hv-sidebar a.active {
-    background: #4F6560;
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(79, 101, 96, 0.35);
-}
-.hv-sidebar a.active:hover {
-    background: #3d504c;
-    transform: scale(1.05);
+    color: #000000 !important;
 }
 
-/* Logout icon */
+/* Logout icon - same styling as other nav items */
 .hv-sidebar-logout {
-    color: #9CA3AF !important;
+    color: rgba(255,255,255,0.9) !important;
+    background: transparent !important;
 }
-.hv-sidebar-logout:hover {
-    background: rgba(229, 115, 115, 0.12) !important;
-    color: #E57373 !important;
-}
-
-/* Tooltip on hover */
-.hv-sidebar a[title]:hover::after {
-    content: attr(title);
-    position: absolute;
-    left: calc(100% + 14px);
-    top: 50%;
-    transform: translateY(-50%);
-    background: #1A2B24;
-    color: #fff;
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-family: 'Poppins', sans-serif;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    pointer-events: none;
-    z-index: 1000000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    animation: hv-tooltip-in 0.2s ease;
-}
-.hv-sidebar a[title]:hover::before {
-    content: '';
-    position: absolute;
-    left: calc(100% + 8px);
-    top: 50%;
-    transform: translateY(-50%);
-    border: 5px solid transparent;
-    border-right-color: #1A2B24;
-    pointer-events: none;
-    z-index: 1000000;
-    animation: hv-tooltip-in 0.2s ease;
+.hv-sidebar-logout:hover,
+.hv-sidebar-logout.active {
+    color: #000000 !important;
+    background: transparent !important;
 }
 
-@keyframes hv-tooltip-in {
-    from { opacity: 0; transform: translateY(-50%) translateX(-4px); }
-    to   { opacity: 1; transform: translateY(-50%) translateX(0); }
-}
+
 
 /* ── Content offset ── */
 .hv-main {
-    margin-left: 120px;
-    padding: 20px;
+    margin-left: 240px;
+    padding: 24px;
 }
 
 /* ── Responsive: Mobile & Tablet (Offcanvas) ── */
@@ -485,10 +445,10 @@
         left: 0;
         transform: translateY(0) translateX(-100%);
         height: 100vh;
-        width: 80px;
+        width: 240px;
         border-radius: 0;
-        padding: 80px 0 20px 0;
-        background: #ffffff;
+        padding: 24px 0;
+        background: #E62129;
         box-shadow: 4px 0 24px rgba(0,0,0,0.1);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -501,12 +461,12 @@
     .hv-sidebar-bottom {
         margin-top: auto;
     }
-    .hv-main, .page {
+    .hv-main, .hivi-page-wrapper {
         margin-left: 0;
         padding-bottom: 32px;
     }
-    .page {
-      padding-top: 76px;
+    .hivi-page-wrapper {
+      padding-top: 82px;
       padding-left: 16px;
       padding-right: 16px;
     }
@@ -529,20 +489,134 @@
 .vertical-menu {
     display: none !important;
 }
-.hv-sidebar a {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 10;
-    position: relative;
-}
-
 .hv-sidebar i {
     pointer-events: none; 
+}
+
+/* Suppress any tooltips on sidebar */
+.hv-sidebar a {
+    position: relative;
+    z-index: 1;
+}
+.hv-sidebar a::after {
+    display: none !important;
+}
+.hv-sidebar [data-tooltip] {
+    /* Prevent tippy.js tooltips if present */
+}
+.hv-sidebar [data-tippy-root] {
+    display: none !important;
+}
+
+/* Completely disable tooltips on sidebar elements */
+.hv-sidebar a[title],
+.hv-sidebar a[data-tooltip],
+.hv-sidebar a[data-tippy-content] {
+    pointer-events: auto !important;
+}
+.hv-sidebar a[title]::before,
+.hv-sidebar a[title]::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* =============================================
+   FLOATING PROFILE PILL CARD
+============================================= */
+.profile-pill-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 9999px;
+  padding: 6px 8px 6px 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.15s, border-color 0.2s;
+  max-width: 240px;
+}
+.profile-pill-card:hover {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+  border-color: rgba(0,0,0,0.10);
+}
+.profile-pill-card.active {
+  border-color: rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.profile-pill-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 0;
+}
+.profile-pill-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  line-height: 1.2;
+}
+.profile-pill-role {
+  font-family: 'Poppins', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: #6B7280;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  line-height: 1.2;
+}
+
+.profile-pill-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #FFF1F2 0%, #FECACA 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid rgba(0,0,0,0.06);
+}
+.profile-pill-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 9999px;
+}
+.profile-pill-initials {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #E62129;
+  letter-spacing: 0.03em;
+}
+
+/* Hide pill on profile page — redundant when you're already there */
+body.page-profile #profile-pill {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .profile-pill-info {
+    display: none;
+  }
+  .profile-pill-card {
+    padding: 5px;
+  }
 }
 </style>
 
@@ -584,13 +658,13 @@
 </style>
 
 </head>
-<body class="text-base bg-body-bg text-body font-poppins dark:text-zink-100 dark:bg-zink-800 group-data-[skin=bordered]:bg-body-bordered group-data-[skin=bordered]:dark:bg-zink-700">
+<body class="text-base bg-body-bg text-body font-poppins dark:text-zink-100 dark:bg-zink-800 group-data-[skin=bordered]:bg-body-bordered group-data-[skin=bordered]:dark:bg-zink-700{{ request()->routeIs('profile.show') ? ' page-profile' : '' }}">
 
   <!-- floating sidebar (outside all containers) -->
   @include('sidebar.sidebar')
 
   <!-- page wrapper -->
-  <div class="page">
+  <div class="hivi-page-wrapper">
     
     <!-- topbar header -->
     <header id="page-topbar">
@@ -606,20 +680,37 @@
 
             <!-- logo (horizontal only) -->
             <div class="items-center justify-center hidden px-5 text-center h-header group-data-[layout=horizontal]:md:flex group-data-[layout=horizontal]:ltr::pl-0 group-data-[layout=horizontal]:rtl:pr-0">
-              <a href="{{ route('home') }}">
-                <img src="{{ URL::to('assets/images/logo-sinergi.png') }}" alt="" class="h-10 mx-auto">
+              <a href="{{ route('home') }}" class="flex items-center gap-2">
+                <span style="font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 700; color: #111111;">SIMORA</span>
               </a>
             </div>
 
-            <!-- search bar -->
-            <div class="relative hidden ltr:ml-3 rtl:mr-3 lg:block group-data-[layout=horizontal]:hidden group-data-[layout=horizontal]:lg:block">
-              <input type="text" id="topbar-search" class="py-2 pr-4 text-sm text-topbar-item bg-topbar border border-topbar-border rounded pl-8 placeholder:text-slate-400 form-control focus-visible:outline-0 min-w-[300px] focus:border-blue-400 group-data-[topbar=dark]:bg-topbar-dark group-data-[topbar=dark]:border-topbar-border-dark group-data-[topbar=dark]:placeholder:text-slate-500 group-data-[topbar=dark]:text-topbar-item-dark group-data-[topbar=brand]:bg-topbar-brand group-data-[topbar=brand]:border-topbar-border-brand group-data-[topbar=brand]:placeholder:text-blue-300 group-data-[topbar=brand]:text-topbar-item-brand group-data-[topbar=dark]:dark:bg-zink-700 group-data-[topbar=dark]:dark:border-zink-500 group-data-[topbar=dark]:dark:text-zink-100" placeholder="Search employees, menus, or files" autocomplete="off">
-              <i data-lucide="search" class="inline-block size-4 absolute left-2.5 top-2.5 text-topbar-item fill-slate-100 group-data-[topbar=dark]:fill-topbar-item-bg-hover-dark group-data-[topbar=dark]:text-topbar-item-dark group-data-[topbar=brand]:fill-topbar-item-bg-hover-brand group-data-[topbar=brand]:text-topbar-item-brand group-data-[topbar=dark]:dark:text-zink-200 group-data-[topbar=dark]:dark:fill-zink-600"></i>
-              <div id="search-results" style="display:none; position:absolute; top:42px; left:0; width:340px; background:#fff; border-radius:6px; box-shadow:0 4px 16px rgba(0,0,0,0.12); z-index:9999; max-height:320px; overflow-y:auto;" class="dark:bg-zink-700"></div>
-            </div>
 
-            <!-- right side: icons + notifications + profile -->
+
+            <!-- right side: profile pill -->
             <div class="flex gap-3 ms-auto">
+              @auth
+              <a href="{{ route('profile.show') }}" id="profile-pill" class="profile-pill-card {{ request()->routeIs('profile.show') ? 'active' : '' }}">
+                <div class="profile-pill-info">
+                  <span class="profile-pill-name">{{ auth()->user()->name }}</span>
+                  <span class="profile-pill-role">{{ auth()->user()->role_name ?? 'User' }}</span>
+                </div>
+                <div class="profile-pill-avatar">
+                  @if(auth()->user()->avatar)
+                    <img src="{{ URL::to('assets/images/user/'.auth()->user()->avatar) }}?v={{ filemtime(public_path('assets/images/user/'.auth()->user()->avatar)) }}" alt="{{ auth()->user()->name }}">
+                  @else
+                    @php
+                      $n = auth()->user()->name ?? 'U';
+                      $parts = explode(' ', trim($n));
+                      $ini = '';
+                      foreach ($parts as $p) { if (!empty($p)) $ini .= strtoupper(substr($p,0,1)); }
+                      if (strlen($ini) > 2) $ini = substr($ini, 0, 2);
+                    @endphp
+                    <span class="profile-pill-initials">{{ $ini }}</span>
+                  @endif
+                </div>
+              </a>
+              @endauth
             </div>
 
             </div>
@@ -628,48 +719,7 @@
     </header>
 
     <!-- page content -->
-    <div class="max-w-7xl mx-auto px-6">
-        @auth
-        @unless(auth()->user()->hasRole('staff'))
-            @php
-                $user = auth()->user();
-                $activeSuratIds = \App\Models\Surat::where('status', 'submitted')->pluck('id');
-                $myWaitingGlobal = \App\Models\DocumentApproval::where('status', 'waiting')
-                    ->where('document_type', 'LIKE', 'surat_%')
-                    ->whereIn('document_id', $activeSuratIds)
-                    ->where(function($q) use ($user) {
-                        $q->where('assigned_user_id', $user->id)
-                          ->orWhere(function($sq) use ($user) {
-                              $jabatan = $user->profile?->jabatan;
-                              $sq->whereNull('assigned_user_id');
-                              if ($jabatan) {
-                                  $sq->where('jabatan', $jabatan);
-                              } else {
-                                  $sq->where('jabatan', '___NONE___');
-                              }
-                          });
-                    })
-                    ->count();
-            @endphp
-            @if($myWaitingGlobal > 0)
-            <div class="mb-4 flex items-center justify-between gap-3 px-4 py-3 rounded-xl shadow-sm border border-red-200"
-                 style="background:rgba(254,242,242,0.9); backdrop-filter: blur(4px);">
-                <div class="flex items-center gap-3">
-                    <i data-lucide="bell-ring" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
-                    <p class="text-sm text-red-800 font-medium">
-                        You have <strong>{{ $myWaitingGlobal }} letters</strong> waiting for your approval.
-                    </p>
-                </div>
-                @unless(request()->routeIs('surat.index'))
-                <a href="{{ route('surat.index') }}" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition flex-shrink-0">
-                    Review Now
-                </a>
-                @endunless
-            </div>
-            @endif
-        @endunless
-        @endauth
-
+    <div class="max-w-7xl px-6">
         @yield('content')
       </div>
     </div>
@@ -688,7 +738,48 @@
   <!-- initialize icons & scripts -->
   <script>
     lucide.createIcons();
+
+    function dismissWaitingBadge() {
+        const badge = document.getElementById('waiting-badge');
+        if (badge) badge.style.display = 'none';
+        localStorage.setItem('waiting_badge_dismissed_{{ auth()->id() }}', '{{ now()->timestamp }}');
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+      // Badge: sembunyikan jika sudah diklik hari ini, tampilkan lagi besok
+      const badge = document.getElementById('waiting-badge');
+      if (badge) {
+          const key = 'waiting_badge_dismissed_{{ auth()->id() }}';
+          const dismissed = localStorage.getItem(key);
+          if (dismissed) {
+              const dismissedDate = new Date(parseInt(dismissed) * 1000).toDateString();
+              const today = new Date().toDateString();
+              if (dismissedDate === today) {
+                  badge.style.display = 'none';
+              } else {
+                  localStorage.removeItem(key);
+              }
+          }
+      }
+      // Completely prevent tooltips on sidebar by disabling tippy.js for these elements
+      const sidebarLinks = document.querySelectorAll('.hv-sidebar a');
+      sidebarLinks.forEach(link => {
+        // Remove all tooltip-related attributes
+        link.removeAttribute('title');
+        link.removeAttribute('data-tooltip');
+        link.removeAttribute('data-tippy-content');
+        link.removeAttribute('data-tooltip-content');
+        link.removeAttribute('data-tooltip-trigger');
+        
+        // Destroy any existing tippy instances
+        if (link._tippy) {
+          link._tippy.destroy();
+        }
+        
+        // Prevent future tooltip initialization
+        link.setAttribute('data-tippy-ignore', 'true');
+      });
+
       // Mobile Menu
       const btn = document.getElementById('mobile-menu-btn');
       const sidebar = document.getElementById('hv-sidebar');
@@ -722,6 +813,45 @@
           el.classList.add('loaded');
         });
       }, 600); // 600ms artificial delay for perceived performance
+
+      // Sidebar Sliding Animation
+      const nav = document.querySelector('.hv-sidebar-nav');
+      if (nav) {
+        const slider = document.createElement('div');
+        slider.className = 'hv-sidebar-slider';
+        nav.appendChild(slider);
+        const links = nav.querySelectorAll('a:not(.hv-sidebar-logout)');
+        let activeLink = nav.querySelector('a.active');
+        
+        function moveSlider(target) {
+            if (!target) {
+                slider.style.opacity = '0';
+                return;
+            }
+            slider.style.opacity = '1';
+            slider.style.transform = `translateY(${target.offsetTop}px)`;
+            slider.style.height = `${target.offsetHeight}px`;
+        }
+        
+        if (activeLink) {
+            setTimeout(() => {
+                slider.style.transition = 'none';
+                moveSlider(activeLink);
+                setTimeout(() => {
+                    slider.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s';
+                }, 50);
+            }, 50);
+        }
+        
+        links.forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                moveSlider(link);
+            });
+        });
+        nav.addEventListener('mouseleave', () => {
+            moveSlider(activeLink);
+        });
+      }
     });
   </script>
 
@@ -729,3 +859,4 @@
   @stack('scripts')
 </body>
 </html>
+

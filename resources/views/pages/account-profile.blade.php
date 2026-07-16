@@ -1,7 +1,7 @@
 @extends('layouts.master')
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Poppins:wght@300;400;500;600&display=swap');
 
   .profile-page * { font-family: 'Poppins', sans-serif; }
 
@@ -39,7 +39,7 @@
 
   .bento-card-placeholder {
     background: rgba(255,255,255,0.4);
-    border: 2px dashed rgba(128,187,155,0.35);
+    border: 2px dashed rgba(230,33,41,0.25);
     border-radius: 20px;
     min-height: 120px;
     display: flex;
@@ -48,7 +48,7 @@
   }
 
   .card-title {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Poppins', sans-serif;
     font-size: 1rem;
     font-weight: 600;
     color: #1a1a1a;
@@ -81,20 +81,20 @@
     outline: none;
     transition: border-color 0.2s;
   }
-  .soft-input:focus { border-color: #80BB9B; }
+  .soft-input:focus { border-color: var(--color-primary); }
 
   .edit-pill {
     font-size: 11px;
     font-weight: 600;
     padding: 4px 14px;
     border-radius: 999px;
-    background: #F0FAF4;
-    color: #4F8A6A;
-    border: 1px solid #C1E4D0;
+    background: var(--color-bg-light);
+    color: var(--color-primary);
+    border: 1px solid rgba(230,33,41,0.2);
     cursor: pointer;
     transition: all 0.2s;
   }
-  .edit-pill:hover { background: #80BB9B; color: #fff; border-color: #80BB9B; }
+  .edit-pill:hover { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 
   .profile-hero {
     position: relative;
@@ -123,10 +123,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #e8f5ee 0%, #c8e6d4 100%);
-    font-family: 'Playfair Display', serif;
+    background: linear-gradient(135deg, var(--color-bg-light) 0%, #FECACA 100%);
+    font-family: 'Poppins', sans-serif;
     font-size: 5rem;
-    color: #4F8A6A;
+    color: var(--color-primary);
     font-weight: 700;
   }
 
@@ -187,10 +187,10 @@
 
   .sng-box-info {
     background: #F6F6F6;
-    border-left: 4px solid #80BB9B;
+    border-left: 4px solid var(--color-primary);
     border-radius: 10px;
     padding: 10px 14px;
-    color: #4F6560;
+    color: var(--color-text);
     font-size: 13px;
   }
 
@@ -216,7 +216,7 @@
     align-items: center;
     transition: color 0.15s;
   }
-  .pw-eye:hover { color: #4F6560; }
+  .pw-eye:hover { color: var(--color-text); }
 </style>
 
 @section('content')
@@ -226,8 +226,8 @@
 
   {{-- page header --}}
   <div class="flex items-center justify-between mb-6">
-    <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#1a1a1a;">
-      Account Profile {{ $user->id === auth()->id() ? 'Mine' : $user->name }}
+    <h2 style="font-family:'Poppins',sans-serif;font-size:1.5rem;font-weight:700;color:#111111;">
+      Profil Akun {{ $user->id === auth()->id() ? 'Saya' : $user->name }}
     </h2>
     @if(auth()->user()->hasRole('hr') && isset($user) && $user->id !== auth()->id())
     <a href="{{ route('hr/employee/edit', $user->id) }}" class="hivi-btn-primary">
@@ -250,7 +250,7 @@
         @unless($user->hasRole('staff'))
         <div class="bento-card">
           <div class="skeleton h-6 w-1/2 mb-4"></div>
-          <div class="skeleton h-32 w-full rounded-xl"></div>
+          <div class="skeleton h-32 w-full rounded-2xl"></div>
         </div>
         @endunless
       </div>
@@ -289,8 +289,8 @@
         <div class="bento-card">
           <div class="skeleton h-6 w-1/2 mb-4"></div>
           <div class="space-y-4">
-            <div class="skeleton h-10 w-full rounded-xl"></div>
-            <div class="skeleton h-10 w-full rounded-xl"></div>
+            <div class="skeleton h-10 w-full rounded-2xl"></div>
+            <div class="skeleton h-10 w-full rounded-2xl"></div>
           </div>
         </div>
       </div>
@@ -307,18 +307,18 @@
       {{-- Account Information Card --}}
       <div class="bento-card">
         <div class="flex items-center justify-between mb-4">
-          <span class="card-title" style="margin-bottom:0;">Account Information</span>
-          <button type="button" class="edit-pill" onclick="document.getElementById('account-form-wrap').classList.toggle('hidden')">Edit</button>
+          <span class="card-title" style="margin-bottom:0;">Informasi Akun</span>
+          <button type="button" class="edit-pill" onclick="document.getElementById('account-form-wrap').classList.toggle('hidden')">Ubah</button>
         </div>
 
         {{-- read-only view --}}
         <div id="account-read-view" class="space-y-4">
           <div>
-            <p class="field-label">Full Name</p>
+            <p class="field-label">Nama Lengkap</p>
             <p class="field-value">{{ $user->name }}</p>
           </div>
           <div>
-            <p class="field-label">Phone Number</p>
+            <p class="field-label">Nomor Telepon</p>
             <p class="field-value">{{ $user->phone_number ?? '—' }}</p>
           </div>
         </div>
@@ -328,33 +328,32 @@
           <form action="{{ route('profile.update', $user->id) }}" method="POST">
             @csrf
             <div class="mb-3">
-              <label class="field-label block mb-1">Full Name</label>
-              <input type="text" name="name" value="{{ old('name', $user->name) }}" required class="soft-input" placeholder="Full name">
+              <label class="field-label block mb-1">Nama Lengkap</label>
+              <input type="text" name="name" value="{{ old('name', $user->name) }}" required class="soft-input" placeholder="Nama lengkap">
               @error('name') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-3">
-              <label class="field-label block mb-1">Phone Number</label>
+              <label class="field-label block mb-1">Nomor Telepon</label>
               <input type="text" name="phone_number" value="{{ old('phone_number', $user->phone_number) }}" class="soft-input" placeholder="08xxxxxxxxxx">
               @error('phone_number') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-4">
-              <label class="field-label block mb-1">Location</label>
-              <input type="text" name="location" value="{{ old('location', $user->location) }}" class="soft-input" placeholder="Location">
+              <label class="field-label block mb-1">Lokasi</label>
+              <input type="text" name="location" value="{{ old('location', $user->location) }}" class="soft-input" placeholder="Lokasi">
               @error('location') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <button type="submit" class="hivi-btn-primary w-full">
-              <i data-lucide="save" class="w-4 h-4"></i> Save Changes
+              <i data-lucide="save" class="w-4 h-4"></i> Simpan Perubahan
             </button>
           </form>
         </div>
       </div>
 
       {{-- Digital Signature Card --}}
-      @unless($user->hasRole('staff'))
-      <div class="bento-card" x-data="{ showUpload: {{ ($profile->signature_path || $profile->ttd_path) ? 'false' : 'true' }} }">
-        <p class="card-title">Digital Signature</p>
-
-        @if($profile->signature_path || $profile->ttd_path)
+      @unless($user->hasRole('staff'))      <div class="bento-card" x-data="{ showUpload: {{ ($user->ttd_path) ? 'false' : 'true' }} }">
+        <p class="card-title">Tanda Tangan Digital</p>
+ 
+        @if($user->ttd_path)
           <div class="ttd-preview-box mb-4">
             <img src="{{ route('ttd.preview.user', $user->id) }}?v={{ time() }}"
                  alt="Signature"
@@ -364,9 +363,9 @@
           <div class="flex items-center gap-3 mb-3">
             <button @click="showUpload = !showUpload" type="button" class="hivi-btn-secondary text-xs px-3 py-1.5">
               <i data-lucide="refresh-cw" class="w-3 h-3"></i>
-              <span x-text="showUpload ? 'Cancel' : 'Replace'"></span>
+              <span x-text="showUpload ? 'Batal' : 'Ganti'"></span>
             </button>
-            <form action="{{ route('profile.signature.delete', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Delete this signature?')">
+            <form action="{{ route('profile.signature.delete', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Hapus tanda tangan ini?')">
               @csrf @method('DELETE')
               <button type="submit" style="background:none;border:none;padding:0;cursor:pointer;color:#EF4444;display:flex;align-items:center;gap:4px;font-size:12px;">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -375,10 +374,9 @@
           </div>
         @else
           <div class="sng-box-danger mb-4 flex items-center gap-2">
-            <i data-lucide="alert-circle" class="w-4 h-4"></i> No signature yet
+            <i data-lucide="alert-circle" class="w-4 h-4"></i> Belum ada tanda tangan
           </div>
         @endif
-
         <div x-show="showUpload" x-transition>
           <form action="{{ route('profile.signature.upload', $user->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -386,7 +384,7 @@
               <input type="file" name="signature" id="signature" accept="image/png,image/jpeg,image/jpg" required class="hidden" onchange="previewSignature(event)">
               <label for="signature" class="cursor-pointer block">
                 <i data-lucide="upload-cloud" class="w-7 h-7 mx-auto mb-1 text-gray-400"></i>
-                <p class="text-xs font-medium text-gray-600">Click to upload</p>
+                <p class="text-xs font-medium text-gray-600">Klik untuk mengunggah</p>
               </label>
             </div>
             <div id="signature-preview-container" class="hidden mb-3">
@@ -395,12 +393,12 @@
               </div>
             </div>
             <button type="submit" class="hivi-btn-primary w-full text-xs">
-              <i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload Signature
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i> Unggah Tanda Tangan
             </button>
           </form>
         </div>
-
-        <p class="text-center mt-3" style="font-size:10.5px;color:#9CA3AF;">Supported formats: PNG, JPG. Max size: 2MB</p>
+ 
+        <p class="text-center mt-3" style="font-size:10.5px;color:#9CA3AF;">Format yang didukung: PNG, JPG. Ukuran maks: 2MB</p>
       </div>
       @endunless
 
@@ -421,26 +419,26 @@
         @endphp
 
         @if($user->avatar)
-          <img id="avatar-preview" src="{{ URL::to('assets/images/user/'.$user->avatar) }}" alt="{{ $user->name }}">
+          <img id="avatar-preview" src="{{ URL::to('assets/images/user/'.$user->avatar) }}" alt="{{ $user->name }}" style="width:100%;height:100%;object-fit:cover;display:block;position:absolute;top:0;left:0;">
         @else
           <div id="avatar-initials" class="profile-hero-initials">{{ $initials }}</div>
           <img id="avatar-preview" src="" alt="{{ $user->name }}" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">
         @endif
 
         {{-- upload button --}}
-        <label for="photo-upload" class="profile-hero-upload" title="Change photo">
-          <i data-lucide="camera" style="width:16px;height:16px;color:#4F6560;"></i>
+        <label for="photo-upload" class="profile-hero-upload" title="Ubah foto">
+          <i data-lucide="camera" style="width:16px;height:16px;color:var(--color-text);"></i>
         </label>
         <input type="file" id="photo-upload" class="hidden" accept="image/*" onchange="uploadPhoto(event)">
 
         {{-- delete photo button --}}
-        <button type="button" id="delete-photo-btn" onclick="deletePhoto()" class="profile-hero-delete" title="Delete photo" style="{{ $user->avatar ? '' : 'display:none;' }}">
+        <button type="button" id="delete-photo-btn" onclick="deletePhoto()" class="profile-hero-delete" title="Hapus foto" style="{{ $user->avatar ? '' : 'display:none;' }}">
           <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
         </button>
 
         {{-- overlay --}}
         <div class="profile-hero-overlay">
-          <p style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:#fff;line-height:1.2;margin-bottom:4px;">
+          <p style="font-family:'Poppins',sans-serif;font-size:1.5rem;font-weight:700;color:#fff;line-height:1.2;margin-bottom:4px;">
             {{ $user->name }}
           </p>
           @if($user->role_name)
@@ -454,81 +452,81 @@
       {{-- Security & PIN Card (non-staff: full card with PIN, Email, Password) --}}
       @unless($user->hasRole('staff'))
       <div class="bento-card" x-data="{ showEmailForm: false, showPasswordForm: false, showPinForm: false }">
-        <p class="card-title">Security & PIN</p>
+        <p class="card-title">Keamanan & PIN</p>
 
         {{-- PIN --}}
         <div class="mb-5">
           <div class="flex items-center justify-between mb-3">
             <div>
-              <p class="field-label" style="margin-bottom:2px;">PIN Approval</p>
-              @if($profile->pin)
-                <span class="text-xs text-green-600 flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> PIN set</span>
+              <p class="field-label" style="margin-bottom:2px;">PIN Persetujuan</p>
+              @if($user->pin)
+                <span class="text-xs text-green-600 flex items-center gap-1"><i data-lucide="check-circle" class="w-3 h-3"></i> PIN telah disetel</span>
               @else
-                <span class="text-xs text-amber-600 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> No PIN yet</span>
+                <span class="text-xs text-amber-600 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3 h-3"></i> Belum ada PIN</span>
               @endif
             </div>
             <button @click="showPinForm = !showPinForm" type="button" class="edit-pill">
-              <span x-text="showPinForm ? 'Close' : 'Set PIN'"></span>
+              <span x-text="showPinForm ? 'Tutup' : 'Atur PIN'"></span>
             </button>
           </div>
-          <form action="{{ route('profile.pin') }}" method="POST" x-show="showPinForm" x-transition class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <form action="{{ route('profile.pin') }}" method="POST" x-show="showPinForm" x-transition class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
             @csrf
-            @if($profile->pin)
+            @if($user->pin)
               <div class="mb-3">
-                <label class="field-label block mb-1">Current PIN</label>
+                <label class="field-label block mb-1">PIN Saat Ini</label>
                 <input type="password" name="current_pin" inputmode="numeric" maxlength="6" class="soft-input tracking-widest text-center" placeholder="••••••">
                 @error('current_pin') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
               </div>
             @endif
             <div class="mb-3">
-              <label class="field-label block mb-1">New PIN (6 digits)</label>
+              <label class="field-label block mb-1">PIN Baru (6 digit)</label>
               <input type="password" name="pin" inputmode="numeric" maxlength="6" required class="soft-input tracking-widest text-center" placeholder="••••••">
               @error('pin') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-4">
-              <label class="field-label block mb-1">Confirm PIN</label>
+              <label class="field-label block mb-1">Konfirmasi PIN</label>
               <input type="password" name="pin_confirmation" inputmode="numeric" maxlength="6" required class="soft-input tracking-widest text-center" placeholder="••••••">
             </div>
-            <button type="submit" class="hivi-btn-primary w-full">Save PIN</button>
+            <button type="submit" class="hivi-btn-primary w-full">Simpan PIN</button>
           </form>
         </div>
 
         {{-- Email --}}
         <div class="border-t border-gray-100 pt-4 mb-4">
           <div class="flex items-center justify-between mb-3">
-            <p class="field-label" style="margin-bottom:0;">Change Email</p>
+            <p class="field-label" style="margin-bottom:0;">Ubah Email</p>
             <button @click="showEmailForm = !showEmailForm" type="button" class="edit-pill">
-              <span x-text="showEmailForm ? 'Close' : 'Edit'"></span>
+              <span x-text="showEmailForm ? 'Tutup' : 'Ubah'"></span>
             </button>
           </div>
-          <form action="{{ route('profile.email') }}" method="POST" x-show="showEmailForm" x-transition class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <form action="{{ route('profile.email') }}" method="POST" x-show="showEmailForm" x-transition class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
             @csrf
             <div class="mb-3">
-              <label class="field-label block mb-1">New Email</label>
+              <label class="field-label block mb-1">Email Baru</label>
               <input type="email" name="email" required class="soft-input" placeholder="name@email.com">
               @error('email') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-4">
-              <label class="field-label block mb-1">Current Password</label>
+              <label class="field-label block mb-1">Kata Sandi Saat Ini</label>
               <input type="password" name="password" required class="soft-input" placeholder="••••••••">
               @error('password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
-            <button type="submit" class="hivi-btn-primary w-full">Save Email</button>
+            <button type="submit" class="hivi-btn-primary w-full">Simpan Email</button>
           </form>
         </div>
 
         {{-- Password --}}
         <div class="border-t border-gray-100 pt-4">
           <div class="flex items-center justify-between mb-3">
-            <p class="field-label" style="margin-bottom:0;">Change Password</p>
+            <p class="field-label" style="margin-bottom:0;">Ubah Kata Sandi</p>
             <button @click="showPasswordForm = !showPasswordForm" type="button" class="edit-pill">
-              <span x-text="showPasswordForm ? 'Close' : 'Edit'"></span>
+              <span x-text="showPasswordForm ? 'Tutup' : 'Ubah'"></span>
             </button>
           </div>
-          <form action="{{ route('profile.password') }}" method="POST" x-show="showPasswordForm" x-transition class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <form action="{{ route('profile.password') }}" method="POST" x-show="showPasswordForm" x-transition class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
             @csrf
             <div class="mb-3">
-              <label class="field-label block mb-1">Current Password</label>
+              <label class="field-label block mb-1">Kata Sandi Saat Ini</label>
               <div class="pw-wrap">
                 <input type="password" name="current_password" required class="soft-input" placeholder="••••••••">
                 <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
@@ -536,21 +534,21 @@
               @error('current_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-3">
-              <label class="field-label block mb-1">New Password</label>
+              <label class="field-label block mb-1">Kata Sandi Baru</label>
               <div class="pw-wrap">
-                <input type="password" name="new_password" required class="soft-input" placeholder="Min. 8 characters">
+                <input type="password" name="new_password" required class="soft-input" placeholder="Min. 8 karakter">
                 <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
               </div>
               @error('new_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-4">
-              <label class="field-label block mb-1">Confirm New Password</label>
+              <label class="field-label block mb-1">Konfirmasi Kata Sandi Baru</label>
               <div class="pw-wrap">
-                <input type="password" name="new_password_confirmation" required class="soft-input" placeholder="Repeat new password">
+                <input type="password" name="new_password_confirmation" required class="soft-input" placeholder="Ulangi kata sandi baru">
                 <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
               </div>
             </div>
-            <button type="submit" class="hivi-btn-primary w-full">Save Password</button>
+            <button type="submit" class="hivi-btn-primary w-full">Simpan Kata Sandi</button>
           </form>
         </div>
       </div>
@@ -559,7 +557,7 @@
       {{-- Change Password Card (staff only) --}}
       @if($user->hasRole('staff'))
       <div class="bento-card" x-data="{ showPasswordForm: {{ $errors->has('current_password') || $errors->has('new_password') ? 'true' : ($user->must_change_password ? 'true' : 'false') }} }">
-        <p class="card-title">Security</p>
+        <p class="card-title">Keamanan</p>
 
         @if($user->must_change_password)
           <div class="sng-box-danger mb-4 flex items-center gap-2">
@@ -571,15 +569,15 @@
         {{-- Password --}}
         <div>
           <div class="flex items-center justify-between mb-3">
-            <p class="field-label" style="margin-bottom:0;">Change Password</p>
+            <p class="field-label" style="margin-bottom:0;">Ubah Kata Sandi</p>
             <button @click="showPasswordForm = !showPasswordForm" type="button" class="edit-pill">
-              <span x-text="showPasswordForm ? 'Close' : 'Edit'"></span>
+              <span x-text="showPasswordForm ? 'Tutup' : 'Ubah'"></span>
             </button>
           </div>
-          <form action="{{ route('profile.password') }}" method="POST" x-show="showPasswordForm" x-transition class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <form action="{{ route('profile.password') }}" method="POST" x-show="showPasswordForm" x-transition class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
             @csrf
             <div class="mb-3">
-              <label class="field-label block mb-1">Current Password</label>
+              <label class="field-label block mb-1">Kata Sandi Saat Ini</label>
               <div class="pw-wrap">
                 <input type="password" name="current_password" required class="soft-input" placeholder="••••••••">
                 <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
@@ -587,21 +585,21 @@
               @error('current_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-3">
-              <label class="field-label block mb-1">New Password</label>
+              <label class="field-label block mb-1">Kata Sandi Baru</label>
               <div class="pw-wrap">
-                <input type="password" name="new_password" required class="soft-input" placeholder="Min. 8 characters">
+                <input type="password" name="new_password" required class="soft-input" placeholder="Min. 8 karakter">
                 <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
               </div>
               @error('new_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
             </div>
             <div class="mb-4">
-              <label class="field-label block mb-1">Confirm New Password</label>
+              <label class="field-label block mb-1">Konfirmasi Kata Sandi Baru</label>
               <div class="pw-wrap">
-                <input type="password" name="new_password_confirmation" required class="soft-input" placeholder="Repeat new password">
+                <input type="password" name="new_password_confirmation" required class="soft-input" placeholder="Ulangi kata sandi baru">
                 <button type="button" class="pw-eye" onclick="togglePw(this)" tabindex="-1"><i data-lucide="eye" class="w-4 h-4"></i></button>
               </div>
             </div>
-            <button type="submit" class="hivi-btn-primary w-full">Save Password</button>
+            <button type="submit" class="hivi-btn-primary w-full">Simpan Kata Sandi</button>
           </form>
         </div>
       </div>
@@ -613,91 +611,28 @@
     {{-- ===== RIGHT COLUMN ===== --}}
     <div class="flex flex-col gap-6">
 
-      {{-- Employee Data Card --}}
+      {{-- Organization Memberships Card --}}
       <div class="bento-card">
-        <p class="card-title">Employee Data</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div>
-            <p class="field-label">Approval Position</p>
-            <p class="field-value">
-              @if($profile->jabatan)
-                <span class="hivi-badge hivi-badge-blue">{{ ucfirst(str_replace('_',' ',$profile->jabatan)) }}</span>
-              @else —@endif
-            </p>
+        <p class="card-title">Keanggotaan Organisasi</p>
+        @if($user->organisasiMembers && $user->organisasiMembers->count() > 0)
+          <div class="space-y-4">
+            @foreach($user->organisasiMembers as $member)
+              <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
+                <div>
+                  <p class="font-bold text-gray-800">{{ $member->organisasi->nama ?? 'Unknown' }}</p>
+                  <p class="text-xs text-gray-500 mt-1 uppercase tracking-wider">{{ str_replace('_', ' ', $member->jabatan) }}</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-[var(--color-primary)]/20 flex items-center justify-center">
+                  <i data-lucide="users" class="w-5 h-5 text-[var(--color-text)]"></i>
+                </div>
+              </div>
+            @endforeach
           </div>
-          <div>
-            <p class="field-label">Contract End Date</p>
-            <p class="field-value">{{ $profile->tgl_kontrak_akhir ? \Carbon\Carbon::parse($profile->tgl_kontrak_akhir)->format('d M Y') : '—' }}</p>
+        @else
+          <div class="text-center py-6 text-gray-500 text-sm">
+            Anda belum menjadi anggota organisasi apa pun.
           </div>
-          <div>
-            <p class="field-label">Last Education</p>
-            <p class="field-value">{{ $profile->pendidikan_terakhir ?? '—' }}</p>
-          </div>
-          <div>
-            <p class="field-label">Marital Status</p>
-            <p class="field-value">{{ ucfirst(str_replace('_',' ', $profile->status_pernikahan ?? '—')) }}</p>
-          </div>
-          <div>
-            <p class="field-label">Join Date</p>
-            <p class="field-value">{{ $profile->tgl_bergabung ? \Carbon\Carbon::parse($profile->tgl_bergabung)->format('d M Y') : ($user->join_date ? \Carbon\Carbon::parse($user->join_date)->format('d M Y') : '—') }}</p>
-          </div>
-          <div>
-            <p class="field-label">Number of Children</p>
-            <p class="field-value">{{ $profile->jumlah_anak ?? 0 }}</p>
-          </div>
-        </div>
-      </div>
-
-      {{-- Population Data Card --}}
-      <div class="bento-card">
-        <p class="card-title">Population Data</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div>
-            <p class="field-label">NIK</p>
-            <p class="field-value" style="font-family:monospace;">{{ $profile->nik ?? '—' }}</p>
-          </div>
-          <div>
-            <p class="field-label">No. KK</p>
-            <p class="field-value" style="font-family:monospace;">{{ $profile->no_kk ?? '—' }}</p>
-          </div>
-          <div>
-            <p class="field-label">NPWP</p>
-            <p class="field-value" style="font-family:monospace;">{{ $profile->npwp ?? '—' }}</p>
-          </div>
-          <div>
-            <p class="field-label">Health BPJS</p>
-            <p class="field-value" style="font-family:monospace;">{{ $profile->bpjs_kesehatan ?? '—' }}</p>
-          </div>
-          <div>
-            <p class="field-label">Employment BPJS</p>
-            <p class="field-value" style="font-family:monospace;">{{ $profile->bpjs_ketenagakerjaan ?? '—' }}</p>
-          </div>
-        </div>
-      </div>
-
-      {{-- Address Card --}}
-      <div class="bento-card">
-        <p class="card-title">Address</p>
-        <div class="space-y-3">
-          <div>
-            <p class="field-label">Full Address</p>
-            <p class="field-value">{{ $profile->alamat ?? '—' }}</p>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div>
-              <p class="field-label">City</p>
-              <p class="field-value">{{ $profile->kota ?? '—' }}</p>
-            </div>
-            <div>
-              <p class="field-label">Province</p>
-              <p class="field-value">{{ $profile->provinsi ?? '—' }}</p>
-            </div>
-            <div>
-              <p class="field-label">Postal Code</p>
-              <p class="field-value">{{ $profile->kode_pos ?? '—' }}</p>
-            </div>
-          </div>
-        </div>
+        @endif
       </div>
     </div>
     {{-- END RIGHT --}}

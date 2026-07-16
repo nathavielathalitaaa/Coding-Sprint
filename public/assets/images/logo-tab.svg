@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+    <!-- Stylized S Path matching SIMORA's circuit-like letters -->
+    <path d="M25 9H11C8.23858 9 6 11.2386 6 14C6 16.7614 8.23858 19 11 19H21C23.7614 19 26 21.2386 26 24C26 26.7614 23.7614 29 21 29H7" stroke="#E62129" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Circuit connection terminal dots -->
+    <circle cx="25" cy="9" r="2" fill="#E62129" />
+    <circle cx="7" cy="29" r="2" fill="#E62129" />
+</svg>

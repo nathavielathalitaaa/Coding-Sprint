@@ -45,7 +45,7 @@ class SuratController extends Controller
     public function index(Request $request)
     {
         $user  = Auth::user();
-        $query = Surat::with(['user', 'approvals', 'suratType', 'organisasi']);
+        $query = Surat::with(['user', 'approvals', 'suratType', 'organisasi', 'proposalFormatCheck']);
 
         // ── Filter visibilitas berdasarkan role ─────────────────────────
         if ($user->hasAnyRole(['admin', 'super-admin'])) {
@@ -107,8 +107,12 @@ class SuratController extends Controller
                       $sq->orWhere(function($ssq) use ($user, $organisasiIds, $isMpk, $isOsis) {
                           $ssq->whereNull('assigned_user_id');
                           
-                          $jabatans = $user->organisasiMembers()->pluck('jabatan')->filter()->unique();
-                          if ($jabatans->isNotEmpty()) {
+                          $jabatans = $user->organisasiMembers()->pluck('jabatan')->filter()->unique()->toArray();
+                          if (in_array('bph', $jabatans)) {
+                              $jabatans[] = 'bph_osis';
+                              $jabatans[] = 'bph_mpk';
+                          }
+                          if (!empty($jabatans)) {
                               $ssq->whereIn('jabatan', $jabatans);
                           }
                           
@@ -174,6 +178,9 @@ class SuratController extends Controller
 
         // ── Validasi Organisasi Tipe ────────────────────────────────────
         $organisasi = \App\Models\Organisasi::findOrFail($request->organisasi_id);
+        if ($suratType->organisasi_id && $suratType->organisasi_id !== $organisasi->id) {
+            return back()->withErrors(['surat_type_id' => 'Jenis surat ini tidak berlaku untuk organisasi yang dipilih.'])->withInput();
+        }
         if ($suratType->organisasi_tipe && $suratType->organisasi_tipe !== $organisasi->tipe) {
             return back()->withErrors(['surat_type_id' => 'Jenis surat ini tidak berlaku untuk organisasi yang dipilih.'])->withInput();
         }
@@ -247,6 +254,14 @@ class SuratController extends Controller
                 'lokasi'            => $request->lokasi,
                 'deskripsi_singkat' => $request->deskripsi_singkat ?: null,
             ]);
+
+            // Run proposal format check synchronously
+            try {
+                $checker = app(\App\Services\ProposalFormatChecker::class);
+                $checker->analyze($surat);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Proposal format check failed: ' . $e->getMessage());
+            }
         }
 
         flash()->success('Surat berhasil diajukan dan sedang menunggu verifikasi Admin Sekretariat.');
@@ -329,6 +344,15 @@ class SuratController extends Controller
             'status'         => 'submitted',
             'catatan_revisi' => null,
         ]);
+
+        if ($surat->suratType && $surat->suratType->requires_kegiatan_detail) {
+            try {
+                $checker = app(\App\Services\ProposalFormatChecker::class);
+                $checker->analyze($surat);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Proposal format check failed during update: ' . $e->getMessage());
+            }
+        }
 
         $this->approval->resubmit('surat_' . $surat->jenis_surat, $surat->id);
 
@@ -455,7 +479,7 @@ class SuratController extends Controller
                         $surat->refresh();
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 \Log::error('Gagal generate cover/stamp/merge PDF: ' . $e->getMessage());
                 flash()->warning('Surat disetujui, namun PDF dengan tanda tangan gagal digabungkan: ' . $e->getMessage());
             }
@@ -489,10 +513,10 @@ class SuratController extends Controller
     {
         // ── Validasi Request ────────────────────────────────────────────
         $request->validate([
-            'catatan_revisi' => 'required|string|min:5|max:500',
+            'catatan_revisi' => 'required|string|min:1|max:500',
         ], [
             'catatan_revisi.required' => 'Catatan revisi wajib diisi saat menolak.',
-            'catatan_revisi.min'      => 'Catatan revisi minimal 5 karakter.',
+            'catatan_revisi.min'      => 'Catatan revisi minimal 1 karakter.',
         ]);
 
         // ── Pengecekan Otorisasi Rejection ──────────────────────────────
@@ -637,12 +661,15 @@ class SuratController extends Controller
         $suratType = SuratType::where('kode', $jenis)->first();
         
         if ($suratType) {
-            $approvers = $suratType->approvers->map(function($a) {
-                return [
-                    'jabatan' => $a->jabatan_label,
-                    'label'   => $a->label,
-                ];
-            })->toArray();
+            $approvers = $suratType->approvers()
+                ->where('is_signer', true)
+                ->get()
+                ->map(function($a) {
+                    return [
+                        'jabatan' => $a->jabatan_label,
+                        'label'   => $a->label,
+                    ];
+                })->toArray();
 
             return response()->json([
                 'mode' => 'stamp',
@@ -654,8 +681,11 @@ class SuratController extends Controller
             ->orWhere('document_type', $jenis)
             ->first();
 
-        $approvers = ApprovalStep::where('document_type', 'surat_' . $jenis)
-            ->orWhere('document_type', $jenis)
+        $approvers = ApprovalStep::where(function($q) use ($jenis) {
+                $q->where('document_type', 'surat_' . $jenis)
+                  ->orWhere('document_type', $jenis);
+            })
+            ->where('is_signer', true)
             ->orderBy('step_order')
             ->get()
             ->map(function($s) {
@@ -749,20 +779,24 @@ class SuratController extends Controller
             flash()->warning('Surat ditolak dan dikembalikan ke pembuat.');
         } else {
             // ── Disposisi Awal ──────────────────────────────────────
-            // Nomor surat digenerate otomatis oleh SuratNumberService
-            // berdasarkan nomor_format + counter di SuratType.
-            // Seluruh operasi (generate + update surat + init approval)
-            // dibungkus dalam satu DB transaction agar counter tidak
-            // nyangkut jika salah satu langkah gagal.
+            // Nomor surat bisa diisi manual oleh admin, atau
+            // digenerate otomatis oleh SuratNumberService jika kosong.
 
             if (!$surat->suratType) {
-                flash()->error('Jenis surat tidak ditemukan. Tidak dapat membuat nomor surat otomatis.');
+                flash()->error('Jenis surat tidak ditemukan. Tidak dapat memproses disposisi.');
                 return back();
             }
 
-            DB::transaction(function () use ($surat) {
-                // Generate nomor (lockForUpdate ada di dalam generate())
-                $nomorSurat = $this->numberService->generate($surat->suratType);
+            $nomorManual = trim($request->input('nomor_surat', ''));
+            if ($nomorManual) {
+                $request->validate([
+                    'nomor_surat' => 'required|string|max:100',
+                ]);
+            }
+
+            DB::transaction(function () use ($surat, $nomorManual) {
+                // Gunakan nomor manual jika diisi, jika tidak generate otomatis
+                $nomorSurat = $nomorManual ?: $this->numberService->generate($surat->suratType);
 
                 $surat->update([
                     'nomor_surat'    => $nomorSurat,
@@ -785,7 +819,8 @@ class SuratController extends Controller
                 }
             });
 
-            flash()->success('Surat diverifikasi, nomor surat diberikan otomatis, dan diteruskan ke alur persetujuan.');
+            $pesanNomor = $nomorManual ? "Nomor surat ditetapkan: {$nomorManual}." : 'Nomor surat digenerate otomatis.';
+            flash()->success("Surat diverifikasi. {$pesanNomor} Diteruskan ke alur persetujuan.");
         }
 
         return redirect()->route('surat.inbox_admin');

@@ -14,6 +14,7 @@ class SuratType extends Model
         'nama',
         'deskripsi',
         'organisasi_tipe',
+        'organisasi_id',
         'requires_kegiatan_detail',
         'nomor_format',
         'nomor_counter',
@@ -43,6 +44,19 @@ class SuratType extends Model
     public function surats()
     {
         return $this->hasMany(Surat::class);
+    }
+
+    public function organisasi()
+    {
+        return $this->belongsTo(Organisasi::class);
+    }
+
+    public function scopeForOrganisasi($query, ?int $organisasiId)
+    {
+        return $query->where(function ($q) use ($organisasiId) {
+            $q->where('organisasi_id', $organisasiId)
+              ->orWhereNull('organisasi_id');
+        });
     }
 
     public function scopeForOrganisasiTipe($query, ?string $tipe)

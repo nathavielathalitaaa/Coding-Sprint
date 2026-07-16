@@ -12,13 +12,17 @@ class SuratTypeController extends Controller
 {
     public function index()
     {
-        $suratTypes = SuratType::withCount(['surats', 'approvers'])->get();
-        return view('surat-type.index', compact('suratTypes'));
+        $suratTypes = SuratType::with(['organisasi'])->withCount(['surats', 'approvers'])->get();
+        $organisasis = \App\Models\Organisasi::where('is_active', true)->get();
+        return view('surat-type.index', compact('suratTypes', 'organisasis'));
     }
 
     public function create()
     {
         $approverUsers = \App\Models\User::with(['profile', 'roles'])
+            ->whereDoesntHave('roles', function($roleQuery) {
+                $roleQuery->whereIn('name', ['admin', 'super-admin']);
+            })
             ->where(function($q) {
                 // Include: all hr and supervisor
                 $q->whereHas('roles', function($roleQuery) {
@@ -40,7 +44,8 @@ class SuratTypeController extends Controller
                 ];
             });
 
-        return view('surat-type.create', compact('approverUsers'));
+        $organisasis = \App\Models\Organisasi::where('is_active', true)->get();
+        return view('surat-type.create', compact('approverUsers', 'organisasis'));
     }
 
     public function store(Request $request)
@@ -49,7 +54,7 @@ class SuratTypeController extends Controller
             'nama' => 'required|string|max:255',
             'kode' => 'required|string|unique:surat_types,kode',
             'nomor_format' => 'required|array',
-            'organisasi_tipe' => 'nullable|in:osis,mpk,sub_organ',
+            'organisasi_id' => 'nullable|exists:organisasis,id',
             'approvers' => 'required|array|min:1',
             'approvers.*.jabatan_label' => 'required|string|max:100',
             'approvers.*.target_mode' => 'required|in:submitter,fixed_osis,fixed_mpk,global',
@@ -58,12 +63,21 @@ class SuratTypeController extends Controller
             'approvers.*.metode_ttd' => 'nullable|in:stamp,append',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $organisasiTipe = null;
+        if ($request->organisasi_id) {
+            $org = \App\Models\Organisasi::find($request->organisasi_id);
+            if ($org) {
+                $organisasiTipe = $org->tipe;
+            }
+        }
+
+        DB::transaction(function () use ($request, $organisasiTipe) {
             $suratType = SuratType::create([
                 'nama' => $request->nama,
                 'kode' => Str::slug($request->kode),
                 'deskripsi' => $request->deskripsi,
-                'organisasi_tipe' => $request->organisasi_tipe,
+                'organisasi_tipe' => $organisasiTipe,
+                'organisasi_id' => $request->organisasi_id,
                 'nomor_format' => $request->nomor_format,
                 'nomor_reset' => $request->nomor_reset ?? 'yearly',
                 'is_active' => $request->boolean('is_active', true),
@@ -93,6 +107,9 @@ class SuratTypeController extends Controller
         $suratType = SuratType::with('approvers')->findOrFail($id);
         
         $approverUsers = \App\Models\User::with(['profile', 'roles'])
+            ->whereDoesntHave('roles', function($roleQuery) {
+                $roleQuery->whereIn('name', ['admin', 'super-admin']);
+            })
             ->where(function($q) {
                 $q->whereHas('roles', function($roleQuery) {
                     $roleQuery->whereIn('name', ['hr', 'supervisor']);
@@ -112,7 +129,8 @@ class SuratTypeController extends Controller
                 ];
             });
 
-        return view('surat-type.create', compact('suratType', 'approverUsers'));
+        $organisasis = \App\Models\Organisasi::where('is_active', true)->get();
+        return view('surat-type.create', compact('suratType', 'approverUsers', 'organisasis'));
     }
 
     public function update(Request $request, $id)
@@ -123,7 +141,7 @@ class SuratTypeController extends Controller
             'nama' => 'required|string|max:255',
             'kode' => 'required|string|unique:surat_types,kode,' . $id,
             'nomor_format' => 'required|array',
-            'organisasi_tipe' => 'nullable|in:osis,mpk,sub_organ',
+            'organisasi_id' => 'nullable|exists:organisasis,id',
             'approvers' => 'required|array|min:1',
             'approvers.*.jabatan_label' => 'required|string|max:100',
             'approvers.*.target_mode' => 'required|in:submitter,fixed_osis,fixed_mpk,global',
@@ -132,12 +150,21 @@ class SuratTypeController extends Controller
             'approvers.*.metode_ttd' => 'nullable|in:stamp,append',
         ]);
 
-        DB::transaction(function () use ($request, $suratType) {
+        $organisasiTipe = null;
+        if ($request->organisasi_id) {
+            $org = \App\Models\Organisasi::find($request->organisasi_id);
+            if ($org) {
+                $organisasiTipe = $org->tipe;
+            }
+        }
+
+        DB::transaction(function () use ($request, $suratType, $organisasiTipe) {
             $suratType->update([
                 'nama' => $request->nama,
                 'kode' => Str::slug($request->kode),
                 'deskripsi' => $request->deskripsi,
-                'organisasi_tipe' => $request->organisasi_tipe,
+                'organisasi_tipe' => $organisasiTipe,
+                'organisasi_id' => $request->organisasi_id,
                 'nomor_format' => $request->nomor_format,
                 'nomor_reset' => $request->nomor_reset ?? 'yearly',
                 'is_active' => $request->boolean('is_active'),

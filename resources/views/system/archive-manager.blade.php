@@ -18,7 +18,7 @@
             <a href="{{ route('system/monitor') }}" class="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </a>
-            <h1 class="text-3xl font-sans font-bold text-[#1A2B24]">Manajer Arsip</h1>
+            <h1 class="text-3xl font-sans font-bold text-[#111111]">Manajer Arsip</h1>
         </div>
         <p class="text-gray-500 ml-11">Tinjau dan kompres file dokumen lama untuk mengosongkan ruang penyimpanan.</p>
     </div>
@@ -29,11 +29,11 @@
     <div class="lg:col-span-2 space-y-6">
         <div class="manager-card">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-lg font-sans font-bold text-[#1A2B24] flex items-center gap-2">
+                <h2 class="text-lg font-sans font-bold text-[#111111] flex items-center gap-2">
                     <i data-lucide="folder-clock" class="w-5 h-5 text-[var(--color-text)]"></i>
                     Pratinjau Dokumen yang Dapat Diarsipkan
                 </h2>
-                <span class="px-3 py-1 bg-[#F0F7F3] text-[#2E7D5E] rounded-full text-xs font-semibold">
+                <span class="px-3 py-1 bg-[var(--color-bg-light)] text-[#E62129] rounded-full text-xs font-semibold">
                     {{ $archivableSurats->count() }} Siap
                 </span>
             </div>
@@ -89,7 +89,7 @@
     {{-- Right Column: Action Form --}}
     <div class="lg:col-span-1">
         <div class="manager-card sticky top-24">
-            <h2 class="text-lg font-sans font-bold text-[#1A2B24] mb-2">Jalankan Pengarsipan</h2>
+            <h2 class="text-lg font-sans font-bold text-[#111111] mb-2">Jalankan Pengarsipan</h2>
             <p class="text-sm text-gray-500 mb-6">Pilih rentang tanggal untuk mengompres dokumen menjadi file ZIP. PDF asli akan dihapus dari server.</p>
 
             <form action="{{ route('system/monitor/archive') }}" method="POST" id="archiveForm">

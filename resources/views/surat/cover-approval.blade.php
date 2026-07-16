@@ -5,7 +5,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: {{ $settings['font_family'] ?? 'Arial' }}, sans-serif;
     font-size: 12px;
     color: #1a1a1a;
     padding: 32px;
@@ -15,19 +15,27 @@
   /* Header */
   .header {
     text-align: center;
-    border-bottom: 2px solid #4F6560;
+    border-bottom: 2px solid {{ $settings['accent_color'] ?? '#E62129' }};
     padding-bottom: 16px;
     margin-bottom: 24px;
   }
   .header h2 {
     font-size: 18px;
     font-weight: bold;
-    color: #4F6560;
+    color: {{ $settings['accent_color'] ?? '#E62129' }};
     margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
-  .header p { font-size: 12px; color: #555; }
+  .header p { font-size: 12px; color: #666; }
+
+  .logo-container {
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .logo-container img {
+    max-height: 50px;
+  }
 
   /* Info grid */
   .info-table { width: 100%; margin-bottom: 24px; border-collapse: collapse; }
@@ -39,8 +47,8 @@
   .ttd-section-title {
     font-size: 13px;
     font-weight: bold;
-    color: #4F6560;
-    border-bottom: 1px solid #e5e7eb;
+    color: #1a1a1a;
+    border-bottom: 1px solid {{ $settings['accent_color'] ?? '#E62129' }};
     padding-bottom: 8px;
     margin-bottom: 20px;
     text-transform: uppercase;
@@ -60,7 +68,7 @@
   .ttd-label {
     font-size: 11px;
     font-weight: bold;
-    color: #555;
+    color: #666;
     margin-bottom: 10px;
     text-transform: uppercase;
   }
@@ -132,10 +140,17 @@
 </head>
 <body>
 
+{{-- Logo --}}
+@if(!empty($logo_base64))
+<div class="logo-container">
+  <img src="{{ $logo_base64 }}" alt="Logo">
+</div>
+@endif
+
 {{-- Header --}}
 <div class="header">
   <h2>Lembar Persetujuan Dokumen</h2>
-  <p>{{ $settings['company_name'] ?? 'HR Sinergi Hotel & Villa' }}</p>
+  <p>{{ $settings['company_name'] ?? 'SIMORA SMK Telkom Sidoarjo' }}</p>
 </div>
 
 {{-- Info Surat --}}
@@ -146,7 +161,7 @@
   </tr>
   <tr>
     <td>Jenis Dokumen</td>
-    <td>: {{ ucfirst(str_replace('_', ' ', $surat->jenis_surat)) }}</td>
+    <td>: {{ $surat->suratType ? $surat->suratType->nama : ucfirst(str_replace('_', ' ', $surat->jenis_surat)) }}</td>
   </tr>
   <tr>
     <td>Perihal</td>
@@ -162,7 +177,7 @@
   </tr>
   <tr>
     <td>Status</td>
-    <td>: <span class="badge">Disetujui Penuh</span></td>
+    <td>: <span class="badge" style="background: #d1ead9; color: #1a5c33;">Disetujui Penuh</span></td>
   </tr>
 </table>
 
@@ -200,7 +215,7 @@
 
 {{-- Footer --}}
 <div class="footer">
-  {{ $settings['footer_text'] ?? 'Dokumen ini digenerate otomatis oleh sistem HR.' }}
+  {{ $settings['footer_text'] ?? 'Dokumen ini digenerate otomatis oleh sistem persuratan SIMORA.' }}
   &bull; {{ now()->format('d M Y H:i') }}
 </div>
 

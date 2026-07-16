@@ -15,12 +15,12 @@
         margin-bottom: 16px;
         transition: color 0.2s;
     }
-    .al-back-btn:hover { color: #1A2B24; }
+    .al-back-btn:hover { color: #111111; }
     .al-title {
-        font-family: 'Playfair Display', serif;
+        font-family: 'Poppins', sans-serif;
         font-size: 32px;
         font-weight: 700;
-        color: #1A2B24;
+        color: #111111;
         margin: 0 0 6px;
     }
     .al-subtitle {
@@ -52,10 +52,10 @@
         margin-bottom: 8px;
     }
     .al-stat-val {
-        font-family: 'Playfair Display', serif;
+        font-family: 'Poppins', sans-serif;
         font-size: 32px;
         font-weight: 700;
-        color: #4F6560;
+        color: var(--color-text);
     }
 
     /* Filter Card */
@@ -89,19 +89,19 @@
         border: 1px solid #E5E7EB;
         border-radius: 12px;
         font-size: 13px;
-        color: #1A2B24;
+        color: #111111;
         background: white;
         transition: border-color 0.2s;
         box-sizing: border-box;
     }
     .al-input:focus {
         outline: none;
-        border-color: #4F6560;
+        border-color: var(--color-text);
         box-shadow: 0 0 0 2px rgba(79,101,96,0.1);
     }
     .al-btn-filter {
         padding: 9px 20px;
-        background: #4F6560;
+        background: var(--color-text);
         color: white;
         border: none;
         border-radius: 12px;
@@ -111,7 +111,7 @@
         transition: background 0.2s;
         white-space: nowrap;
     }
-    .al-btn-filter:hover { background: #3d504c; }
+    .al-btn-filter:hover { background: var(--color-primary); }
     .al-btn-reset {
         padding: 9px 16px;
         background: transparent;
@@ -158,7 +158,7 @@
         transition: background 0.15s;
     }
     .al-table tbody tr:last-child { border-bottom: none; }
-    .al-table tbody tr:hover { background: rgba(79,101,96,0.04); }
+    .al-table tbody tr:hover { background: rgba(230,33,41,0.04); }
     .al-table td {
         padding: 14px 20px;
         vertical-align: middle;
@@ -174,18 +174,18 @@
         width: 34px;
         height: 34px;
         border-radius: 50%;
-        background: rgba(79,101,96,0.15);
+        background: rgba(230,33,41,0.10);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 13px;
         font-weight: 700;
-        color: #4F6560;
+        color: var(--color-text);
         flex-shrink: 0;
         overflow: hidden;
     }
     .al-ava img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-    .al-user-name { font-size: 13px; font-weight: 600; color: #1A2B24; }
+    .al-user-name { font-size: 13px; font-weight: 600; color: #111111; }
     .al-user-role { font-size: 11px; color: #9CA3AF; }
 
     /* Action badge */
@@ -198,12 +198,12 @@
         font-size: 11px;
         font-weight: 600;
     }
-    .al-badge-login    { background: #ECFDF5; color: #065F46; }
+    .al-badge-login    { background: var(--color-bg-light); color: var(--color-primary); }
     .al-badge-logout   { background: #F1F5F9; color: #475569; }
     .al-badge-create   { background: #EFF6FF; color: #1D4ED8; }
     .al-badge-update   { background: #FFFBEB; color: #92400E; }
     .al-badge-delete   { background: #FEF2F2; color: #991B1B; }
-    .al-badge-approve  { background: #F0FDF4; color: #166534; }
+    .al-badge-approve  { background: #ecfdf5; color: #059669; }
     .al-badge-default  { background: #F3F4F6; color: #4B5563; }
 
     /* Description */
@@ -246,24 +246,24 @@
 
 <div class="al-page-header">
     <a href="{{ route('home') }}" class="al-back-btn">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Kembali ke Dasbor
     </a>
-    <h1 class="al-title">Activity Log</h1>
-    <p class="al-subtitle">Complete audit trail of all system-wide user activities</p>
+    <h1 class="al-title">Log Aktivitas</h1>
+    <p class="al-subtitle">Jejak audit lengkap dari semua aktivitas pengguna di seluruh sistem</p>
 </div>
 
 {{-- Stats --}}
 <div class="al-stats">
     <div class="al-stat-card">
-        <p class="al-stat-label">Total Events</p>
+        <p class="al-stat-label">Total Peristiwa</p>
         <div class="al-stat-val">{{ number_format($totalLogs) }}</div>
     </div>
     <div class="al-stat-card">
-        <p class="al-stat-label">Showing</p>
+        <p class="al-stat-label">Menampilkan</p>
         <div class="al-stat-val">{{ number_format($logs->total()) }}</div>
     </div>
     <div class="al-stat-card">
-        <p class="al-stat-label">Current Page</p>
+        <p class="al-stat-label">Halaman Saat Ini</p>
         <div class="al-stat-val">{{ $logs->currentPage() }} / {{ $logs->lastPage() }}</div>
     </div>
 </div>
@@ -273,24 +273,24 @@
     <form method="GET" action="{{ route('activity.log') }}">
         <div class="al-filter-grid">
             <div>
-                <label class="al-filter-label">Search Description</label>
-                <input type="text" name="search" class="al-input" placeholder="Search activity..." value="{{ request('search') }}">
+                <label class="al-filter-label">Cari Deskripsi</label>
+                <input type="text" name="search" class="al-input" placeholder="Cari aktivitas..." value="{{ request('search') }}">
             </div>
             <div>
-                <label class="al-filter-label">Filter by User</label>
+                <label class="al-filter-label">Filter berdasarkan Pengguna</label>
                 <select name="user_id" class="al-input">
-                    <option value="">All Users</option>
+                    <option value="">Semua Pengguna</option>
                     @foreach($users as $u)
                         <option value="{{ $u->id }}" {{ request('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div>
-                <label class="al-filter-label">Date From</label>
+                <label class="al-filter-label">Dari Tanggal</label>
                 <input type="date" name="date_from" class="al-input" value="{{ request('date_from') }}">
             </div>
             <div>
-                <label class="al-filter-label">Date To</label>
+                <label class="al-filter-label">Sampai Tanggal</label>
                 <input type="date" name="date_to" class="al-input" value="{{ request('date_to') }}">
             </div>
             <div style="display:flex;gap:8px;">
@@ -299,7 +299,7 @@
                 </button>
                 @if(request()->hasAny(['search','user_id','action','date_from','date_to']))
                     <a href="{{ route('activity.log') }}" class="al-btn-reset">
-                        <i data-lucide="x" class="w-3.5 h-3.5"></i> Clear
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i> Bersihkan
                     </a>
                 @endif
             </div>
@@ -313,11 +313,11 @@
     <table class="al-table">
         <thead>
             <tr>
-                <th>User</th>
-                <th>Action</th>
-                <th>Description</th>
-                <th>IP Address</th>
-                <th>Time</th>
+                <th>Pengguna</th>
+                <th>Tindakan</th>
+                <th>Deskripsi</th>
+                <th>Alamat IP</th>
+                <th>Waktu</th>
             </tr>
         </thead>
         <tbody>
@@ -345,14 +345,25 @@
                             @endif
                         </div>
                         <div>
-                            <div class="al-user-name">{{ $log->user?->name ?? 'System' }}</div>
-                            <div class="al-user-role">{{ ucfirst($log->user?->role_name ?? '-') }}</div>
+                            <div class="al-user-name">{{ $log->user?->name ?? 'Sistem' }}</div>
+                            <div class="al-user-role">{{ $log->user?->role_name === 'admin' ? 'Admin' : ($log->user?->role_name === 'staff' ? 'Staf' : ($log->user?->role_name === 'validator' ? 'Validator' : ($log->user?->role_name ?? '-'))) }}</div>
                         </div>
                     </div>
                 </td>
                 <td>
                     <span class="al-badge {{ $badgeClass }}">
-                        {{ str_replace('_', ' ', $log->action) }}
+                        {{
+                            match(strtolower($log->action ?? '')) {
+                                'login' => 'Masuk',
+                                'logout' => 'Keluar',
+                                'create' => 'Buat',
+                                'update' => 'Perbarui',
+                                'delete' => 'Hapus',
+                                'approve' => 'Setujui',
+                                'reject' => 'Tolak',
+                                default => str_replace('_', ' ', $log->action ?? '-')
+                            }
+                        }}
                     </span>
                 </td>
                 <td>
@@ -373,7 +384,7 @@
     {{-- Pagination --}}
     <div class="al-pagination">
         <span class="al-page-info">
-            Showing {{ $logs->firstItem() }}–{{ $logs->lastItem() }} of {{ number_format($logs->total()) }} entries
+            Menampilkan {{ $logs->firstItem() }}–{{ $logs->lastItem() }} dari {{ number_format($logs->total()) }} entri
         </span>
         {{ $logs->links() }}
     </div>
@@ -383,9 +394,9 @@
         <div class="al-empty-icon">
             <i data-lucide="inbox" class="w-6 h-6 text-gray-400"></i>
         </div>
-        <p>No activity logs match your filter.</p>
+        <p>Tidak ada log aktivitas yang cocok dengan filter Anda.</p>
         @if(request()->hasAny(['search','user_id','action','date_from','date_to']))
-            <a href="{{ route('activity.log') }}" class="al-btn-reset" style="margin: 12px auto 0; display: inline-flex;">Clear filters</a>
+            <a href="{{ route('activity.log') }}" class="al-btn-reset" style="margin: 12px auto 0; display: inline-flex;">Bersihkan filter</a>
         @endif
     </div>
     @endif

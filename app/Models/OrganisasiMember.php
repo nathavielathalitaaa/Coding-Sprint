@@ -37,7 +37,7 @@ class OrganisasiMember extends Model
             'sekretaris'=> 'Sekretaris',
             'ketua'     => 'Ketua',
             'bph'       => 'BPH',
-            'komisi'    => 'Komisi',
+            'divisi'    => 'Divisi',
             'pembina'   => 'Pembina',
             'pengawas'  => 'Pengawas',
             default     => ucfirst($this->jabatan),
@@ -52,7 +52,6 @@ class OrganisasiMember extends Model
             'sekretaris' => 'Sekretaris',
             'ketua'      => 'Ketua',
             'bph'        => 'BPH (Badan Pengurus Harian)',
-            'komisi'     => 'Komisi',
             'pembina'    => 'Pembina',
             'pengawas'   => 'Pengawas',
         ];

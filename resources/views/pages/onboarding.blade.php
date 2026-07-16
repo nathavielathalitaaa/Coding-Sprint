@@ -3,40 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onboarding — HR Sinergi Hotel & Villa</title>
+    <title>Onboarding — SIMORA SMK Telkom Sidoarjo</title>
 
-    <link rel="shortcut icon" href="{{ URL::to('assets/images/favicon.ico') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ URL::to('assets/images/logo-tab.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        :root {
+            --color-primary: #E62129;
+            --color-primary-dark: #C91A20;
+            --color-surface: #FFFFFF;
+            --color-bg-light: #F5F5F7;
+            --color-text: #111111;
+            --color-text-muted: #6B7280;
+            --color-border: #E5E7EB;
+            --radius-card: 28px;
+            --radius-input: 9999px;
+            --radius-pill: 9999px;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
+            min-width: 900px;
+            width: 100%;
             height: 100vh;
             display: flex;
-            overflow: hidden;
-            background: #E8EDEA;
+            flex-direction: row;
+            overflow-x: auto;
+            overflow-y: hidden;
+            background: linear-gradient(145deg, #F5C6C8 0%, var(--color-primary) 50%, var(--color-text) 100%);
         }
 
         /* ── KIRI ── */
         .left-panel {
             flex: 1.4;
-            background: linear-gradient(145deg, #C5D9CE 0%, #80BB9B 50%, #4F6560 100%);
+            min-width: 420px;
+            background: transparent;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 60px;
+            padding: 48px 52px 40px;
             position: relative;
             overflow: hidden;
+            height: 100vh;
         }
 
-        .left-panel::before {
+        /* ── KANAN ── */
+        .right-panel {
+            flex: 1;
+            min-width: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            background: transparent;
+            overflow-y: auto;
+            height: 100vh;
+        }        .left-panel::before {
             content: '';
             position: absolute;
             width: 500px; height: 500px;
@@ -57,22 +87,20 @@
             text-align: center;
             position: relative;
             z-index: 1;
-        }
-
-        .left-brand img {
-            width: 180px;
-            height: auto;
-            display: block;
-            margin: 0 auto 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            justify-content: center;
         }
 
         .left-brand h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 52px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 36px;
             font-weight: 700;
             color: white;
-            line-height: 1.1;
-            margin-bottom: 16px;
+            line-height: 1.15;
+            margin-bottom: 10px;
             letter-spacing: -0.5px;
         }
 
@@ -82,12 +110,13 @@
         }
 
         .left-brand p {
-            font-size: 15px;
-            color: rgba(255,255,255,0.75);
+            font-size: 13px;
+            color: rgba(255,255,255,0.78);
             font-weight: 300;
-            letter-spacing: 0.02em;
-            max-width: 340px;
-            line-height: 1.7;
+            letter-spacing: 0.01em;
+            max-width: 320px;
+            line-height: 1.65;
+            margin-bottom: 0;
         }
 
         .deco-card {
@@ -113,38 +142,29 @@
         .deco-text p { font-size: 13px; color: white; font-weight: 500; margin: 0; }
         .deco-text span { font-size: 11px; color: rgba(255,255,255,0.65); }
 
-        /* ── KANAN ── */
-        .right-panel {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            background: linear-gradient(135deg, #E8EDEA 0%, #D4E4DC 100%);
-            overflow-y: auto;
-        }
-
         /* ── CARD ── */
         .ob-card {
             background: #FFFFFF;
-            border-radius: 28px;
-            padding: 48px 44px;
+            border-radius: 24px;
+            padding: 28px 28px;
             width: 100%;
-            max-width: 460px;
-            box-shadow: 0 4px 32px rgba(79,101,96,0.1);
+            max-width: 360px;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+            /* Tidak stretch ke full height */
+            align-self: center;
         }
 
         .ob-card h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 28px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
             font-weight: 700;
-            color: #1A2B24;
+            color: #111111;
             margin-bottom: 4px;
             line-height: 1.2;
         }
 
         .ob-card .subtitle {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 300;
             color: #6B7280;
             margin-bottom: 6px;
@@ -179,14 +199,14 @@
         }
 
         .step-item.active .step-circle {
-            background: #4F6560;
-            border-color: #4F6560;
+            background: var(--color-text);
+            border-color: var(--color-text);
             color: white;
         }
 
         .step-item.done .step-circle {
-            background: #80BB9B;
-            border-color: #80BB9B;
+            background: var(--color-primary);
+            border-color: var(--color-primary);
             color: white;
         }
 
@@ -196,7 +216,7 @@
             color: #9CA3AF;
         }
         .step-item.active .step-label,
-        .step-item.done .step-label { color: #4F6560; }
+        .step-item.done .step-label { color: var(--color-text); }
 
         .step-line {
             flex: 1;
@@ -204,7 +224,7 @@
             background: #E5E7EB;
             margin: 0 12px;
         }
-        .step-line.done { background: #80BB9B; }
+        .step-line.done { background: var(--color-primary); }
 
         /* ── FORM ELEMENTS ── */
         .form-group { margin-bottom: 20px; }
@@ -227,41 +247,41 @@
             padding: 13px 20px;
             font-family: 'Poppins', sans-serif;
             font-size: 14px;
-            color: #1A2B24;
+            color: #111111;
             outline: none;
             transition: box-shadow 0.2s;
             letter-spacing: 0.05em;
         }
-        .hv-input:focus { box-shadow: 0 0 0 2px #80BB9B; }
+        .hv-input:focus { box-shadow: 0 0 0 2px var(--color-primary); }
         .hv-input::placeholder { color: #9CA3AF; letter-spacing: 0; }
 
         /* ── UPLOAD AREA ── */
         .upload-area {
-            border: 2px dashed #D1E8DC;
+            border: 2px dashed var(--color-border);
             border-radius: 16px;
             padding: 32px 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
-            background: #F6FAF8;
+            background: var(--color-bg-light);
         }
         .upload-area:hover {
-            border-color: #80BB9B;
-            background: #EDF7F1;
+            border-color: var(--color-primary);
+            background: #FEE2E2;
         }
         .upload-area input { display: none; }
         .upload-icon {
             width: 44px; height: 44px;
-            background: #E8F5EE;
+            background: var(--color-bg-light);
             border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
             margin: 0 auto 12px;
-            color: #4F6560;
+            color: var(--color-text);
         }
         .upload-title {
             font-size: 14px;
             font-weight: 500;
-            color: #1A2B24;
+            color: #111111;
             margin-bottom: 4px;
         }
         .upload-sub {
@@ -282,8 +302,8 @@
         }
 
         .ttd-saved-box {
-            background: #F6FAF8;
-            border: 1px solid #D1E8DC;
+            background: var(--color-bg-light);
+            border: 1px solid var(--color-border);
             border-radius: 16px;
             padding: 20px;
             text-align: center;
@@ -305,7 +325,7 @@
         }
         .ttd-check {
             font-size: 12px;
-            color: #4F6560;
+            color: var(--color-text);
             font-weight: 500;
             display: flex;
             align-items: center;
@@ -315,12 +335,12 @@
 
         /* ── INFO BOX ── */
         .info-box {
-            background: #F0F7F3;
-            border-left: 3px solid #80BB9B;
+            background: var(--color-bg-light);
+            border-left: 3px solid var(--color-primary);
             border-radius: 0 10px 10px 0;
             padding: 12px 16px;
             font-size: 12px;
-            color: #4F6560;
+            color: var(--color-text);
             margin-bottom: 20px;
             font-weight: 300;
             line-height: 1.5;
@@ -339,7 +359,7 @@
         /* ── BUTTON ── */
         .btn-submit {
             width: 100%;
-            background: #4F6560;
+            background: var(--color-text);
             color: white;
             border: none;
             border-radius: 9999px;
@@ -355,95 +375,45 @@
             justify-content: center;
             gap: 8px;
         }
-        .btn-submit:hover { background: #3d504c; }
+        .btn-submit:hover { background: #222222; }
         .btn-submit:active { transform: scale(0.99); }
         .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
 
-        /* ── RESPONSIVE ── */
-        @media (max-width: 1023px) {
-            .left-panel { flex: 1.1; padding: 40px; }
-            .left-brand h1 { font-size: 42px; }
-        }
-
-        @media (max-width: 768px) {
-            body { 
-                flex-direction: column; 
-                height: auto; 
-                min-height: 100vh; 
-                overflow-x: hidden;
-                overflow-y: auto;
-            }
-            .left-panel { 
-                flex: none; 
-                min-height: 280px; 
-                padding: 48px 24px; 
-                border-radius: 0 0 40px 40px; 
-                text-align: center;
-            }
-            .left-brand h1 { font-size: 34px; margin-bottom: 12px; }
-            .left-brand p { font-size: 13px; margin: 0 auto; line-height: 1.6; }
-            .left-brand img { width: 140px; margin-bottom: 20px; }
-            
-            .deco-card { display: none; }
-            .left-panel::before, .left-panel::after { display: none; }
-
-            .right-panel { 
-                flex: none; 
-                padding: 24px 16px 48px; 
-                overflow-y: visible; 
-            }
-            .ob-card { 
-                padding: 32px 20px; 
-                border-radius: 24px; 
-                max-width: 100%; 
-                margin-top: -40px;
-                position: relative;
-                z-index: 10;
-            }
-            .ob-card h2 { font-size: 22px; }
-            .ob-card .subtitle { font-size: 12px; margin-bottom: 24px; }
-            
-            .steps { margin-bottom: 24px; }
-            .step-circle { width: 32px; height: 32px; font-size: 12px; }
-            .step-label { font-size: 10px; }
-            .step-line { margin: 0 8px; }
-
-            .hv-input { padding: 12px 16px; font-size: 14px; }
-            .upload-area { padding: 24px 16px; }
-            .upload-icon { width: 36px; height: 36px; }
-            .upload-title { font-size: 13px; }
-            .upload-sub { font-size: 11px; }
-
-            .btn-submit { padding: 12px 20px; font-size: 13px; }
-        }
-
-        @media (max-width: 380px) {
-            .left-panel { min-height: 240px; padding: 36px 20px; }
-            .left-brand h1 { font-size: 28px; }
-            .ob-card { padding: 28px 16px; }
-            .step-label { display: none; } /* Hide labels on very small screens to save space */
-        }
     </style>
 </head>
 <body>
 
 {{-- PANEL KIRI --}}
 <div class="left-panel">
+
+    {{-- Tengah: judul, deskripsi, dan logo --}}
     <div class="left-brand">
-        <img src="{{ URL::to('assets/images/Logo Sinergi putih.png') }}" alt="Sinergi">
-        <h1>HR <em>Sinergi</em><br>Hotel & Villa</h1>
-        <p>Sistem manajemen SDM terpadu untuk operasional hotel yang lebih efisien dan terstruktur.</p>
-    </div>
-    <div class="deco-card">
-        <div class="deco-icon">
-            <i data-lucide="shield-check" style="width:18px;height:18px;"></i>
+        <h1>SIMORA</h1>
+        <p style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:500;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:12px;">Sistem Informasi Manajemen Organisasi & Persuratan</p>
+        <p>Sistem Persuratan Terpadu untuk operasional organisasi siswa SMK Telkom Sidoarjo yang lebih efisien dan terstruktur.</p>
+
+        {{-- Lingkaran logo — tepat di bawah teks --}}
+        <div style="display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:10px;margin-top:32px;width:100%;">
+            @foreach([
+                ['osis.png',    'OSIS'],
+                ['mpk.png',     'MPK'],
+                ['sangtasih.png','Sangtasih'],
+                ['BDI.png',     'BDI'],
+                ['KOMDIS.jpg',  'Komdis'],
+                ['PASTEMDA.png','Pastemda'],
+                ['PMR.jpg',     'PMR'],
+            ] as [$file,$label])
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:0;">
+                <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.55);overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.2);transition:transform .2s;position:relative;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                    <img src="{{ URL::to('assets/images/'.$file) }}" alt="{{ $label }}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:52px;height:52px;object-fit:contain;">
+                </div>
+                <span style="font-size:8px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:0.03em;text-transform:uppercase;text-align:center;white-space:nowrap;">{{ $label }}</span>
+            </div>
+            @endforeach
         </div>
-        <div class="deco-text">
-            <p>Dokumen Aman & Terverifikasi</p>
-            <span>Approval digital dengan TTD resmi</span>
-        </div>
     </div>
-</div>
+
+</div>{{-- /left-panel --}}
 
 {{-- PANEL KANAN --}}
 <div class="right-panel">
@@ -451,13 +421,13 @@
 
         <h2>Selamat Datang,<br>{{ $user->name }}</h2>
         <p class="subtitle">Lengkapi profil Anda sebelum mulai menggunakan sistem</p>
-        <p style="font-family:'Poppins',sans-serif;font-size:12px;color:#6B7280;font-style:italic;margin-top:4px;margin-bottom:32px;">Onboarding diperlukan karena Anda terdaftar sebagai approver pada salah satu jenis surat di sistem. Tanda tangan digital dan PIN digunakan untuk memverifikasi persetujuan dokumen resmi.</p>
+        <p style="font-family:'Poppins',sans-serif;font-size:11px;color:#9CA3AF;font-style:italic;margin-top:2px;margin-bottom:20px;line-height:1.5;">Tanda tangan digital dan PIN digunakan untuk memverifikasi persetujuan dokumen resmi.</p>
 
         {{-- Progress Steps --}}
         <div class="steps">
-            <div class="step-item {{ $step === 'ttd' ? 'active' : ($profile->ttd_path || $profile->signature_path ? 'done' : '') }}">
+            <div class="step-item {{ $step === 'ttd' ? 'active' : ($user->ttd_path ? 'done' : '') }}">
                 <div class="step-circle">
-                    @if($profile->ttd_path || $profile->signature_path)
+                    @if($user->ttd_path)
                         <i data-lucide="check" style="width:14px;height:14px;"></i>
                     @else
                         1
@@ -465,10 +435,10 @@
                 </div>
                 <span class="step-label">Tanda Tangan</span>
             </div>
-            <div class="step-line {{ $profile->ttd_path || $profile->signature_path ? 'done' : '' }}"></div>
-            <div class="step-item {{ $step === 'pin' ? 'active' : ($profile->pin ? 'done' : '') }}">
+            <div class="step-line {{ $user->ttd_path ? 'done' : '' }}"></div>
+            <div class="step-item {{ $step === 'pin' ? 'active' : ($user->pin ? 'done' : '') }}">
                 <div class="step-circle">
-                    @if($profile->pin)
+                    @if($user->pin)
                         <i data-lucide="check" style="width:14px;height:14px;"></i>
                     @else
                         2
@@ -485,12 +455,12 @@
                 @csrf
 
                 <div class="form-group">
-                    <label>Upload Tanda Tangan Digital</label>
+                    <label>Unggah Tanda Tangan Digital</label>
                     <div class="upload-area" onclick="document.getElementById('ttd').click()">
                         <div class="upload-icon">
                             <i data-lucide="upload" style="width:20px;height:20px;"></i>
                         </div>
-                        <p class="upload-title">Klik untuk upload file</p>
+                        <p class="upload-title">Klik untuk mengunggah file</p>
                         <p class="upload-sub">Format PNG, JPG, JPEG · Maks. 2MB</p>
                         <input type="file" id="ttd" name="ttd" accept=".png,.jpg,.jpeg"
                             @change="

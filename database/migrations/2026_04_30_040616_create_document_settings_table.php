@@ -21,10 +21,10 @@ return new class extends Migration
         // Insert default values
         $now = now();
         \Illuminate\Support\Facades\DB::table('document_settings')->insert([
-            ['key' => 'company_name', 'value' => 'HR Sinergi Hotel & Villa', 'created_at' => $now, 'updated_at' => $now],
-            ['key' => 'accent_color', 'value' => '#04A54C', 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'company_name', 'value' => 'SIMORA SMK Telkom Sidoarjo', 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'accent_color', 'value' => '#E62129', 'created_at' => $now, 'updated_at' => $now],
             ['key' => 'font_family', 'value' => 'Arial', 'created_at' => $now, 'updated_at' => $now],
-            ['key' => 'footer_text', 'value' => 'Dokumen ini digenerate otomatis oleh sistem HR Sinergi', 'created_at' => $now, 'updated_at' => $now],
+            ['key' => 'footer_text', 'value' => 'Dokumen ini digenerate otomatis oleh sistem persuratan SIMORA', 'created_at' => $now, 'updated_at' => $now],
             ['key' => 'logo_path', 'value' => null, 'created_at' => $now, 'updated_at' => $now],
         ]);
     }

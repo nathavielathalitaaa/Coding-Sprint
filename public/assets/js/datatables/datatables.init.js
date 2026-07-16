@@ -1,9 +1,5 @@
 /*
-Template Name: Sinergi Hotel & Vila - HR Management System
-Author: Sinergi Hotel & Vila
-Version: 1.1.0
-Website: https://sinergihv.com/
-Contact: info@sinergihv.com
+Template Name: SIMORA - Sistem Persuratan OSIS
 File: Main Js File
 */
 

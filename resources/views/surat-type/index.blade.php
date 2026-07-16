@@ -190,19 +190,31 @@
     </a>
 </div>
 
+<div style="margin-bottom: 28px; max-width: 320px;">
+    <select class="hv-input" onchange="filterSuratType(this.value)" style="padding: 10px 16px; border-radius: 12px; font-size: 13px; font-family: 'Poppins', sans-serif; cursor: pointer; border: 1px solid rgba(0, 0, 0, 0.1); background-color: white;">
+        <option value="all">Semua Organisasi</option>
+        <option value="generic">Generik (Semua Organisasi)</option>
+        @foreach($organisasis as $org)
+            <option value="{{ $org->id }}">{{ $org->nama }}</option>
+        @endforeach
+    </select>
+</div>
+
 <div class="hv-grid">
     @foreach($suratTypes as $type)
-    <div class="hv-card">
+    <div class="hv-card" data-org-id="{{ $type->organisasi_id ?? 'generic' }}">
         <div class="hv-card-header">
             <div>
                 <h2 class="hv-surat-nama">{{ $type->nama }}</h2>
                 <div class="mt-1 flex gap-2">
-                    @if($type->organisasi_tipe === 'osis')
-                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:var(--color-bg-light); color:#2E7D5E;">OSIS</span>
-                    @elseif($type->organisasi_tipe === 'mpk')
-                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:#E0F2FE; color:#0369A1;">MPK</span>
-                    @elseif($type->organisasi_tipe === 'sub_organ')
-                        <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:#FEF3C7; color:#B45309;">Sub Organ</span>
+                    @if($type->organisasi)
+                        @if($type->organisasi->tipe === 'osis')
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:var(--color-bg-light); color:#E62129;">{{ $type->organisasi->nama }}</span>
+                        @elseif($type->organisasi->tipe === 'mpk')
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:#E0F2FE; color:#0369A1;">{{ $type->organisasi->nama }}</span>
+                        @else
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:#FEF3C7; color:#B45309;">{{ $type->organisasi->nama }}</span>
+                        @endif
                     @else
                         <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase" style="background:#F1F5F9; color:#475569;">Generik</span>
                     @endif
@@ -234,27 +246,6 @@
             </div>
         </div>
 
-        <div class="hv-section-label">TAMPILAN FORMAT NOMOR</div>
-        <div class="hv-nomor-preview">
-            @php
-                $now = now();
-                $bulanRomawi = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'][$now->month - 1];
-                $preview = [];
-                foreach($type->nomor_format as $komponen) {
-                    $preview[] = match($komponen['type']) {
-                        'NOMOR_URUT' => '001',
-                        'KODE_SURAT' => strtoupper($type->kode),
-                        'LEMBAGA' => $komponen['value'] ?? 'HRD',
-                        'BULAN_ROMAWI' => $bulanRomawi,
-                        'TAHUN' => $now->year,
-                        'CUSTOM' => $komponen['value'] ?? '',
-                        default => ''
-                    };
-                }
-                echo implode('/', array_filter($preview));
-            @endphp
-        </div>
-
         <div class="hv-card-actions">
             <a href="{{ route('surat-type.edit', $type->id) }}" class="hv-btn-edit">Ubah Tipe Dokumen</a>
             <form action="{{ route('surat-type.destroy', $type->id) }}" method="POST" onsubmit="return confirm('Hapus tipe dokumen ini? Ini juga akan menghapus semua dokumen yang terkait.')">
@@ -268,6 +259,31 @@
     </div>
     @endforeach
 </div>
+
+@push('scripts')
+<script>
+    function filterSuratType(orgId) {
+        document.querySelectorAll('.hv-card').forEach(card => {
+            const cardOrgId = card.getAttribute('data-org-id');
+            if (orgId === 'all') {
+                card.style.display = 'flex';
+            } else if (orgId === 'generic') {
+                if (cardOrgId === 'generic' || !cardOrgId) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            } else {
+                if (cardOrgId == orgId) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            }
+        });
+    }
+</script>
+@endpush
 
 @endsection
 

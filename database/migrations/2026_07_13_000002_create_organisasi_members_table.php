@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('organisasi_id')->constrained('organisasis')->cascadeOnDelete();
-            $table->enum('jabatan', ['anggota', 'sekretaris', 'ketua', 'bph', 'komisi', 'pembina', 'pengawas']);
+            $table->enum('jabatan', ['anggota', 'sekretaris', 'ketua', 'bph', 'divisi', 'pembina', 'pengawas']);
             $table->timestamps();
 
             // Satu user hanya bisa punya satu jabatan per organisasi

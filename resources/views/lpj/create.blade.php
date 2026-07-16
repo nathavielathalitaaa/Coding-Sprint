@@ -31,7 +31,7 @@
     <div class="bg-gray-50 rounded-[28px] p-6 border border-gray-100 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-[var(--color-bg-light)] rounded-2xl flex items-center justify-center shrink-0">
-                <i data-lucide="award" class="w-6 h-6 text-[#2E7D5E]"></i>
+                <i data-lucide="award" class="w-6 h-6 text-[#E62129]"></i>
             </div>
             <div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Kegiatan</p>
@@ -50,8 +50,8 @@
         {{-- Section 1: Ringkasan Kegiatan --}}
         <div class="bg-white rounded-[28px] border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-6">
             <div class="flex items-center gap-2 mb-4">
-                <i data-lucide="file-text" class="w-5 h-5 text-[#2E7D5E]"></i>
-                <h3 class="text-lg font-sans font-bold text-[#1A2B24]">Ringkasan Kegiatan</h3>
+                <i data-lucide="file-text" class="w-5 h-5 text-[#E62129]"></i>
+                <h3 class="text-lg font-sans font-bold text-[#111111]">Ringkasan Kegiatan</h3>
             </div>
             <div>
                 <label class="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Ringkasan / Laporan Kegiatan <span class="text-red-500">*</span></label>
@@ -65,11 +65,11 @@
         <div class="bg-white rounded-[28px] border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="dollar-sign" class="w-5 h-5 text-[#2E7D5E]"></i>
-                    <h3 class="text-lg font-sans font-bold text-[#1A2B24]">Realisasi Anggaran</h3>
+                    <i data-lucide="dollar-sign" class="w-5 h-5 text-[#E62129]"></i>
+                    <h3 class="text-lg font-sans font-bold text-[#111111]">Realisasi Anggaran</h3>
                 </div>
                 <button type="button" onclick="addAnggaranRow()"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--color-bg-light)] text-[#2E7D5E] hover:bg-[#d5ecd1] rounded-2xl text-xs font-bold transition">
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--color-bg-light)] text-[#E62129] hover:bg-[#d5ecd1] rounded-2xl text-xs font-bold transition">
                     <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Baris
                 </button>
             </div>
@@ -117,11 +117,11 @@
         <div class="bg-white rounded-[28px] border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.06)] p-6">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
-                    <i data-lucide="paperclip" class="w-5 h-5 text-[#2E7D5E]"></i>
-                    <h3 class="text-lg font-sans font-bold text-[#1A2B24]">Lampiran Berkas</h3>
+                    <i data-lucide="paperclip" class="w-5 h-5 text-[#E62129]"></i>
+                    <h3 class="text-lg font-sans font-bold text-[#111111]">Lampiran Berkas</h3>
                 </div>
                 <button type="button" onclick="addLampiranRow()"
-                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--color-bg-light)] text-[#2E7D5E] hover:bg-[#d5ecd1] rounded-2xl text-xs font-bold transition">
+                        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--color-bg-light)] text-[#E62129] hover:bg-[#d5ecd1] rounded-2xl text-xs font-bold transition">
                     <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Lampiran
                 </button>
             </div>
@@ -132,12 +132,12 @@
                     <div class="w-full md:w-1/3">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Pilih File</label>
                         <input type="file" name="lampirans[0][file]" required
-                               class="w-full bg-white border border-gray-200 rounded-2xl py-1.5 px-3 text-xs focus:ring-1 focus:ring-[#2E7D5E] outline-none">
+                               class="w-full bg-white border border-gray-200 rounded-2xl py-1.5 px-3 text-xs focus:ring-1 focus:ring-[#E62129] outline-none">
                     </div>
                     <div class="w-full md:w-1/4">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipe</label>
                         <select name="lampirans[0][tipe]" required
-                                class="w-full bg-white border border-gray-200 rounded-2xl py-2 px-3 text-xs focus:ring-1 focus:ring-[#2E7D5E] outline-none">
+                                class="w-full bg-white border border-gray-200 rounded-2xl py-2 px-3 text-xs focus:ring-1 focus:ring-[#E62129] outline-none">
                             <option value="foto">Foto Dokumentasi</option>
                             <option value="video">Video Dokumentasi</option>
                             <option value="kwitansi">Kwitansi / Nota</option>
@@ -147,7 +147,7 @@
                     <div class="flex-1">
                         <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Keterangan</label>
                         <input type="text" name="lampirans[0][keterangan]" placeholder="Deskripsi singkat lampiran"
-                               class="w-full bg-white border border-gray-200 rounded-2xl py-2.5 px-3 text-xs focus:ring-1 focus:ring-[#2E7D5E] outline-none transition">
+                               class="w-full bg-white border border-gray-200 rounded-2xl py-2.5 px-3 text-xs focus:ring-1 focus:ring-[#E62129] outline-none transition">
                     </div>
                     <div class="md:pt-5">
                         <button type="button" onclick="removeLampiranRow(0)"
@@ -166,7 +166,7 @@
                 Batal
             </a>
             <button type="submit"
-                    class="inline-flex items-center gap-2 px-6 py-3.5 bg-[#2E7D5E] text-white rounded-2xl text-xs font-bold hover:bg-[#235f47] transition shadow-md">
+                    class="inline-flex items-center gap-2 px-6 py-3.5 bg-[#E62129] text-white rounded-2xl text-xs font-bold hover:bg-[#235f47] transition shadow-md">
                 <i data-lucide="send" class="w-4 h-4"></i> Ajukan Laporan Pertanggungjawaban (LPJ)
             </button>
         </div>
@@ -221,12 +221,12 @@
                 <div class="w-full md:w-1/3">
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Pilih File</label>
                     <input type="file" name="lampirans[${lampiranIndex}][file]" required
-                           class="w-full bg-white border border-gray-200 rounded-2xl py-1.5 px-3 text-xs focus:ring-1 focus:ring-[#2E7D5E] outline-none">
+                           class="w-full bg-white border border-gray-200 rounded-2xl py-1.5 px-3 text-xs focus:ring-1 focus:ring-[#E62129] outline-none">
                 </div>
                 <div class="w-full md:w-1/4">
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tipe</label>
                     <select name="lampirans[${lampiranIndex}][tipe]" required
-                            class="w-full bg-white border border-gray-200 rounded-2xl py-2 px-3 text-xs focus:ring-1 focus:ring-[#2E7D5E] outline-none">
+                            class="w-full bg-white border border-gray-200 rounded-2xl py-2 px-3 text-xs focus:ring-1 focus:ring-[#E62129] outline-none">
                         <option value="foto">Foto Dokumentasi</option>
                         <option value="video">Video Dokumentasi</option>
                         <option value="kwitansi">Kwitansi / Nota</option>
@@ -236,7 +236,7 @@
                 <div class="flex-1">
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Keterangan</label>
                     <input type="text" name="lampirans[${lampiranIndex}][keterangan]" placeholder="Deskripsi singkat lampiran"
-                           class="w-full bg-white border border-gray-200 rounded-2xl py-2.5 px-3 text-xs focus:ring-1 focus:ring-[#2E7D5E] outline-none transition">
+                           class="w-full bg-white border border-gray-200 rounded-2xl py-2.5 px-3 text-xs focus:ring-1 focus:ring-[#E62129] outline-none transition">
                 </div>
                 <div class="md:pt-5">
                     <button type="button" onclick="removeLampiranRow(${lampiranIndex})"

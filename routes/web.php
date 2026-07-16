@@ -161,16 +161,16 @@ Route::middleware('auth')->group(function () {
         });
 
         // ══════════════════════════════════════════════
-        // Kelola Organisasi (role: admin)
+        // Kelola Organisasi (role: admin, super-admin, and BPH OSIS/MPK)
         // ══════════════════════════════════════════════
-        Route::middleware('role:admin|super-admin')->group(function () {
-            Route::resource('organisasi', OrganisasiController::class)->except(['edit', 'update', 'destroy']);
-            Route::post('organisasi/{organisasi}/members', [OrganisasiController::class, 'addMember'])->name('organisasi.members.add');
-            Route::delete('organisasi/{organisasi}/members/{member}', [OrganisasiController::class, 'removeMember'])->name('organisasi.members.remove');
-            Route::post('organisasi/{organisasi}/komisi', [OrganisasiController::class, 'createKomisi'])->name('organisasi.komisi.store');
-            Route::post('komisi/{komisi}/members', [OrganisasiController::class, 'addKomisiMember'])->name('komisi.members.add');
-            Route::delete('komisi/{komisi}/members/{member}', [OrganisasiController::class, 'removeKomisiMember'])->name('komisi.members.remove');
-        });
+        Route::get('organisasi/template-excel', [OrganisasiController::class, 'downloadTemplate'])->name('organisasi.template-excel');
+        Route::post('organisasi/{organisasi}/import-excel', [OrganisasiController::class, 'importExcel'])->name('organisasi.import-excel');
+        Route::resource('organisasi', OrganisasiController::class)->except(['edit', 'update', 'destroy']);
+        Route::post('organisasi/{organisasi}/members', [OrganisasiController::class, 'addMember'])->name('organisasi.members.add');
+        Route::delete('organisasi/{organisasi}/members/{member}', [OrganisasiController::class, 'removeMember'])->name('organisasi.members.remove');
+        Route::post('organisasi/{organisasi}/komisi', [OrganisasiController::class, 'createKomisi'])->name('organisasi.komisi.store');
+        Route::post('komisi/{komisi}/members', [OrganisasiController::class, 'addKomisiMember'])->name('komisi.members.add');
+        Route::delete('komisi/{komisi}/members/{member}', [OrganisasiController::class, 'removeKomisiMember'])->name('komisi.members.remove');
 
         // ══════════════════════════════════════════════
         // surat

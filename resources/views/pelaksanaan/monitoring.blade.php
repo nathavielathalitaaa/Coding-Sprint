@@ -201,6 +201,9 @@
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
 
         setTimeout(() => document.getElementById('catatanPenutupInput').focus(), 150);
     }

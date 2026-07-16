@@ -5,7 +5,7 @@
     {{-- Header --}}
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-            <h1 class="text-3xl font-sans font-bold text-[#1A2B24]">Database Arsip LPJ</h1>
+            <h1 class="text-3xl font-sans font-bold text-[#111111]">Database Arsip LPJ</h1>
             <p class="text-[13px] font-light text-[#6B7280] mt-1">
                 Temukan seluruh laporan pertanggungjawaban kegiatan organisasi yang telah disahkan dan diarsipkan.
             </p>
@@ -97,7 +97,7 @@
                         </div>
                     </div>
 
-                    <h3 class="text-base font-sans font-bold text-[#1A2B24] mb-1.5 leading-snug">{{ $detail->nama_kegiatan ?? $surat->perihal }}</h3>
+                    <h3 class="text-base font-sans font-bold text-[#111111] mb-1.5 leading-snug">{{ $detail->nama_kegiatan ?? $surat->perihal }}</h3>
                     <p class="text-[11px] text-gray-500 mb-4">
                         Organisasi: <span class="font-semibold text-gray-700">{{ $surat->organisasi->nama ?? '-' }}</span> &bull; 
                         PIC: <span class="font-medium text-gray-700">{{ $surat->picUser->name }}</span>

@@ -46,7 +46,7 @@ class DataAwalSeeder extends Seeder
         $adminId = DB::table('users')->insertGetId([
             'user_id'    => 'ADMIN-001',
             'name'       => 'Admin SIMORA',
-            'email'      => 'admin@smktelkom-sdj.sch.id',
+            'email'      => 'admin@skomda.com',
             'password'   => Hash::make('password'),
             'status'     => 'aktif',
             'role_name'  => 'super-admin',
@@ -71,7 +71,7 @@ class DataAwalSeeder extends Seeder
         $pengawasPusatId = DB::table('users')->insertGetId([
             'user_id'    => 'GURU-001',
             'name'       => 'Pengawas Pusat SMK',
-            'email'      => 'pengawas.pusat@smktelkom-sdj.sch.id',
+            'email'      => 'pengawas.pusat@skomda.com',
             'password'   => Hash::make('password'),
             'status'     => 'aktif',
             'role_name'  => 'pengawas_pusat',
@@ -89,7 +89,7 @@ class DataAwalSeeder extends Seeder
         $kepalaSekolahId = DB::table('users')->insertGetId([
             'user_id'    => 'GURU-002',
             'name'       => 'Kepala Sekolah SMK Telkom Sidoarjo',
-            'email'      => 'kepsek@smktelkom-sdj.sch.id',
+            'email'      => 'kepsek@skomda.com',
             'password'   => Hash::make('password'),
             'status'     => 'aktif',
             'role_name'  => 'kepala_sekolah',
@@ -107,7 +107,7 @@ class DataAwalSeeder extends Seeder
         $guru1Id = DB::table('users')->insertGetId([
             'user_id'    => 'GURU-003',
             'name'       => 'Bapak Pembina OSIS',
-            'email'      => 'pembina.osis@smktelkom-sdj.sch.id',
+            'email'      => 'pembina.osis@skomda.com',
             'password'   => Hash::make('password'),
             'status'     => 'aktif',
             'role_name'  => 'guru',
@@ -124,7 +124,7 @@ class DataAwalSeeder extends Seeder
         $guru2Id = DB::table('users')->insertGetId([
             'user_id'    => 'GURU-004',
             'name'       => 'Ibu Pembina MPK',
-            'email'      => 'pembina.mpk@smktelkom-sdj.sch.id',
+            'email'      => 'pembina.mpk@skomda.com',
             'password'   => Hash::make('password'),
             'status'     => 'aktif',
             'role_name'  => 'guru',
@@ -140,11 +140,11 @@ class DataAwalSeeder extends Seeder
 
         // ── Buat User Anggota Demo ──────────────────────────────────────
         $anggotaUsers = [
-            ['user_id' => 'ANT-001', 'name' => 'Ketua OSIS',       'email' => 'ketua.osis@smktelkom-sdj.sch.id'],
-            ['user_id' => 'ANT-002', 'name' => 'BPH OSIS 1',       'email' => 'bph.osis1@smktelkom-sdj.sch.id'],
-            ['user_id' => 'ANT-003', 'name' => 'Ketua MPK',        'email' => 'ketua.mpk@smktelkom-sdj.sch.id'],
-            ['user_id' => 'ANT-004', 'name' => 'BPH MPK 1',        'email' => 'bph.mpk1@smktelkom-sdj.sch.id'],
-            ['user_id' => 'ANT-005', 'name' => 'Anggota ROHIS',    'email' => 'bph.rohis1@smktelkom-sdj.sch.id'],
+            ['user_id' => 'ANT-001', 'name' => 'Ketua OSIS',       'email' => 'ketua.osis@skomda.com'],
+            ['user_id' => 'ANT-002', 'name' => 'BPH OSIS 1',       'email' => 'bph.osis1@skomda.com'],
+            ['user_id' => 'ANT-003', 'name' => 'Ketua MPK',        'email' => 'ketua.mpk@skomda.com'],
+            ['user_id' => 'ANT-004', 'name' => 'BPH MPK 1',        'email' => 'bph.mpk1@skomda.com'],
+            ['user_id' => 'ANT-005', 'name' => 'Anggota ROHIS',    'email' => 'bph.rohis1@skomda.com'],
         ];
 
         $anggotaIds = [];

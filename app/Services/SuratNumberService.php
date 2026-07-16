@@ -140,7 +140,12 @@ class SuratNumberService
         foreach ($suratType->nomor_format as $komponen) {
             $bagian = match ($komponen['type'] ?? '') {
                 'NOMOR_URUT'   => str_pad($counter, 3, '0', STR_PAD_LEFT),
-                'KODE_SURAT'   => strtoupper($suratType->kode),
+                'KODE_SURAT'   => match (true) {
+                    str_starts_with($suratType->kode, 'proposal_')     => 'PROP',
+                    str_starts_with($suratType->kode, 'surat_resmi_')   => 'SR',
+                    str_starts_with($suratType->kode, 'administrasi_')  => 'ADM',
+                    default                                            => strtoupper($suratType->kode),
+                },
                 'LEMBAGA'      => $komponen['value'] ?? '',
                 'BULAN_ROMAWI' => $bulanRomawi,
                 'TAHUN'        => (string) $now->year,

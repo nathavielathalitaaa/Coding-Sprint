@@ -66,15 +66,15 @@ class SuratPolicy
         return false;
     }
 
-    // semua role bisa buat surat
+    // Admin & super-admin tidak bisa buat surat
     public function create(User $user): bool
     {
-        return true;
+        return !$user->hasAnyRole(['admin', 'super-admin']);
     }
 
     public function store(User $user): bool
     {
-        return true;
+        return !$user->hasAnyRole(['admin', 'super-admin']);
     }
 
     /**

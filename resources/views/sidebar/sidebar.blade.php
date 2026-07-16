@@ -19,28 +19,69 @@
             <span>Dashboard</span>
         </a>
 
-        {{-- ajukan surat --}}
+        {{-- ajukan surat (bukan admin) --}}
+        @can('create', App\Models\Surat::class)
         <a href="{{ route('surat.create') }}"
            class="{{ request()->routeIs('surat.create') ? 'active' : '' }}"
            title="Ajukan Surat Baru">
             <i data-lucide="plus-circle"></i>
             <span>Ajukan surat</span>
         </a>
+        @endcan
 
         {{-- persetujuan --}}
+        @unless(auth()->user()->hasRole('staff'))
+        @php
+            $waitingCount = 0;
+            if(auth()->check()) {
+                $authUser = auth()->user();
+                $activeSuratIds = \App\Models\Surat::where('status', 'submitted')->pluck('id');
+                $waitingCount = \App\Models\DocumentApproval::where('status', 'waiting')
+                    ->where('document_type', 'LIKE', 'surat_%')
+                    ->whereIn('document_id', $activeSuratIds)
+                    ->where(function($q) use ($authUser) {
+                        $q->where('assigned_user_id', $authUser->id)
+                          ->orWhere(function($sq) use ($authUser) {
+                              $jabatans = $authUser->organisasiMembers()->pluck('jabatan')->filter()->unique();
+                              $sq->whereNull('assigned_user_id');
+                              if ($jabatans->isNotEmpty()) {
+                                  $sq->whereIn('jabatan', $jabatans);
+                              } else {
+                                  $sq->where('jabatan', '___NONE___');
+                              }
+                          });
+                    })
+                    ->count();
+            }
+        @endphp
         <a href="{{ route('surat.index', ['filter' => 'waiting']) }}"
+           id="nav-persetujuan"
            class="{{ request()->routeIs('surat.index') && request('filter') === 'waiting' ? 'active' : '' }}"
+           onclick="dismissWaitingBadge()"
            title="Persetujuan Surat">
             <i data-lucide="check-square"></i>
             <span>Persetujuan</span>
+            @if($waitingCount > 0)
+            <span id="waiting-badge"
+                  style="margin-left:auto;min-width:20px;height:20px;border-radius:999px;background:#fff;color:#E62129;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;line-height:1;">
+                {{ $waitingCount }}
+            </span>
+            @endif
         </a>
+        @endunless
 
         {{-- daftar surat --}}
         <a href="{{ route('surat.index') }}"
-           class="{{ request()->routeIs('surat.index') && request('filter') !== 'waiting' || request()->routeIs('surat.show') || request()->routeIs('surat.edit') ? 'active' : '' }}"
+           class="{{ request()->routeIs('surat.index') || request()->routeIs('surat.show') || request()->routeIs('surat.edit') ? 'active' : '' }}"
            title="Daftar Surat">
             <i data-lucide="file-text"></i>
             <span>Daftar surat</span>
+            @if($waitingCount > 0)
+            <span id="waiting-badge"
+                  style="margin-left:auto;min-width:20px;height:20px;border-radius:999px;background:#fff;color:#E62129;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;line-height:1;">
+                {{ $waitingCount }}
+            </span>
+            @endif
         </a>
 
         {{-- Pelaksanaan & LPJ ── --}}
@@ -65,14 +106,6 @@
             <span>Arsip LPJ</span>
         </a>
 
-        {{-- profile --}}
-        <a href="{{ route('profile.show') }}"
-           class="{{ request()->routeIs('profile.show') ? 'active' : '' }}"
-           title="Profil Saya">
-            <i data-lucide="user-circle"></i>
-            <span>Profil Saya</span>
-        </a>
-
         {{-- inbox admin (admin only) --}}
         @if(auth()->user()->hasAnyRole(['admin', 'super-admin']))
         <a href="{{ route('surat.inbox_admin') }}"
@@ -82,8 +115,19 @@
         </a>
         @endif
 
-        {{-- kelola organisasi (admin only) --}}
-        @if(auth()->user()->hasAnyRole(['admin', 'super-admin']))
+        {{-- kelola organisasi (admin, super-admin, and BPH OSIS/MPK) --}}
+        @php
+            $canManageOrg = auth()->check() && (
+                auth()->user()->hasAnyRole(['admin', 'super-admin']) || 
+                \App\Models\OrganisasiMember::where('user_id', auth()->id())
+                    ->whereIn('jabatan', ['bph', 'ketua'])
+                    ->whereHas('organisasi', function($q) {
+                        $q->whereIn('tipe', ['osis', 'mpk']);
+                    })
+                    ->exists()
+            );
+        @endphp
+        @if($canManageOrg)
         <a href="{{ route('organisasi.index') }}"
            class="{{ request()->routeIs('organisasi.*') || request()->routeIs('komisi.*') ? 'active' : '' }}">
             <i data-lucide="users"></i>

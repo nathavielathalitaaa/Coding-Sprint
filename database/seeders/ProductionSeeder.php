@@ -47,7 +47,7 @@ class ProductionSeeder extends Seeder
         $this->command->info('Creating admin HR account...');
         $admin = User::create([
             'name'      => 'Admin HR',
-            'email'     => 'admin@smktelkom-sdj.sch.id',
+            'email'     => 'admin@skomda.com',
             'password'  => bcrypt('Simora@2026'),
             'user_id'   => 'SIN-0001',
             'status'    => 'aktif',
@@ -126,7 +126,7 @@ class ProductionSeeder extends Seeder
         // ── Summary ───────────────────────────────────────────────────
         $this->command->newLine();
         $this->command->info('=== Production Setup Complete! ===');
-        $this->command->info('Admin Email : admin@smktelkom-sdj.sch.id');
+        $this->command->info('Admin Email : admin@skomda.com');
         $this->command->info('Password    : Simora@2026');
         $this->command->warn('IMPORTANT: Change the admin password after first login!');
     }

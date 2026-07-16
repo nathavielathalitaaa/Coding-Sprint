@@ -26,7 +26,7 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                     LPJ Valid & Sah
                 </span>
-                <h2 class="text-2xl font-sans font-bold text-[#1A2B24] mt-2">{{ $surat->kegiatanDetail->nama_kegiatan ?? $surat->perihal }}</h2>
+                <h2 class="text-2xl font-sans font-bold text-[#111111] mt-2">{{ $surat->kegiatanDetail->nama_kegiatan ?? $surat->perihal }}</h2>
                 <p class="text-xs text-gray-500 mt-1">
                     Organisasi: <span class="font-bold text-gray-700">{{ $surat->organisasi->nama ?? '-' }}</span> &bull; 
                     PIC: <span class="font-medium text-gray-700">{{ $surat->picUser->name }}</span>
@@ -132,7 +132,7 @@
                     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-3">Pengesahan Dokumen</span>
                     <div class="p-4 bg-emerald-50/30 border border-emerald-100 rounded-[28px] flex items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-2xl bg-white border border-emerald-200 flex items-center justify-center font-bold text-[#2E7D5E] shrink-0">
+                            <div class="w-10 h-10 rounded-2xl bg-white border border-emerald-200 flex items-center justify-center font-bold text-[#E62129] shrink-0">
                                 <i data-lucide="check-check" class="w-5 h-5"></i>
                             </div>
                             <div class="text-xs">

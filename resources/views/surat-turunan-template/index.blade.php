@@ -5,7 +5,7 @@
 {{-- Header --}}
 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
     <div>
-        <h1 class="text-3xl font-sans font-bold text-[#1A2B24]">Template Surat Turunan</h1>
+        <h1 class="text-3xl font-sans font-bold text-[#111111]">Template Surat Turunan</h1>
         <p class="text-[13px] font-light text-[#6B7280] mt-1">
             Kelola teks default untuk setiap jenis surat turunan yang bisa digenerate dari surat induk.
         </p>
@@ -36,11 +36,11 @@
         <div class="flex items-start justify-between p-6 pb-4">
             <div class="flex items-start gap-3">
                 <div class="w-10 h-10 rounded-2xl bg-[var(--color-bg-light)] flex items-center justify-center shrink-0">
-                    <i data-lucide="file-text" class="w-5 h-5 text-[#2E7D5E]"></i>
+                    <i data-lucide="file-text" class="w-5 h-5 text-[#E62129]"></i>
                 </div>
                 <div>
-                    <h2 class="text-base font-sans font-bold text-[#1A2B24]">{{ $tpl->nama }}</h2>
-                    <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-[var(--color-bg-light)] text-[#2E7D5E]">
+                    <h2 class="text-base font-sans font-bold text-[#111111]">{{ $tpl->nama }}</h2>
+                    <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-[var(--color-bg-light)] text-[#E62129]">
                         {{ $tpl->kode }}
                     </span>
                 </div>
