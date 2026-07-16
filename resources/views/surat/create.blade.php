@@ -6,7 +6,8 @@
 <section class="page-section">
   <x-page-header title="Ajukan surat" subtitle="Isi formulir berikut untuk mengajukan dokumen baru" />
 
-  <form class="form-shell" action="#" method="post" enctype="multipart/form-data">
+  <form class="form-shell" action="{{ route('surat.store') }}" method="post" enctype="multipart/form-data">
+    @csrf
     <div class="form-grid">
       <div class="form-column">
         <label class="field-group">
@@ -40,24 +41,6 @@
     </div>
   </form>
 </section>
-@endsection
-
-                <div class="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                    <a href="{{ route('surat.index') }}"
-                       style="padding: 10px 24px; border-radius: 12px; border: 1px solid #d1d5db; background: #ffffff; font-size: 14px; font-weight: 600; color: #374151; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;"
-                       onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='#ffffff'">
-                        Batal
-                    </a>
-                    <button type="submit" style="background-color: #4F6560;"
-                            class="inline-flex items-center gap-2 px-8 py-2.5 hover:opacity-90 text-white rounded-xl text-sm font-bold shadow transition">
-                        <i data-lucide="send" class="w-4 h-4"></i>
-                        Simpan & Ajukan Surat
-                    </button>
-                </div>
-
-            </form>
-        </div>
-
 @endsection
 
 @push('scripts')
