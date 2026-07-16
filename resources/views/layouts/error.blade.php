@@ -1,16 +1,17 @@
 <!DOCTYPE html>
-<html lang="en" class="light scroll-smooth group" data-layout="vertical" data-sidebar="light" data-sidebar-size="lg" data-mode="light" data-topbar="light" data-skin="default" data-navbar="sticky" data-content="fluid" dir="ltr">
+<html lang="id" class="light scroll-smooth group" data-layout="vertical" data-sidebar="light" data-sidebar-size="lg" data-mode="light" data-topbar="light" data-skin="default" data-navbar="sticky" data-content="fluid" dir="ltr">
 <head>
     <meta charset="utf-8">
-    <title>404 | Sinergi Hotel & Vila</title>
+    <title>404 | SIMORA SMK Telkom Sidoarjo</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta content="Minimal Admin & Dashboard Template" name="description">
-    <meta content="Sinergi Hotel & Vila" name="author">
+    <meta content="SIMORA SMK Telkom Sidoarjo" name="description">
+    <meta content="SIMORA SMK Telkom Sidoarjo" name="author">
     <!-- app favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ URL::to('assets/images/logo-tab.svg') }}">
     <link rel="shortcut icon" href="{{ URL::to('assets/images/favicon.ico') }}">
     <!-- layout config js -->
     <script src="{{ URL::to('assets/js/layout.js') }}"></script>
-    <!-- sinergi hotel & vila css -->
+    <!-- SIMORA SMK Telkom Sidoarjo css -->
     <link rel="stylesheet" href="{{ URL::to('assets/css/starcode2.css') }}">
 </head>
 
