@@ -1,47 +1,20 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>@yield('title', 'SIMORA')</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ asset('css/simora.css') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-</head>
-<body>
-  <div class="app-shell">
-    @include('components.sidebar')
-
-    <div class="main-shell">
-      <button class="mobile-nav-toggle" type="button" aria-label="Buka menu">
-        <i class="fa-solid fa-bars"></i>
-      </button>
-
-      <main class="main-content">
-        @yield('content')
-      </main>
-    </div>
-  </div>
-
-  <script src="{{ asset('js/simora.js') }}"></script>
-</body>
-</html>
 <!DOCTYPE html>
-<html lang="en" class="light scroll-smooth group" data-layout="vertical" data-sidebar="light" data-sidebar-size="lg" data-mode="light" data-topbar="light" data-skin="default" data-navbar="sticky" data-content="fluid" dir="ltr">
+<html lang="id" class="light scroll-smooth group" data-layout="vertical" data-sidebar="dark" data-sidebar-size="lg" data-mode="light" data-topbar="light" data-skin="default" data-navbar="sticky" data-content="fluid" dir="ltr">
 <head>
     <meta charset="utf-8">
-    <title>Sign In | Sinergi Hotel & Vila - HR Management System</title>
+    <title>Masuk | SIMORA SMK Telkom Sidoarjo - Sistem Manajemen Persuratan</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta content="Minimal Admin & Dashboard Template" name="description">
-    <meta content="Sinergi Hotel & Vila" name="author">
+    <meta content="Sistem Informasi Persuratan OSIS SIMORA" name="description">
+    <meta content="SIMORA SMK Telkom Sidoarjo" name="author">
     <!-- app favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ URL::to('assets/images/logo-tab.svg') }}">
     <link rel="shortcut icon" href="{{ URL::to('assets/images/favicon.ico') }}">
     <!-- layout config js -->
     <script src="{{ URL::to('assets/js/layout.js') }}"></script>
-    <!-- sinergi hotel & vila css -->
+    <!-- SIMORA SMK Telkom Sidoarjo css -->
     <link rel="stylesheet" href="{{ URL::to('assets/css/starcode2.css') }}">
-    
-</head>
+    <link rel="stylesheet" href="{{ URL::to('assets/css/app.css') }}">
+    </head>
 
 <body class="flex items-center justify-center min-h-screen py-16 lg:py-10 bg-slate-50 dark:bg-zink-800 dark:text-zink-100 font-public">
     <div class="relative">
