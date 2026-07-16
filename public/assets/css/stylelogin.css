@@ -25,16 +25,16 @@ body{
 }
 .page-wrapper{
   display:flex;
-  height:100vh;
-  overflow:hidden;
+  min-height:100vh;
+  overflow:auto;
 }
 
 /* ==========================
    Panels (Left / Right)
    ========================== */
-.panel{flex:1;position:relative;display:flex;flex-direction:column}
+.panel{flex:1;position:relative;display:flex;flex-direction:column;min-height:100vh}
 .left-panel{background:var(--primary);color:#fff;padding:48px;align-items:flex-start;overflow:hidden}
-.right-panel{background:var(--right-bg);align-items:center;justify-content:center;position:relative}
+.right-panel{background:var(--right-bg);align-items:center;justify-content:center;position:relative;min-height:100vh}
 
 /* --------------------------
    Left header (logo SIMORA)
