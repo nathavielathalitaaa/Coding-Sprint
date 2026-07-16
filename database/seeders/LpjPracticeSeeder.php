@@ -34,12 +34,12 @@ class LpjPracticeSeeder extends Seeder
         }
 
         // Ambil User
-        $ketuaOsis = User::where('email', 'ketua.osis@smktelkom-sdj.sch.id')->first();
-        $bphOsis = User::where('email', 'bph.osis1@smktelkom-sdj.sch.id')->first();
-        $bphMpk = User::where('email', 'bph.mpk1@smktelkom-sdj.sch.id')->first();
-        $pembinaOsis = User::where('email', 'pembina.osis@smktelkom-sdj.sch.id')->first();
-        $pengawasPusat = User::where('email', 'pengawas.pusat@smktelkom-sdj.sch.id')->first();
-        $kepkep = User::where('email', 'kepsek@smktelkom-sdj.sch.id')->first();
+        $ketuaOsis = User::where('email', 'ketua.osis@skomda.com')->first();
+        $bphOsis = User::where('email', 'bph.osis1@skomda.com')->first();
+        $bphMpk = User::where('email', 'bph.mpk1@skomda.com')->first();
+        $pembinaOsis = User::where('email', 'pembina.osis@skomda.com')->first();
+        $pengawasPusat = User::where('email', 'pengawas.pusat@skomda.com')->first();
+        $kepkep = User::where('email', 'kepsek@skomda.com')->first();
 
         if (!$ketuaOsis || !$bphOsis || !$pembinaOsis || !$kepkep) {
             $this->command->error('User demo tidak lengkap. Pastikan DataAwalSeeder & OrganisasiSeeder sudah dijalankan.');
